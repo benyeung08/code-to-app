@@ -29,11 +29,20 @@
   {
     "name": "LuaXIDE",
     "description": "Android Lua IDE with built-in interpreter, visual UI designer, debugger, and APK builder — all on-device, no root required.",
-    "stargazers_count": 9,
+    "stargazers_count": 10,
     "forks_count": 0,
     "language": "C",
     "pushed_at": "2026-09-25T13:01:11Z",
     "html_url": "https://github.com/shiaho777/LuaXIDE"
+  },
+  {
+    "name": "andmx",
+    "description": "Android-native AI coding agent (AndMX)",
+    "stargazers_count": 8,
+    "forks_count": 2,
+    "language": "Kotlin",
+    "pushed_at": "2026-09-26T06:17:46Z",
+    "html_url": "https://github.com/shiaho777/andmx"
   },
   {
     "name": "revx",
@@ -63,15 +72,6 @@
     "html_url": "https://github.com/shiaho777/zv-codec"
   },
   {
-    "name": "andmx",
-    "description": "Android-native AI coding agent (AndMX)",
-    "stargazers_count": 7,
-    "forks_count": 2,
-    "language": "Kotlin",
-    "pushed_at": "2026-09-26T06:17:46Z",
-    "html_url": "https://github.com/shiaho777/andmx"
-  },
-  {
     "name": "wgsql",
     "description": "GPU-accelerated columnar OLAP via WebGPU. One WGSL kernel, four backends.",
     "stargazers_count": 7,
@@ -79,15 +79,6 @@
     "language": "Rust",
     "pushed_at": "2026-09-17T06:30:59Z",
     "html_url": "https://github.com/shiaho777/wgsql"
-  },
-  {
-    "name": "anthropic-ui-skill",
-    "description": "A Skill that allows AI to generate the UI design style of Anthropic Company. Its aesthetics are very good.",
-    "stargazers_count": 6,
-    "forks_count": 1,
-    "language": null,
-    "pushed_at": "2026-05-28T08:50:31Z",
-    "html_url": "https://github.com/shiaho777/anthropic-ui-skill"
   },
   {
     "name": "MacBottle",
@@ -106,6 +97,15 @@
     "language": "Python",
     "pushed_at": "2026-05-28T10:56:43Z",
     "html_url": "https://github.com/shiaho777/echomind"
+  },
+  {
+    "name": "anthropic-ui-skill",
+    "description": "A Skill that allows AI to generate the UI design style of Anthropic Company. Its aesthetics are very good.",
+    "stargazers_count": 5,
+    "forks_count": 1,
+    "language": null,
+    "pushed_at": "2026-05-28T08:50:31Z",
+    "html_url": "https://github.com/shiaho777/anthropic-ui-skill"
   },
   {
     "name": "qsyy",
@@ -167,7 +167,7 @@
     "stargazers_count": 1,
     "forks_count": 0,
     "language": "Python",
-    "pushed_at": "2026-09-26T12:06:15Z",
+    "pushed_at": "2026-09-26T22:05:26Z",
     "html_url": "https://github.com/shiaho777/pyj-j"
   },
   {
