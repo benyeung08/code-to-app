@@ -91,10 +91,7 @@ android {
                 "build/generated/shellRuntimeSrc",
                 "build/generated/shellStrings",
             )
-            // Shell-local res first: values/shell_theme_compat.xml declares the
-            // Material3 color attrs / theme parents the shared app themes.xml
-            // needs, so the material library can stay out of the template.
-            res.srcDirs("src/main/res", "../app/src/main/res")
+            res.srcDirs("../app/src/main/res")
             assets.srcDirs("src/main/assets", "build/generated/shellRuntimeAssets")
         }
     }
@@ -541,6 +538,7 @@ dependencies {
     implementation("androidx.credentials:credentials-play-services-auth:1.5.0")
     implementation("com.google.android.libraries.identity.googleid:googleid:1.1.1")
 
+    implementation("com.google.android.material:material:1.10.0")
     implementation("androidx.activity:activity-compose:1.8.1")
     implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.6.2")
     implementation("androidx.lifecycle:lifecycle-runtime-compose:2.6.2")

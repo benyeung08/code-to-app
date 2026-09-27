@@ -229,6 +229,11 @@
 # ============================================================
 -dontwarn androidx.compose.**
 
+# ============================================================
+# Material / AppCompat — 已有 consumer rules，仅兜底
+# ============================================================
+-dontwarn com.google.android.material.**
+
 # Node.js JNI output bridge (R8 may rename onOutput otherwise)
 -keep class com.webtoapp.core.nodejs.NodeBridge { *; }
 -keep class com.webtoapp.core.nodejs.NodeJniOutputBridge {
