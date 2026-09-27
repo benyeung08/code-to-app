@@ -72,7 +72,6 @@ import com.webtoapp.data.model.withRuntimePermissionsSyncedFromFeatures
 import com.webtoapp.ui.components.ApkExportPreflightPanel
 import com.webtoapp.ui.components.BackgroundRunConfigCard
 import com.webtoapp.ui.components.EncryptionConfigCard
-import com.webtoapp.ui.components.FeatureStackConfigCard
 import com.webtoapp.ui.components.IsolationConfigCard
 import com.webtoapp.ui.components.NotificationConfigCard
 import com.webtoapp.ui.components.PremiumButton
@@ -192,10 +191,6 @@ private fun BuildApkContent(
         mutableStateOf(webApp.apkExportConfig?.notificationConfig ?: com.webtoapp.data.model.NotificationExportConfig())
     }
 
-    var featureStackConfig by remember(webApp.id) {
-        mutableStateOf(webApp.apkExportConfig?.featureStack ?: com.webtoapp.data.model.FeatureStackConfig())
-    }
-
     var selectedEngineType by remember(webApp.id) {
         mutableStateOf(webApp.apkExportConfig?.engineType ?: "SYSTEM_WEBVIEW")
     }
@@ -244,7 +239,6 @@ private fun BuildApkContent(
             backgroundRunConfig = backgroundRunConfig,
             notificationEnabled = notificationEnabled,
             notificationConfig = notificationConfig,
-            featureStack = featureStackConfig,
             engineType = selectedEngineType,
             perAppSigningEnabled = perAppSigningEnabled,
             forceFullRebuild = forceFullRebuild
@@ -624,13 +618,6 @@ private fun BuildApkContent(
                     config = notificationConfig,
                     onEnabledChange = { notificationEnabled = it },
                     onConfigChange = { notificationConfig = it }
-                )
-            }
-
-            item {
-                FeatureStackConfigCard(
-                    config = featureStackConfig,
-                    onConfigChange = { featureStackConfig = it }
                 )
             }
 
