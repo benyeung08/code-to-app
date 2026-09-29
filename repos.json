@@ -2,7 +2,7 @@
   {
     "name": "WebToApp",
     "description": "Turn any website into an installable app across iOS, Android, Windows, macOS and Linux, and generate a sharing link.",
-    "stargazers_count": 107,
+    "stargazers_count": 108,
     "forks_count": 26,
     "language": "Python",
     "pushed_at": "2026-09-14T14:42:06Z",
@@ -81,6 +81,15 @@
     "html_url": "https://github.com/shiaho777/wgsql"
   },
   {
+    "name": "An-Harness",
+    "description": "Android-first on-device AI agent harness — exploring everything possible on Android",
+    "stargazers_count": 5,
+    "forks_count": 2,
+    "language": "Kotlin",
+    "pushed_at": "2026-09-08T10:15:19Z",
+    "html_url": "https://github.com/shiaho777/An-Harness"
+  },
+  {
     "name": "MacBottle",
     "description": null,
     "stargazers_count": 5,
@@ -135,15 +144,6 @@
     "html_url": "https://github.com/shiaho777/clipshelf"
   },
   {
-    "name": "An-Harness",
-    "description": "Android-first on-device AI agent harness — exploring everything possible on Android",
-    "stargazers_count": 4,
-    "forks_count": 2,
-    "language": "Kotlin",
-    "pushed_at": "2026-09-08T10:15:19Z",
-    "html_url": "https://github.com/shiaho777/An-Harness"
-  },
-  {
     "name": "zcode-exports",
     "description": "Export ZCode session data to Markdown as a skill",
     "stargazers_count": 2,
@@ -151,15 +151,6 @@
     "language": null,
     "pushed_at": "2026-08-19T02:15:54Z",
     "html_url": "https://github.com/shiaho777/zcode-exports"
-  },
-  {
-    "name": "bitx",
-    "description": "BitX / KEF — open local intelligence: editable external knowledge, adapter behavior, reproducible quality gates",
-    "stargazers_count": 2,
-    "forks_count": 0,
-    "language": "Python",
-    "pushed_at": "2026-07-21T05:35:32Z",
-    "html_url": "https://github.com/shiaho777/bitx"
   },
   {
     "name": "pyj-j",
@@ -221,7 +212,7 @@
     "stargazers_count": 0,
     "forks_count": 0,
     "language": "Kotlin",
-    "pushed_at": "2026-09-29T01:06:41Z",
+    "pushed_at": "2026-09-29T03:27:23Z",
     "html_url": "https://github.com/shiaho777/LogSleuth"
   },
   {
