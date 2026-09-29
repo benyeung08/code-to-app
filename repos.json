@@ -2,8 +2,8 @@
   {
     "name": "WebToApp",
     "description": "Turn any website into an installable app across iOS, Android, Windows, macOS and Linux, and generate a sharing link.",
-    "stargazers_count": 106,
-    "forks_count": 25,
+    "stargazers_count": 107,
+    "forks_count": 26,
     "language": "Python",
     "pushed_at": "2026-09-14T14:42:06Z",
     "html_url": "https://github.com/shiaho777/WebToApp"
@@ -167,7 +167,7 @@
     "stargazers_count": 1,
     "forks_count": 0,
     "language": "Python",
-    "pushed_at": "2026-09-28T06:16:05Z",
+    "pushed_at": "2026-09-28T23:41:00Z",
     "html_url": "https://github.com/shiaho777/pyj-j"
   },
   {
@@ -221,7 +221,7 @@
     "stargazers_count": 0,
     "forks_count": 0,
     "language": "Kotlin",
-    "pushed_at": "2026-09-28T03:32:42Z",
+    "pushed_at": "2026-09-29T01:06:41Z",
     "html_url": "https://github.com/shiaho777/LogSleuth"
   },
   {
