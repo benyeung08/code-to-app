@@ -6,5 +6,5 @@
         resources (manifest labels etc.); AppStringsResourceConsistencyTest rejects
         localized keys here and any values-* locale directory.
     -->
-    <string name="app_name" translatable="false">WebToApp</string>
+    <string name="app_name" translatable="false">MobileCodeToApp</string>
 </resources>

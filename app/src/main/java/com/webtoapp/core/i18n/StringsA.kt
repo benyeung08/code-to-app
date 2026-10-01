@@ -780,16 +780,16 @@ object StringsA {
     }
 
     val createHtmlApp: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "HTML App"
-        AppLanguage.ENGLISH -> "HTML App"
-        AppLanguage.ARABIC -> "تطبيق HTML"
-        AppLanguage.PORTUGUESE -> "App HTML"
-        AppLanguage.SPANISH -> "App HTML"
-        AppLanguage.FRENCH -> "App HTML"
-        AppLanguage.GERMAN -> "HTML-App"
-        AppLanguage.RUSSIAN -> "HTML-приложение"
-        AppLanguage.JAPANESE -> "HTMLアプリ"
-        AppLanguage.KOREAN -> "HTML 앱"
+        AppLanguage.CHINESE -> "手机编程应用"
+        AppLanguage.ENGLISH -> "Mobile Code App"
+        AppLanguage.ARABIC -> "تطبيق برمجة الهاتف"
+        AppLanguage.PORTUGUESE -> "App de Código Móvel"
+        AppLanguage.SPANISH -> "App de Código Móvil"
+        AppLanguage.FRENCH -> "App de code mobile"
+        AppLanguage.GERMAN -> "Mobile-Code-App"
+        AppLanguage.RUSSIAN -> "Мобильное код-приложение"
+        AppLanguage.JAPANESE -> "モバイルコードアプリ"
+        AppLanguage.KOREAN -> "모바일 코드 앱"
     }
 
     val createFrontendApp: String get() = when (Strings.lang) {
@@ -6005,16 +6005,16 @@ object StringsA {
     }
 
     val createHtmlAppTitle: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "创建HTML应用"
-        AppLanguage.ENGLISH -> "Create HTML App"
-        AppLanguage.ARABIC -> "إنشاء تطبيق HTML"
-        AppLanguage.PORTUGUESE -> "Criar App HTML"
-        AppLanguage.SPANISH -> "Crear App HTML"
-        AppLanguage.FRENCH -> "Créer une App HTML"
-        AppLanguage.GERMAN -> "HTML-App erstellen"
-        AppLanguage.RUSSIAN -> "Создать HTML-приложение"
-        AppLanguage.JAPANESE -> "HTML アプリを作成"
-        AppLanguage.KOREAN -> "HTML 앱 만들기"
+        AppLanguage.CHINESE -> "创建手机编程应用"
+        AppLanguage.ENGLISH -> "Create Mobile Code App"
+        AppLanguage.ARABIC -> "إنشاء تطبيق برمجة الهاتف"
+        AppLanguage.PORTUGUESE -> "Criar App de Código Móvel"
+        AppLanguage.SPANISH -> "Crear App de Código Móvil"
+        AppLanguage.FRENCH -> "Créer une app de code mobile"
+        AppLanguage.GERMAN -> "Mobile-Code-App erstellen"
+        AppLanguage.RUSSIAN -> "Создать мобильное код-приложение"
+        AppLanguage.JAPANESE -> "モバイルコードアプリを作成"
+        AppLanguage.KOREAN -> "모바일 코드 앱 만들기"
     }
 
     val selectFiles: String get() = when (Strings.lang) {
@@ -13439,4 +13439,3 @@ object StringsA {
     }
 
 }
-

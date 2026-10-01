@@ -16,7 +16,7 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "WebToApp"
+rootProject.name = "MobileCodeToApp"
 include(":app")
 include(":shell")
 include(":clone-host")

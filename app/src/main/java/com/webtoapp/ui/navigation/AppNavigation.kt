@@ -36,6 +36,7 @@ import com.webtoapp.ui.screens.CreateGoAppScreen
 import com.webtoapp.ui.screens.CreateHtmlAppScreen
 import com.webtoapp.ui.screens.CreateMediaAppScreen
 import com.webtoapp.ui.screens.CreateMultiWebAppScreen
+import com.webtoapp.ui.screens.CreateNativeAppScreen
 import com.webtoapp.ui.screens.CreateNodeJsAppScreen
 import com.webtoapp.ui.screens.CreateOfflinePackScreen
 import com.webtoapp.ui.screens.CreatePhpAppScreen
@@ -65,6 +66,7 @@ object Routes {
     const val CREATE_MEDIA_APP = "create_media_app"
     const val CREATE_GALLERY_APP = "create_gallery_app"
     const val CREATE_HTML_APP = "create_html_app"
+    const val CREATE_NATIVE_APP = "create_native_app"
     const val CREATE_FRONTEND_APP = "create_frontend_app"
     const val CREATE_NODEJS_APP = "create_nodejs_app"
     const val CREATE_WORDPRESS_APP = "create_wordpress_app"
@@ -173,6 +175,7 @@ fun AppNavigation() {
                         onCreateMediaApp = { navController.navigate(Routes.CREATE_MEDIA_APP) },
                         onCreateGalleryApp = { navController.navigate(Routes.CREATE_GALLERY_APP) },
                         onCreateHtmlApp = { navController.navigate(Routes.CREATE_HTML_APP) },
+                        onCreateNativeApp = { navController.navigate(Routes.CREATE_NATIVE_APP) },
                         onCreateFrontendApp = { navController.navigate(Routes.CREATE_FRONTEND_APP) },
                         onCreateNodeJsApp = { navController.navigate(Routes.CREATE_NODEJS_APP) },
                         onCreateWordPressApp = { navController.navigate(Routes.CREATE_WORDPRESS_APP) },
@@ -379,6 +382,12 @@ fun AppNavigation() {
                         navController.popBackStackSafely()
                     },
                     onNavigateToLinuxEnv = { navController.navigate(Routes.LINUX_ENVIRONMENT) }
+                )
+            }
+
+            composable(Routes.CREATE_NATIVE_APP) {
+                CreateNativeAppScreen(
+                    onBack = { navController.popBackStackSafely() }
                 )
             }
 

@@ -53,12 +53,14 @@ android {
     compileSdk = 36
 
     defaultConfig {
-        applicationId = "com.webtoapp"
+        // MobileCodeToApp is a separately installable fork; keep the Kotlin
+        // namespace stable so existing exported-app compatibility is preserved.
+        applicationId = "com.mobilecodetoapp"
         minSdk = 23
 
         targetSdk = 36
-        versionCode = 71
-        versionName = "2.6.9"
+        versionCode = 1
+        versionName = "1.0.0-mobilecode"
         buildConfigField("boolean", "SHELL_RUNTIME_ONLY", "false")
 
         vectorDrawables {
@@ -89,7 +91,7 @@ android {
             // Google Play variant. Only Play's applicationId requirement differs
             // (`com.webtoapp` is registered on Google Play by another party); behavior,
             // targetSdk and every build rule are shared with the standard flavor.
-            applicationId = "shiaho.webtoapp"
+            applicationId = "com.mobilecodetoapp.play"
         }
     }
 

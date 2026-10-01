@@ -108,6 +108,7 @@ fun HomeScreen(
     onCreateMediaApp: () -> Unit = {},
     onCreateGalleryApp: () -> Unit = {},
     onCreateHtmlApp: () -> Unit = {},
+    onCreateNativeApp: () -> Unit = {},
     onCreateFrontendApp: () -> Unit = {},
     onCreateNodeJsApp: () -> Unit = {},
     onCreateWordPressApp: () -> Unit = {},
@@ -183,10 +184,11 @@ fun HomeScreen(
         val iconRes: Int,
         val onClick: () -> Unit
     )
+    // MobileCodeToApp is code-first: open the on-device HTML/CSS/JavaScript
+    // editor as the primary flow instead of asking for a website URL.
     val createActionItems = listOf(
-        CreateActionItem(Strings.appTypeWeb, R.drawable.ic_type_web, onCreateApp),
-        CreateActionItem(Strings.appTypeMultiWeb, R.drawable.ic_type_multi_web, onCreateMultiWebApp),
-        CreateActionItem(Strings.appTypeHtml, R.drawable.ic_type_html, onCreateHtmlApp),
+        CreateActionItem(Strings.createHtmlApp, R.drawable.ic_type_html, onCreateHtmlApp),
+        CreateActionItem("原生 Android（Kotlin + Java）", R.drawable.ic_type_frontend, onCreateNativeApp),
         CreateActionItem(Strings.websiteOfflinePack, R.drawable.ic_type_offline_pack, onCreateOfflinePack),
         CreateActionItem(Strings.appTypeFrontend, R.drawable.ic_type_frontend, onCreateFrontendApp),
         CreateActionItem(Strings.appTypePhp, R.drawable.ic_type_php, onCreatePhpApp),
@@ -1590,4 +1592,3 @@ private fun CreateActionTile(
         )
     }
 }
-
