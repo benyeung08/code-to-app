@@ -1,62 +1,76 @@
 ---
 layout: home
 title: WebToApp
-titleTemplate: 在手機上構建 Android APK
+titleTemplate: Build Android APKs on your phone
 hero:
   name: WebToApp
-  text: 在手機上構建 Android APK
-  tagline: Android 上最全功能的 web-to-app 工具包，手機上的完整 APK 工坊，現已支持原生導入和自我更新。
+  text: Build Android APKs on your phone
+  tagline: The most full featured web-to-app toolkit on Android, a complete APK workshop that runs entirely on your phone. Now with Native Import & self-update.
   actions:
     - theme: brand
-      text: 快速開始
-      link: /zh/guide/getting-started
+      text: Get Started
+      link: /guide/getting-started
     - theme: alt
-      text: 在 GitHub 上查看
+      text: View on GitHub
       link: https://github.com/benyeung08/web-to-app
+  image:
+    src: /logo.png
+    alt: WebToApp
 
 features:
-  - title: 13 種應用類型，一個構建器
-    details: 網頁、多網頁、HTML、離線包、前端、Node.js、PHP、Python、Go、WordPress、媒體、相冊，以及全新的原生導入，支持導入現有 Android Studio 項目。
-  - title: 自我更新
-    details: 關於頁面現在檢查 benyeung08/web-to-app 的 Release，不再有 v1.0.0-mobilecode，乾淨的版本號，應用內下載安裝。
-  - title: 設備上構建
-    details: 二進制 AXML/ARSC 補丁，V1/V2/V3 簽名，AAB 導出，現在還支持通過 :native_build 進程進行完整的 Gradle 構建。
+  - title: 13 App Types, One Builder
+    details: Web, Multi-Web, HTML, Offline Pack, Frontend, Node.js, PHP, Python, Go, WordPress, Media, Gallery, and NEW Native Import for existing Android Studio projects.
+  - title: Self-Update
+    details: About screen now checks benyeung08/web-to-app releases. No more v1.0.0-mobilecode — clean versioning with in-app download & install.
+  - title: On-Device Build
+    details: Binary AXML/ARSC patching, V1/V2/V3 signing, AAB export, and now full Gradle build via :native_build fork+exec.
 ---
 
-## 從 URL 到簽名 APK，只需三步
+## From URL to a signed APK in three steps
 
-1. **選擇類型** 從 [13 種應用類型](/zh/guide/app-types/) 中選擇 — 普通 [網頁](/zh/guide/app-types/web) 封裝，[HTML](/zh/guide/app-types/html) 或 [前端](/zh/guide/app-types/frontend) 構建，設備上的 [Node.js](/zh/guide/app-types/nodejs)、[PHP](/zh/guide/app-types/php)、[Python](/zh/guide/app-types/python)、[Go](/zh/guide/app-types/go)、[WordPress](/zh/guide/app-types/wordpress) 服務器，或用於現有 Android Studio 項目的 [原生導入](/zh/guide/app-types/native-import)。
-2. **填寫基本信息** 名稱、URL 或項目、圖標 — 然後保存。每種類型都共享相同的 [配置卡片](/zh/guide/config/)，用於網絡、隱私、外觀和運行時。
-3. **構建和分享** [構建 APK](/zh/guide/app-actions/build-apk) 在設備上使用 V1/V2/V3 簽名，然後 [分享](/zh/guide/app-actions/share-apk) 或 [導出 Play-ready AAB](/zh/guide/app-actions/export-apk)。無需 PC，無需構建隊列。
+1. **Pick a type** Choose from [13 app types](/guide/app-types/) — a plain [Web](/guide/app-types/web) wrapper, [HTML](/guide/app-types/html) or [Frontend](/guide/app-types/frontend) builds, on-device [Node.js](/guide/app-types/nodejs), [PHP](/guide/app-types/php), [Python](/guide/app-types/python), [Go](/guide/app-types/go), [WordPress](/guide/app-types/wordpress) servers, or [Native Import](/guide/app-types/native-import) for existing Android Studio projects.
+2. **Fill in the basics** A name, a URL or a project, an icon — then save. Every type shares the same [configuration cards](/guide/config/) for network, privacy, appearance, and runtimes.
+3. **Build and share** [Build APK](/guide/app-actions/build-apk) signs on-device with V1/V2/V3, then [share](/guide/app-actions/share-apk) it or [export a Play-ready AAB](/guide/app-actions/export-apk). No PC, no build queue.
 
-## 十三種應用類型，一個構建器
+## Thirteen app types, one builder
 
-[**網頁和多網頁**](/zh/guide/app-types/multi-web) URL 封裝、標籤中心、門戶和鏈接提要。
+[**Web and Multi-Web**](/guide/app-types/multi-web) URL wrappers, tabbed hubs, portals, and link feeds.
 
-[**HTML 和離線包**](/zh/guide/app-types/html) 打包本地 HTML 或 zip 構建，或將網站抓取為自包含的離線 APK。
+[**HTML and Offline Pack**](/guide/app-types/html) Package local HTML or zip builds, or scrape a site into a self-contained offline APK.
 
-[**前端**](/zh/guide/app-types/frontend) 將 React、Vue 或 Vite 構建作為 localhost 服務的 APK 發布。
+[**Frontend**](/guide/app-types/frontend) Ship React, Vue, or Vite builds as a localhost-served APK.
 
-[**服務器運行時**](/zh/guide/app-types/nodejs) fork+exec Node.js、PHP、Python 或 Go 二進制文件，在本地端口上提供服務。
+[**Server runtimes**](/guide/app-types/nodejs) fork+exec Node.js, PHP, Python, or Go binaries that serve on a local port.
 
-[**WordPress**](/zh/guide/app-types/wordpress) 一個完整的可移植 WordPress 網站，PHP 和 SQLite 在設備上運行。
+[**WordPress**](/guide/app-types/wordpress) A full portable WordPress site with PHP and SQLite running on-device.
 
-[**媒體和相冊**](/zh/guide/app-types/media) 圖像和視頻播放器、相冊和作品集作為獨立應用。
+[**Media and Gallery**](/guide/app-types/media) Image and video players, albums, and portfolios as standalone apps.
 
-[**原生導入（新增）**](/zh/guide/app-types/native-import) 導入現有的 Android Studio 項目並在手機上構建。第一階段：快速二進制合併 res/assets/jniLibs/dex。第二階段：通過 :native_build 進程完整執行 `./gradlew assembleDebug`，自動下載 JDK 17 + Android SDK。
+[**Native Import (NEW)**](/guide/app-types/native-import) Import an existing Android Studio project and build it on your phone. Phase 1: fast binary merge of res/assets/jniLibs/dex. Phase 2: full `./gradlew assembleDebug` via :native_build process with JDK 17 + Android SDK auto-download.
 
-## 編輯器背後的工具箱
+## A toolbox behind the editor
 
-[**Agent**](/zh/guide/more-features/agent) 一個帶有多達 57 個內置工具的工具調用助手，可以構建、編輯和操作整個應用。
+[**Agent**](/guide/more-features/agent) A tool-calling assistant with up to 57 built-in tools that can build, edit, and operate the whole app.
 
-[**擴展模塊**](/zh/guide/more-features/extension-modules) 將 JS/CSS、用戶腳本或 MV3 Chrome 擴展注入任何生成的應用。
+[**Extension modules**](/guide/more-features/extension-modules) Inject JS/CSS, userscripts, or MV3 Chrome extensions into any generated app.
 
-[**Hosts 廣告屏蔽**](/zh/guide/more-features/hosts-adblock) 20 個內置過濾列表和按應用訂閱，編譯到發布的 APK 中。
+[**Hosts ad-block**](/guide/more-features/hosts-adblock) 20 built-in filter lists and per-app subscriptions, compiled into the shipped APK.
 
-[**Linux 環境**](/zh/guide/more-features/linux-environment) 一個類似 Termux 的環境，帶有真正的工具鏈，用於構建和運行項目。
+[**Linux environment**](/guide/more-features/linux-environment) A Termux-style environment with real toolchains for building and running projects.
 
-[**端口管理器**](/zh/guide/more-features/port-manager) 每個本地服務器運行時的衝突策略、真正的停止處理程序和 DNS 橋接。
+[**Port manager**](/guide/more-features/port-manager) Conflict policies, real stop handlers, and DNS bridging for every local server runtime.
 
-[**應用修改器**](/zh/guide/more-features/app-modifier) 克隆和重塑已安裝的 APK，批量導入定義，導出模板。
+[**App modifier**](/guide/more-features/app-modifier) Clone and rebrand installed APKs, batch-import definitions, export templates.
 
-[**自我更新**](/zh/guide/more-features/self-update) 新增：關於頁面檢查 benyeung08/web-to-app 的發行版，下載 APK 到 update_apks/，通過 FileProvider 安裝。
+[**Self-update**](/guide/more-features/self-update) NEW: About screen checks benyeung08/web-to-app releases, downloads APK to update_apks/, installs via FileProvider.
+
+## Under the hood
+
+13 app types
+57 agent tools max
+10 UI languages
+20 ad-filter lists
+
+The builder does its own binary patching — AXML/ARSC rewriting, permission pruning, AES-256-GCM resource encryption, 16 KB page-aligned native libraries — and keeps a low targetSdk shell so fork+exec runtimes keep working. Phase 2 adds a `gradle_launcher` native wrapper for true on-device Gradle builds. The [developer docs](/developer/architecture) cover the full export pipeline.
+
+Ready to build your first APK? [Get started](/guide/getting-started)
