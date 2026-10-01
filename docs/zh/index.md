@@ -1,195 +1,62 @@
 ---
 layout: home
-
+title: WebToApp
+titleTemplate: 在手機上構建 Android APK
 hero:
   name: WebToApp
-  text: 在手机上构建 Android APK
-  tagline: 一个远超"网址转 App"的设备端 APK 工坊 —— fork+exec 真实服务运行时、搭载加固网络栈、导出 Play 级安装包,全程无需电脑。
-  image:
-    src: /logo.png
-    alt: WebToApp
+  text: 在手機上構建 Android APK
+  tagline: Android 上最全功能的 web-to-app 工具包，手機上的完整 APK 工坊，現已支持原生導入和自我更新。
   actions:
     - theme: brand
-      text: 快速开始
-      link: /zh/guide/introduction
-    - theme: alt
-      text: 开发者文档
-      link: /zh/developer/
+      text: 快速開始
+      link: /zh/guide/getting-started
     - theme: alt
       text: 在 GitHub 上查看
-      link: https://github.com/shiaho777/web-to-app
+      link: https://github.com/benyeung08/web-to-app
 
 features:
-  - icon: <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="16" height="16" rx="2"/><path d="M9 4v16"/><path d="M4 9h5"/></svg>
-    title: 真实的设备端运行时
-    details: Node.js、PHP、Python、Go、WordPress 作为原生二进制直接从应用存储 fork+exec —— 如同 Termux,但打包成可安装的 APK。
-  - icon: <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l8 3v6c0 4.5-3.2 7.6-8 9-4.8-1.4-8-4.5-8-9V6z"/></svg>
-    title: 加固网络栈
-    details: DNS-over-HTTPS、带本地 MITM 桥的 TLS 指纹伪造、加密客户端 Hello(ECH)、按应用代理,以及针对受限 SPA 的 CORS 绕过。
-  - icon: <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 8l-9-5-9 5 9 5z"/><path d="M3 8v8l9 5 9-5V8"/><path d="M12 13v8"/></svg>
-    title: 自包含构建
-    details: 二进制 AXML/ARSC 打补丁、权限裁剪、V1/V2/V3 签名、Google Play 级 AAB 导出 —— 全部通过 apksig 在应用内完成,无需远程构建队列。
-  - icon: <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M10 2v4M14 2v4M10 18v4M14 18v4M2 10h4M2 14h4M18 10h4M18 14h4"/><rect x="8" y="8" width="8" height="8" rx="1.5"/></svg>
-    title: 发布后仍可扩展
-    details: 添加 JS/CSS 模块、Tampermonkey 风格油猴脚本,或 MV3 Chrome 扩展(从 Chrome 网上应用店实时搜索),无需重建宿主。
-  - icon: <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="10" width="16" height="10" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/><circle cx="12" cy="15" r="1.4"/></svg>
-    title: 隐私与指纹防护
-    details: 50+ 维浏览器指纹伪装、内置 20 个过滤列表的 hosts 去广告、AES-256-GCM 资源加密,以及激活码门控。
-  - icon: <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M3 12h18"/><path d="M12 3a14 14 0 0 1 0 18a14 14 0 0 1 0-18"/></svg>
-    title: 10 种界面语言
-    details: 中文、英文、阿拉伯文(RTL)、葡萄牙文、西班牙文、法文、德文、俄文、日文、韩文 —— 在设置中随时切换。
+  - title: 13 種應用類型，一個構建器
+    details: 網頁、多網頁、HTML、離線包、前端、Node.js、PHP、Python、Go、WordPress、媒體、相冊，以及全新的原生導入，支持導入現有 Android Studio 項目。
+  - title: 自我更新
+    details: 關於頁面現在檢查 benyeung08/web-to-app 的 Release，不再有 v1.0.0-mobilecode，乾淨的版本號，應用內下載安裝。
+  - title: 設備上構建
+    details: 二進制 AXML/ARSC 補丁，V1/V2/V3 簽名，AAB 導出，現在還支持通過 :native_build 進程進行完整的 Gradle 構建。
 ---
 
-<div class="wta-home">
+## 從 URL 到簽名 APK，只需三步
 
-## 从 URL 到签名 APK,只需三步
+1. **選擇類型** 從 [13 種應用類型](/zh/guide/app-types/) 中選擇 — 普通 [網頁](/zh/guide/app-types/web) 封裝，[HTML](/zh/guide/app-types/html) 或 [前端](/zh/guide/app-types/frontend) 構建，設備上的 [Node.js](/zh/guide/app-types/nodejs)、[PHP](/zh/guide/app-types/php)、[Python](/zh/guide/app-types/python)、[Go](/zh/guide/app-types/go)、[WordPress](/zh/guide/app-types/wordpress) 服務器，或用於現有 Android Studio 項目的 [原生導入](/zh/guide/app-types/native-import)。
+2. **填寫基本信息** 名稱、URL 或項目、圖標 — 然後保存。每種類型都共享相同的 [配置卡片](/zh/guide/config/)，用於網絡、隱私、外觀和運行時。
+3. **構建和分享** [構建 APK](/zh/guide/app-actions/build-apk) 在設備上使用 V1/V2/V3 簽名，然後 [分享](/zh/guide/app-actions/share-apk) 或 [導出 Play-ready AAB](/zh/guide/app-actions/export-apk)。無需 PC，無需構建隊列。
 
-<div class="wta-steps">
+## 十三種應用類型，一個構建器
 
-1. **选择类型**
+[**網頁和多網頁**](/zh/guide/app-types/multi-web) URL 封裝、標籤中心、門戶和鏈接提要。
 
-   从 [12 种应用类型](/zh/guide/app-types/)里选 —— 普通的 [Web](/zh/guide/app-types/web) 封装、[HTML](/zh/guide/app-types/html) 或 [Frontend](/zh/guide/app-types/frontend) 构建,或是设备端运行的 [Node.js](/zh/guide/app-types/nodejs)、[PHP](/zh/guide/app-types/php)、[Python](/zh/guide/app-types/python)、[Go](/zh/guide/app-types/go)、[WordPress](/zh/guide/app-types/wordpress) 服务器。
+[**HTML 和離線包**](/zh/guide/app-types/html) 打包本地 HTML 或 zip 構建，或將網站抓取為自包含的離線 APK。
 
-2. **填写基本信息**
+[**前端**](/zh/guide/app-types/frontend) 將 React、Vue 或 Vite 構建作為 localhost 服務的 APK 發布。
 
-   名称、URL 或项目、图标 —— 保存即可。所有类型共享同一套[配置卡片](/zh/guide/config/):网络、隐私、外观、运行时。
+[**服務器運行時**](/zh/guide/app-types/nodejs) fork+exec Node.js、PHP、Python 或 Go 二進制文件，在本地端口上提供服務。
 
-3. **构建并分享**
+[**WordPress**](/zh/guide/app-types/wordpress) 一個完整的可移植 WordPress 網站，PHP 和 SQLite 在設備上運行。
 
-   [构建 APK](/zh/guide/app-actions/build-apk) 用 V1/V2/V3 在设备上完成签名,再[分享](/zh/guide/app-actions/share-apk)出去或[导出 Play 级 AAB](/zh/guide/app-actions/export-apk)。无需电脑,没有构建队列。
+[**媒體和相冊**](/zh/guide/app-types/media) 圖像和視頻播放器、相冊和作品集作為獨立應用。
 
-</div>
+[**原生導入（新增）**](/zh/guide/app-types/native-import) 導入現有的 Android Studio 項目並在手機上構建。第一階段：快速二進制合併 res/assets/jniLibs/dex。第二階段：通過 :native_build 進程完整執行 `./gradlew assembleDebug`，自動下載 JDK 17 + Android SDK。
 
-## 十二种类型,一个构建器
+## 編輯器背後的工具箱
 
-<div class="wta-types">
+[**Agent**](/zh/guide/more-features/agent) 一個帶有多達 57 個內置工具的工具調用助手，可以構建、編輯和操作整個應用。
 
-<div class="wta-tile">
+[**擴展模塊**](/zh/guide/more-features/extension-modules) 將 JS/CSS、用戶腳本或 MV3 Chrome 擴展注入任何生成的應用。
 
-[**Web 与 Multi-Web**](/zh/guide/app-types/multi-web)
+[**Hosts 廣告屏蔽**](/zh/guide/more-features/hosts-adblock) 20 個內置過濾列表和按應用訂閱，編譯到發布的 APK 中。
 
-URL 封装、多标签页枢纽、门户与链接流。
+[**Linux 環境**](/zh/guide/more-features/linux-environment) 一個類似 Termux 的環境，帶有真正的工具鏈，用於構建和運行項目。
 
-</div>
+[**端口管理器**](/zh/guide/more-features/port-manager) 每個本地服務器運行時的衝突策略、真正的停止處理程序和 DNS 橋接。
 
-<div class="wta-tile">
+[**應用修改器**](/zh/guide/more-features/app-modifier) 克隆和重塑已安裝的 APK，批量導入定義，導出模板。
 
-[**HTML 与离线包**](/zh/guide/app-types/html)
-
-打包本地 HTML 或 zip 构建,或抓取整站生成自包含的离线 APK。
-
-</div>
-
-<div class="wta-tile">
-
-[**Frontend**](/zh/guide/app-types/frontend)
-
-把 React、Vue、Vite 构建产物发布成 localhost 服务的 APK。
-
-</div>
-
-<div class="wta-tile">
-
-[**服务端运行时**](/zh/guide/app-types/nodejs)
-
-fork+exec Node.js、PHP、Python、Go 原生二进制,在本地端口提供服务。
-
-</div>
-
-<div class="wta-tile">
-
-[**WordPress**](/zh/guide/app-types/wordpress)
-
-完整的便携 WordPress 站点,PHP 与 SQLite 都跑在设备上。
-
-</div>
-
-<div class="wta-tile">
-
-[**媒体与相册**](/zh/guide/app-types/media)
-
-图片和视频播放器、相册集、作品集,打包成独立应用。
-
-</div>
-
-</div>
-
-## 编辑器背后的工具箱
-
-<div class="wta-types">
-
-<div class="wta-tile">
-
-[**Agent**](/zh/guide/more-features/agent)
-
-内置最多 57 个工具的调用式助手,可以构建、编辑、操作整个应用。
-
-</div>
-
-<div class="wta-tile">
-
-[**扩展模块**](/zh/guide/more-features/extension-modules)
-
-向任何生成的应用注入 JS/CSS、油猴脚本或 MV3 Chrome 扩展。
-
-</div>
-
-<div class="wta-tile">
-
-[**Hosts 去广告**](/zh/guide/more-features/hosts-adblock)
-
-内置 20 个过滤列表和按应用的订阅规则,编译进导出的 APK。
-
-</div>
-
-<div class="wta-tile">
-
-[**Linux 环境**](/zh/guide/more-features/linux-environment)
-
-Termux 风格的设备端环境,带有构建和运行项目所需的真实工具链。
-
-</div>
-
-<div class="wta-tile">
-
-[**端口管理**](/zh/guide/more-features/port-manager)
-
-冲突策略、真实停止处理器,以及所有本地服务运行时的 DNS 桥接。
-
-</div>
-
-<div class="wta-tile">
-
-[**应用修改器**](/zh/guide/more-features/app-modifier)
-
-克隆和重打包已安装的 APK、批量导入定义、导出模板。
-
-</div>
-
-</div>
-
-## 深入底层
-
-<div class="wta-stats">
-
-<div class="wta-stat"><b>12</b><span>种应用类型</span></div>
-
-<div class="wta-stat"><b>57</b><span>个 Agent 工具(上限)</span></div>
-
-<div class="wta-stat"><b>10</b><span>种界面语言</span></div>
-
-<div class="wta-stat"><b>20</b><span>个去广告列表</span></div>
-
-</div>
-
-构建器自己做二进制手术 —— AXML/ARSC 重写、权限裁剪、AES-256-GCM 资源加密、16 KB 页对齐的原生库 —— 并让 shell 保持低 targetSdk,使 fork+exec 运行时持续可用。[开发者文档](/zh/developer/architecture)覆盖了完整的导出管线。
-
-<div class="wta-cta">
-
-准备好构建你的第一个 APK 了吗?
-
-[快速开始](/zh/guide/getting-started)
-
-</div>
-
-</div>
+[**自我更新**](/zh/guide/more-features/self-update) 新增：關於頁面檢查 benyeung08/web-to-app 的發行版，下載 APK 到 update_apks/，通過 FileProvider 安裝。
