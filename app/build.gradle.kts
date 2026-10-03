@@ -1,38 +1,142 @@
-// app/build.gradle.kts —— benyeung08/web-to-app
-// 改动：
-//   1. 新增 id("org.jetbrains.kotlin.plugin.compose")
-//   2. 删除 composeOptions { kotlinCompilerExtensionVersion = "1.5.15" }（Kotlin 1.9 时代写法，配 Kotlin 2.2.10 会直接报错）
-//   3. Compose BOM 2024.12.01 → 2026.06.01（与上游对齐，避免 compiler/runtime 版本不匹配）
+import java.util.Properties
+import java.util.zip.ZipFile
+import org.gradle.api.DefaultTask
+import org.gradle.api.GradleException
+import org.gradle.api.file.DirectoryProperty
+import org.gradle.api.tasks.Input
+import org.gradle.api.tasks.InputDirectory
+import org.gradle.api.tasks.OutputDirectory
+import org.gradle.api.tasks.PathSensitive
+import org.gradle.api.tasks.PathSensitivity
+import org.gradle.api.tasks.TaskAction
 
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
-    id("org.jetbrains.kotlin.plugin.compose")
-    id("org.jetbrains.kotlin.plugin.parcelize")
     id("com.google.devtools.ksp")
-    id("org.jetbrains.kotlin.plugin.serialization")
+    id("org.jetbrains.kotlin.plugin.compose")
+    id("com.google.protobuf")
 }
 
+ksp {
+    arg("room.schemaLocation", "$projectDir/schemas")
+}
+
+val localProperties = Properties().apply {
+    val file = rootProject.file("local.properties")
+    if (file.exists()) {
+        file.inputStream().use { load(it) }
+    }
+}
+
+val releaseSigningStoreFile = localProperties.getProperty("signing.storeFile")
+    ?.takeIf { it.isNotBlank() }
+    ?.let { rootProject.file(it) }
+val hasReleaseSigningConfig = releaseSigningStoreFile?.isFile == true &&
+    !localProperties.getProperty("signing.storePassword").isNullOrBlank() &&
+    !localProperties.getProperty("signing.keyAlias").isNullOrBlank() &&
+    !localProperties.getProperty("signing.keyPassword").isNullOrBlank()
+
 android {
-    namespace = "com.webtoapp.app"
+
+    signingConfigs {
+        if (hasReleaseSigningConfig) {
+            create("release") {
+                storeFile = releaseSigningStoreFile
+                storePassword = localProperties.getProperty("signing.storePassword")
+                keyAlias = localProperties.getProperty("signing.keyAlias")
+                keyPassword = localProperties.getProperty("signing.keyPassword")
+            }
+        }
+    }
+    namespace = "com.webtoapp"
     compileSdk = 36
 
     defaultConfig {
-        applicationId = "com.webtoapp.app"
-        minSdk = 24
+        applicationId = "com.webtoapp"
+        minSdk = 23
+
         targetSdk = 36
-        versionCode = 101
-        versionName = "1.0.1"
-        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+        versionCode = 72
+        versionName = "2.7.0"
+        buildConfigField("boolean", "SHELL_RUNTIME_ONLY", "false")
+
+        vectorDrawables {
+            useSupportLibrary = true
+        }
+
+        ndk {
+            abiFilters += listOf("armeabi-v7a", "arm64-v8a", "x86", "x86_64")
+        }
+
+        externalNativeBuild {
+            cmake {
+                // All native sources are C; no CXX flags or shared STL needed.
+            }
+        }
+    }
+
+    flavorDimensions += "distribution"
+    productFlavors {
+        create("standard") {
+            // Sideloaded variant (GitHub releases, keeps `com.webtoapp` for the existing
+            // update path). Identical to gplay in every way except the applicationId —
+            // both inherit targetSdk 36 from defaultConfig and run the same code paths
+            // (runtime capability gates key off the installed targetSdk, not the channel).
+        }
+        create("gplay") {
+            // Google Play variant. Only Play's applicationId requirement differs
+            // (`com.webtoapp` is registered on Google Play by another party); behavior,
+            // targetSdk and every build rule are shared with the standard flavor.
+            applicationId = "shiaho.webtoapp"
+        }
+    }
+
+    externalNativeBuild {
+        cmake {
+            path = file("src/main/cpp/CMakeLists.txt")
+            version = "3.22.1"
+        }
     }
 
     buildTypes {
         release {
-            isMinifyEnabled = false
-            proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
+            isMinifyEnabled = true
+            isShrinkResources = true
+            signingConfig = if (hasReleaseSigningConfig) {
+                signingConfigs.getByName("release")
+            } else {
+                val allowDebugSigned = (project.findProperty("allowDebugSignedRelease") as? String) == "true"
+                if (allowDebugSigned) {
+
+                    signingConfigs.getByName("debug")
+                } else {
+                    throw GradleException(
+                        "Release build has no valid signing config. Configure signing.storeFile / " +
+                            "signing.storePassword / signing.keyAlias / signing.keyPassword in local.properties " +
+                            "before assembling a release APK for distribution. Refusing to silently sign with " +
+                            "the debug key — a debug-signed release breaks upgrades for existing users " +
+                            "('signatures do not match'). For a throwaway debug-signed build (e.g. CI smoke " +
+                            "build, never distribute it), pass -PallowDebugSignedRelease=true."
+                    )
+                }
+            }
+            proguardFiles(
+                getDefaultProguardFile("proguard-android-optimize.txt"),
+                "proguard-rules.pro"
+            )
         }
-        debug {
-            isMinifyEnabled = false
+    }
+
+    splits {
+        abi {
+            isEnable = false
+        }
+    }
+
+    bundle {
+        language {
+            enableSplit = false
         }
     }
 
@@ -47,39 +151,374 @@ android {
 
     buildFeatures {
         compose = true
+        buildConfig = true
     }
 
-    // ⚠️ 已删除：composeOptions { kotlinCompilerExtensionVersion = "1.5.15" }
-    // Kotlin 2.x 的 Compose 编译器版本 = Kotlin 版本（此处即 2.2.10），由
-    // org.jetbrains.kotlin.plugin.compose 插件自动带入，不能再手动指定。
+    testOptions {
+        unitTests {
+            isIncludeAndroidResources = true
+        }
+    }
+
+    lint {
+
+        disable += "NullSafeMutableLiveData"
+
+        disable += "ExpiredTargetSdkVersion"
+        disable += "ExpiringTargetSdkVersion"
+        disable += "OldTargetApi"
+
+        abortOnError = false
+    }
 
     packaging {
         resources {
             excludes += "/META-INF/{AL2.0,LGPL2.1}"
+            // Gecko omni.ja is downloaded on demand, never bundle it in host.
+            excludes += "assets/omni.ja"
+            excludes += "**/omni.ja"
+            // BouncyCastle post-quantum experimental blobs (~1.2M), unused.
+            excludes += "**/org/bouncycastle/pqc/**"
+            // Django gettext sources (~5.9M raw): the Python runtime only reads
+            // compiled .mo files, .po never ships in a working install.
+            excludes += "**/*.po"
+        }
+
+        jniLibs {
+            useLegacyPackaging = true
+
+            excludes += "**/libxul.so"
+            excludes += "**/libmozglue.so"
+            excludes += "**/libgeckoffi.so"
+            excludes += "**/libmozavutil.so"
+            excludes += "**/libmozavcodec.so"
+
+            excludes += "**/libgkcodecs.so"
+            excludes += "**/libminidump_analyzer.so"
+            excludes += "**/libnss3.so"
+            excludes += "**/libfreebl3.so"
+            excludes += "**/libsoftokn3.so"
+            excludes += "**/liblgpllibs.so"
+            excludes += "**/libplugin-container.so"
+            // GeckoView breakpad helper — depends on libmozglue.so which is already
+            // excluded, so it can never load; dead weight carried by every APK.
+            excludes += "**/libcrashhelper.so"
+
+            excludes += "**/libcrypto_engine.so"
+
+            // Cronet natives are downloaded on demand / injected per-export, never bundled.
+            excludes += "**/libcronet*.so"
         }
     }
+    androidResources {
+        // Keep "" semantics (include dot-dirs like .pypackages) while dropping
+        // Django gettext sources (*.po, runtime reads .mo only) and Gecko's
+        // omni.ja (downloaded on demand). packaging.resources.excludes does
+        // NOT cover assets, hence aapt-level filtering (verified by APK audit).
+        ignoreAssetsPattern = "*.po:*.ja"
 
-    flavorDimensions += "mode"
-    productFlavors {
-        create("standard") {
-            dimension = "mode"
-            isDefault = true
+        localeFilters += listOf("zh", "en", "ar")
+    }
+}
+
+val shellTemplateOutput = project(":shell").layout.buildDirectory.file("outputs/apk/release/shell-release.apk")
+val skipShellTemplateSync = providers.gradleProperty("skipShellTemplateSync").map(String::toBoolean).orElse(false)
+
+tasks.register<Copy>("syncShellTemplateApk") {
+    description = "Builds the dedicated shell template APK and copies it into the app assets."
+    group = "build"
+    dependsOn(":shell:assembleRelease")
+    from(shellTemplateOutput)
+    into(file("src/main/assets/template"))
+    rename { "webview_shell.apk" }
+}
+
+tasks.matching { it.name == "preBuild" }.configureEach {
+    if (!skipShellTemplateSync.get()) {
+        dependsOn("syncShellTemplateApk")
+    }
+    if (!skipStackBundlesSync.get()) {
+        dependsOn("syncStackBundles")
+    }
+}
+
+// Optional feature stacks (issue #1115): bundle zips produced by
+// feature-stacks/* modules land in assets/stacks/ and are grafted into
+// generated APKs only for configs that enable them.
+val skipStackBundlesSync = providers.gradleProperty("skipStackBundlesSync").map(String::toBoolean).orElse(false)
+
+// Pre-configure the stack module during this script's configuration phase —
+// deferring it to task-graph resolution trips Gradle's class-loader-scope
+// locking under configuration-on-demand.
+evaluationDependsOn(":feature-stacks:admob")
+
+tasks.register<Copy>("syncStackBundles") {
+    description = "Copies built feature-stack bundles into app assets for optional APK grafting."
+    group = "build"
+    dependsOn(":feature-stacks:admob:bundleAdmobStack")
+    from(rootProject.layout.projectDirectory.dir("feature-stacks/admob/build/outputs/stack")) {
+        include("*.zip")
+    }
+    into(file("src/main/assets/stacks"))
+}
+
+val cloneHostAar = rootProject.layout.projectDirectory.file("clone-host/build/outputs/aar/clone-host-release.aar")
+val androidSdkDir = android.sdkDirectory
+
+tasks.register<Copy>("syncCloneHostDex") {
+    description = "Extracts classes.jar from clone-host AAR and converts it to a DEX asset for APK cloning."
+    group = "build"
+    dependsOn(":clone-host:assembleRelease")
+
+    enabled = false
+
+    val dexOutputDir = layout.projectDirectory.dir("src/main/assets/clone_host").asFile
+    val intermediateDir = layout.buildDirectory.dir("intermediates/clone-host-extract")
+    val sdkDir = androidSdkDir
+
+    doFirst {
+        intermediateDir.get().asFile.mkdirs()
+        dexOutputDir.mkdirs()
+    }
+
+    from(cloneHostAar)
+    into(intermediateDir)
+    rename { "clone-host.aar" }
+
+    doLast {
+        val aarFile = intermediateDir.get().file("clone-host.aar").asFile
+        if (!aarFile.exists()) {
+            throw GradleException("clone-host AAR not found at ${aarFile.absolutePath}")
+        }
+
+        val classesJar = intermediateDir.get().file("classes.jar").asFile
+        ZipFile(aarFile).use { zip ->
+            val entry = zip.getEntry("classes.jar")
+                ?: throw GradleException("classes.jar not found in clone-host AAR")
+            zip.getInputStream(entry).use { input ->
+                classesJar.outputStream().use { output -> input.copyTo(output) }
+            }
+        }
+
+        val androidJar = sdkDir.resolve("platforms/android-36/android.jar")
+        if (!androidJar.exists()) {
+            throw GradleException("android.jar not found at ${androidJar.absolutePath}")
+        }
+
+        val d8 = sdkDir.resolve("build-tools")
+            .listFiles()?.maxByOrNull { it.name }
+            ?.resolve("d8")
+            ?: throw GradleException("d8 not found in build-tools")
+
+        dexOutputDir.mkdirs()
+
+        val process = ProcessBuilder(
+            d8.absolutePath,
+            "--release",
+            "--min-api", "23",
+            "--lib", androidJar.absolutePath,
+            "--output", dexOutputDir.absolutePath,
+            classesJar.absolutePath
+        ).redirectErrorStream(true).start()
+
+        val output = process.inputStream.bufferedReader().readText()
+        if (process.waitFor() != 0) {
+            throw GradleException("d8 failed to dex clone-host: $output")
+        }
+    }
+}
+
+tasks.matching { it.name == "preBuild" }.configureEach {
+    dependsOn("syncCloneHostDex")
+}
+
+tasks.register("testClasses") {
+    group = "verification"
+    description = "Compatibility alias for JVM-style test class compilation in the Android app module."
+    dependsOn("compileDebugUnitTestSources")
+}
+
+tasks.register("unitTestClasses") {
+    group = "verification"
+    description = "Compatibility alias for Android unit test class compilation in the Android app module."
+    dependsOn("compileDebugUnitTestSources")
+}
+
+
+
+
+
+
+protobuf {
+    protoc {
+        artifact = "com.google.protobuf:protoc:3.25.5"
+    }
+    generateProtoTasks {
+        all().forEach { task ->
+            task.builtins {
+
+                create("java") {
+                    option("lite")
+                }
+            }
         }
     }
 }
 
 dependencies {
-    implementation("androidx.core:core-ktx:1.13.1")
-    implementation("androidx.appcompat:appcompat:1.7.0")
-    implementation("com.google.android.material:material:1.12.0")
-    implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.8.6")
-    implementation("androidx.activity:activity-compose:1.9.3")
+
+    implementation("androidx.core:core-ktx:1.12.0")
+    implementation("androidx.appcompat:appcompat:1.6.1")
+    implementation("androidx.core:core-splashscreen:1.0.1")
+    implementation("androidx.swiperefreshlayout:swiperefreshlayout:1.1.0")
+    implementation("androidx.documentfile:documentfile:1.0.1")
+
+    implementation("com.google.protobuf:protobuf-javalite:3.25.5")
+
+    implementation("com.google.android.material:material:1.10.0")
+    implementation("androidx.activity:activity-compose:1.8.1")
+    implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.6.2")
+    implementation("androidx.lifecycle:lifecycle-runtime-compose:2.6.2")
+    implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.6.2")
+
     implementation(platform("androidx.compose:compose-bom:2026.06.01"))
     implementation("androidx.compose.ui:ui")
     implementation("androidx.compose.ui:ui-graphics")
-    implementation("androidx.compose.material3:material3")
-    implementation("androidx.navigation:navigation-compose:2.8.5")
-    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.7.3")
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.8.1")
-    implementation("com.jakewharton.timber:timber:5.0.1")
+    implementation("androidx.compose.ui:ui-tooling-preview")
+    implementation("androidx.compose.material3:material3:1.5.0-alpha17")
+
+    implementation("androidx.compose.material:material-icons-extended:1.7.8")
+    implementation("androidx.navigation:navigation-compose:2.7.5")
+    debugImplementation("androidx.compose.ui:ui-tooling")
+
+    implementation("androidx.room:room-runtime:2.7.2")
+    implementation("androidx.room:room-ktx:2.7.2")
+    ksp("androidx.room:room-compiler:2.7.2")
+
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3")
+
+    implementation("io.coil-kt:coil-compose:2.5.0")
+    implementation("io.coil-kt:coil-video:2.5.0")
+
+    implementation("com.google.code.gson:gson:2.10.1")
+
+    implementation("com.squareup.okhttp3:okhttp:4.12.0")
+    implementation("com.squareup.okhttp3:okhttp-dnsoverhttps:4.12.0")
+
+    implementation(platform("com.google.firebase:firebase-bom:33.7.0"))
+    implementation("com.google.firebase:firebase-messaging")
+
+    implementation("org.bouncycastle:bcpkix-jdk15to18:1.78.1")
+    implementation("org.bouncycastle:bcprov-jdk15to18:1.78.1")
+
+    implementation("io.insert-koin:koin-android:3.5.3")
+    implementation("io.insert-koin:koin-androidx-compose:3.5.3")
+
+    implementation("androidx.webkit:webkit:1.9.0")
+
+    implementation("androidx.datastore:datastore-preferences:1.0.0")
+
+    implementation("org.apache.commons:commons-compress:1.26.0")
+    implementation("org.tukaani:xz:1.9")
+
+    implementation("com.android.tools.build:apksig:8.3.0")
+
+    implementation("org.mozilla.geckoview:geckoview-arm64-v8a:142.0.20250827004350")
+
+    // Forced HTTP/3 (issue #721): Chromium's own network stack as the MITM bridge's
+    // upstream leg. Java classes ship in the APK; libcronet is NEVER bundled — the host
+    // downloads it on demand (filesDir/cronet_deps) and ApkBuilder injects it into
+    // exported APKs only when the app enables 强制 HTTP/3 (GeckoView precedent).
+    // Version must match CronetDependencyManager.CRONET_ARTIFACT_VERSION.
+    implementation("org.chromium.net:cronet-embedded:143.7445.0")
+
+    implementation("com.google.zxing:core:3.5.2")
+
+    // Native Google sign-in through the Jetpack Credential Manager (NativeBridge).
+    implementation("androidx.credentials:credentials:1.5.0")
+    implementation("androidx.credentials:credentials-play-services-auth:1.5.0")
+    implementation("com.google.android.libraries.identity.googleid:googleid:1.1.1")
+    implementation("androidx.browser:browser:1.8.0")
+
+    implementation("androidx.media:media:1.7.0")
+
+    testImplementation("junit:junit:4.13.2")
+    testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.7.3")
+    testImplementation("com.google.truth:truth:1.1.5")
+    testImplementation("org.robolectric:robolectric:4.12.2")
+    testImplementation("androidx.test:core:1.5.0")
+
+    androidTestImplementation("androidx.test.ext:junit:1.1.5")
+    androidTestImplementation("androidx.test.espresso:espresso-core:3.5.1")
+}
+
+/**
+ * Resolves a Python 3 interpreter command for the current platform. Windows usually exposes
+ * Python as `python` (or the `py -3` launcher) rather than `python3`, so a hardcoded
+ * `python3` fails there. Each candidate is verified to actually be Python 3 before use.
+ * NOTE: intentionally duplicated in the root build.gradle.kts (this project has no buildSrc).
+ */
+fun resolvePython3Command(): List<String> {
+    val isWindows = System.getProperty("os.name").lowercase().contains("windows")
+    val candidates: List<List<String>> = if (isWindows) {
+        listOf(listOf("python3"), listOf("python"), listOf("py", "-3"))
+    } else {
+        listOf(listOf("python3"), listOf("python"))
+    }
+    for (candidate in candidates) {
+        try {
+            val probe = ProcessBuilder(candidate + "--version").redirectErrorStream(true).start()
+            val output = probe.inputStream.bufferedReader().readText()
+            if (probe.waitFor() == 0 && output.contains("Python 3")) {
+                return candidate
+            }
+        } catch (_: Exception) {
+            // Candidate unavailable; try the next one.
+        }
+    }
+    return listOf("python3")
+}
+
+tasks.register("checkConfigFieldDrift") {
+    group = "verification"
+    description = "Detect field-name drift between ApkConfig payload keys and ShellConfig @SerializedName (static guard for preview/export config consistency)"
+    val script = rootProject.file("scripts/check_config_field_drift.py")
+    val payloadFile = file("src/main/java/com/webtoapp/core/apkbuilder/ApkConfigJsonFactory.kt")
+    val apkConfigFile = file("src/main/java/com/webtoapp/core/apkbuilder/ApkConfig.kt")
+    val shellConfigFile = file("src/main/java/com/webtoapp/core/shell/ShellModeManager.kt")
+    val allowlist = rootProject.file("scripts/config_field_drift_allowlist.json")
+    // Configuration-cache safe: capture values at configuration time; the doLast action
+    // must not reach through Project or the build-script object. Python resolution is
+    // inlined below — a script-scope function call would serialize a script reference,
+    // while probing at configuration time trips the external-process restriction.
+    val rootDir = rootProject.projectDir
+    inputs.files(script, payloadFile, apkConfigFile, shellConfigFile, allowlist)
+    outputs.upToDateWhen { false }
+    doLast {
+        val isWindows = System.getProperty("os.name").lowercase().contains("windows")
+        val candidates: List<List<String>> = if (isWindows) {
+            listOf(listOf("python3"), listOf("python"), listOf("py", "-3"))
+        } else {
+            listOf(listOf("python3"), listOf("python"))
+        }
+        val python3Cmd = candidates.firstOrNull { candidate ->
+            try {
+                val probe = ProcessBuilder(candidate + "--version").redirectErrorStream(true).start()
+                probe.waitFor() == 0 &&
+                    probe.inputStream.bufferedReader().readText().contains("Python 3")
+            } catch (_: Exception) {
+                false
+            }
+        } ?: listOf("python3")
+        val pb = ProcessBuilder(python3Cmd + script.absolutePath)
+        pb.directory(rootDir)
+        pb.redirectErrorStream(true)
+        val proc = pb.start()
+        val log = proc.inputStream.bufferedReader().readText()
+        val code = proc.waitFor()
+        logger.lifecycle(log.trim())
+        if (code != 0) {
+            throw GradleException("checkConfigFieldDrift failed ($code)")
+        }
+    }
 }
