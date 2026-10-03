@@ -33,6 +33,8 @@ jobs:
       - name: Grant gradlew permission
         run: chmod +x gradlew
 
+      # ⚠️ 已删除 :app:checkConfigFieldDrift —— 该 task 定义在上游 app/build.gradle.kts，
+      # 你已用简化版 app 模块覆盖，task 不存在，Gradle 会直接报 Task not found。
       - name: Run checks
         run: |
           ./gradlew --no-daemon --no-configuration-cache \
@@ -41,5 +43,4 @@ jobs:
             -PallowDebugSignedRelease=true \
             :app:compileStandardDebugKotlin \
             :shell:compileDebugKotlin \
-            :app:testStandardDebugUnitTest \
-            :app:checkConfigFieldDrift --stacktrace
+            :app:testStandardDebugUnitTest --stacktrace

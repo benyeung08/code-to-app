@@ -51,6 +51,9 @@ jobs:
             "cmake;3.22.1" \
             "ndk;28.2.13676358"
 
+      # ⚠️ 已删除 :app:checkConfigFieldDrift
+      # 该 task 定义在【上游】app/build.gradle.kts 第 482 行，你的 app 模块是简化版，
+      # 没有这个 task，Gradle 会报 "Task 'checkConfigFieldDrift' not found in project ':app'"。
       - name: Run checks
         run: |
           ./gradlew --no-daemon --no-configuration-cache \
@@ -59,8 +62,7 @@ jobs:
             -PallowDebugSignedRelease=true \
             :app:compileStandardDebugKotlin \
             :shell:compileDebugKotlin \
-            :app:testStandardDebugUnitTest \
-            :app:checkConfigFieldDrift
+            :app:testStandardDebugUnitTest
 
   package-apks:
     if: github.event_name == 'workflow_dispatch'
@@ -96,6 +98,8 @@ jobs:
             "cmake;3.22.1" \
             "ndk;28.2.13676358"
 
+      # ⚠️ 已删除 :app:assembleGplayDebug / assembleGplayRelease
+      # 简化版 app 模块只有 standard 一个 flavor，没有 gplay。
       - name: Build APKs
         run: |
           ./gradlew --no-daemon --no-configuration-cache \
@@ -103,27 +107,11 @@ jobs:
             -PallowDebugSignedRelease=true \
             :app:assembleStandardDebug \
             :app:assembleStandardRelease \
-            :app:assembleGplayDebug \
-            :app:assembleGplayRelease \
             :shell:assembleDebug \
             :shell:assembleRelease
 
-      # End-to-end proof that the export pipeline produces an installable APK: a real
-      # Robolectric build through ApkBuilder against the freshly built shell template.
-      - name: Build generated demo APK
-        run: |
-          ./gradlew --no-daemon --no-configuration-cache \
-            -Dkotlin.compiler.execution.strategy=in-process \
-            :app:testStandardDebugUnitTest --tests "com.webtoapp.core.apkbuilder.DemoApkExportTest"
-
-      - name: Upload generated demo APK
-        uses: actions/upload-artifact@v4
-        with:
-          name: generated-demo-apk-${{ github.run_number }}
-          path: app/build/outputs/demo/
-          if-no-files-found: error
-          retention-days: 14
-
+      # ⚠️ 已删除 Build generated demo APK / Upload generated demo APK / Upload gplay APKs
+      # 简化版 app 模块没有 com.webtoapp.core.apkbuilder.DemoApkExportTest，也没有 gplay 产物。
       - name: Upload standard APKs
         uses: actions/upload-artifact@v4
         with:
@@ -131,13 +119,5 @@ jobs:
           path: |
             app/build/outputs/apk/standard/**/*.apk
             shell/build/outputs/apk/**/*.apk
-          if-no-files-found: error
-          retention-days: 14
-
-      - name: Upload gplay APKs
-        uses: actions/upload-artifact@v4
-        with:
-          name: gplay-apks-shiaho.webtoapp-DEBUG-SIGNED-do-not-distribute-${{ github.run_number }}
-          path: app/build/outputs/apk/gplay/**/*.apk
           if-no-files-found: error
           retention-days: 14
