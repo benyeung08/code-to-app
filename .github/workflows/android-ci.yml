@@ -173,26 +173,20 @@ jobs:
           grep -E "What went wrong:|FAILURE:" -A 15 assemble.log | head -40 || true
           grep -hE "^e: " assemble.log | sort -u | head -25 || true
 
-      - name: Collect APK
+      # 把 Gradle 输出的 app-standard-debug.apk 改成一个一眼看懂的名字，
+      # 并额外放一份固定名 latest.apk，方便直接抓最新版本。
+      - name: Rename and collect APK
         run: |
           mkdir -p apk-out
-          find app/build/outputs/apk -name "*.apk" -exec cp {} apk-out/ \; || true
+          SRC=$(find app/build/outputs/apk -name "*.apk" | head -1)
+          echo "source: $SRC"
+          VERSION=$(grep -m1 'versionName' app/build.gradle.kts | sed 's/.*"\([^"]*\)".*/\1/')
+          VERSION=${VERSION:-dev}
+          OUT="code-to-app-v${VERSION}-run${{ github.run_number }}-debug.apk"
+          cp "$SRC" "apk-out/$OUT"
+          cp "$SRC" "apk-out/latest.apk"
+          echo "APK_NAME=$OUT" >> "$GITHUB_ENV"
           ls -lh apk-out
-
-      # Artifact 需要登录才能下载，所以额外推到 apk 分支 —— GitHub 网页上
-      # 切到 apk 分支即可直接点开下载，不用登录。
-      - name: Push APK to apk branch
-        if: success()
-        run: |
-          git config user.name "ci-bot"
-          git config user.email "ci-bot@users.noreply.github.com"
-          git checkout --orphan apk
-          git rm -rf --cached . >/dev/null 2>&1 || true
-          rm -rf .github app shell clone-host feature-stacks modules docs examples scripts sample-bundles gradle 2>/dev/null || true
-          git add apk-out
-          git commit -m "Debug APK run ${{ github.run_number }} (${{ github.sha }})" || echo "no apk"
-          git push -f origin apk
-
 
       - name: Push assemble log to ci-logs
         if: always()
@@ -207,11 +201,30 @@ jobs:
           git commit -m "assemble log run ${{ github.run_number }} (${{ github.sha }})" || echo "no change"
           git push -f origin ci-logs
 
-      - name: Upload APK artifact
+      # Artifact 需要登录才能下载，所以额外推到 apk 分支 —— GitHub 网页上
+      # 切到 apk 分支即可直接点开下载，不用登录。
+      - name: Push APK to apk branch
         if: success()
+        run: |
+          git config user.name "ci-bot"
+          git config user.email "ci-bot@users.noreply.github.com"
+          git fetch origin apk || true
+          git checkout -B apk origin/apk 2>/dev/null || git checkout --orphan apk
+          mkdir -p builds
+          cp "apk-out/$APK_NAME" builds/ 2>/dev/null || true
+          cp "apk-out/latest.apk" builds/latest.apk 2>/dev/null || true
+          # 只保留最近 8 个 build，避免仓库越滚越大
+          ls -1t builds/*.apk | tail -n +9 | xargs -r rm -f
+          git add -f builds
+          git commit -m "APK: $APK_NAME (${{ github.sha }})" || echo "no apk"
+          git push origin apk
+
+
+      - name: Upload APK artifact
+        if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: app-standard-debug-${{ github.run_number }}
-          path: app/build/outputs/apk/standard/debug/*.apk
+          name: code-to-app-debug-run-${{ github.run_number }}
+          path: apk-out/*.apk
           if-no-files-found: error
           retention-days: 30
