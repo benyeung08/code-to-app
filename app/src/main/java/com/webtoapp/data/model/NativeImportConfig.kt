@@ -3,7 +3,10 @@ package com.webtoapp.data.model
 
 import java.io.File
 
-enum class AppType {
+// ⚠️ 原名 AppType —— 与同包下 WebApp.kt 的 AppType 重名，导致全项目 40 处
+// "Unresolved reference"（NODEJS_APP / PHP_APP / requiresProcessExec / fromPersistedName …）。
+// 本枚举无任何地方引用，改名即可解除冲突。
+enum class NativeImportAppType {
     WEB, MULTI_WEB, HTML, OFFLINE, FRONTEND, PHP, WORDPRESS, NODEJS, PYTHON, GO, MEDIA, GALLERY,
     NATIVE,           // 空殼原生
     NATIVE_IMPORT     // 導入 AS 專案
