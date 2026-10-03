@@ -51,19 +51,76 @@ jobs:
             "cmake;3.22.1" \
             "ndk;28.2.13676358"
 
-      # ⚠️ 已删除 :app:checkConfigFieldDrift
-      # 该 task 定义在【上游】app/build.gradle.kts 第 482 行，你的 app 模块是简化版，
-      # 没有这个 task，Gradle 会报 "Task 'checkConfigFieldDrift' not found in project ':app'"。
-      - name: Run checks
+      - name: Gradle version
+        run: ./gradlew --version | head -12
+
+      - name: Run app compile
+        id: compile_app
         run: |
-          ./gradlew --no-daemon --no-configuration-cache \
+          set -o pipefail
+          ./gradlew --console=plain --no-daemon --no-configuration-cache \
             -Dkotlin.compiler.execution.strategy=in-process \
             -PskipShellTemplateSync=true \
             -PskipStackBundlesSync=true \
             -PallowDebugSignedRelease=true \
-            :app:compileStandardDebugKotlin \
-            :shell:compileDebugKotlin \
-            :app:testStandardDebugUnitTest
+            :app:compileStandardDebugKotlin 2>&1 | tee compile-app.log
+
+      - name: Run shell compile
+        id: compile_shell
+        run: |
+          set -o pipefail
+          ./gradlew --console=plain --no-daemon --no-configuration-cache \
+            -Dkotlin.compiler.execution.strategy=in-process \
+            -PskipShellTemplateSync=true \
+            -PskipStackBundlesSync=true \
+            :shell:compileDebugKotlin 2>&1 | tee compile-shell.log
+
+      - name: Run unit tests
+        id: unit_tests
+        run: |
+          set -o pipefail
+          ./gradlew --console=plain --no-daemon --no-configuration-cache \
+            -Dkotlin.compiler.execution.strategy=in-process \
+            -PskipShellTemplateSync=true \
+            -PskipStackBundlesSync=true \
+            -PallowDebugSignedRelease=true \
+            :app:testStandardDebugUnitTest 2>&1 | tee unit-test.log
+
+      # 把真正的报错写进 Job Summary —— GitHub 网页端会截断大段日志，
+      # 但 Summary 不会被截断，手机上直接往下滚就能看到。
+      - name: Publish error summary
+        if: failure()
+        run: |
+          {
+            echo "## Gradle 报错摘要"
+            echo
+            echo "### 1. What went wrong"
+            echo '```'
+            grep -E "What went wrong:|FAILURE:" -A 15 compile-app.log compile-shell.log unit-test.log 2>/dev/null | head -60
+            echo '```'
+            echo
+            echo "### 2. Kotlin 编译错误 (前 40 条)"
+            echo '```'
+            grep -hE "^e: " compile-app.log compile-shell.log unit-test.log 2>/dev/null | sort -u | head -40
+            echo '```'
+            echo
+            echo "### 3. 失败的 task / 测试"
+            echo '```'
+            grep -hE "FAILED|Execution failed for task|There were failing tests" compile-app.log compile-shell.log unit-test.log 2>/dev/null | head -30
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload Gradle logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: gradle-logs-${{ github.run_number }}
+          path: |
+            compile-app.log
+            compile-shell.log
+            unit-test.log
+          if-no-files-found: ignore
+          retention-days: 7
 
   package-apks:
     if: github.event_name == 'workflow_dispatch'
