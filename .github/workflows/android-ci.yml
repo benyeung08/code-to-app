@@ -12,7 +12,9 @@ permissions:
 
 concurrency:
   group: android-ci-${{ github.workflow }}-${{ github.ref }}-${{ github.event_name }}
-  cancel-in-progress: ${{ github.event_name == 'push' }}
+  # push 时取消旧 run 可以省时间，但打包 APK 要十几分钟，
+  # 连续 push 会把跑到一半的打包 kill 掉，所以这里关掉自动取消。
+  cancel-in-progress: false
 
 jobs:
   check:
@@ -220,11 +222,13 @@ jobs:
           git push origin apk
 
 
+      # 只在真的产出 APK 时才上传：if-no-files-found 改成 warn，
+      # 否则 run 被新 push 取消时（build 中途被 kill，apk-out 为空）会白白标红。
       - name: Upload APK artifact
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: code-to-app-debug-run-${{ github.run_number }}
           path: apk-out/*.apk
-          if-no-files-found: error
+          if-no-files-found: warn
           retention-days: 30
