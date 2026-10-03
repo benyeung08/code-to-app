@@ -14,7 +14,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Set up JDK 17
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v5
         with:
           distribution: 'temurin'
           java-version: '17'
@@ -27,43 +27,8 @@ jobs:
           TOOL=$(ls $ANDROID_HOME/cmdline-tools | sort -V | tail -n1)
           export PATH=$ANDROID_HOME/cmdline-tools/$TOOL/bin:$PATH
           yes | sdkmanager --licenses || true
-          sdkmanager --install "platform-tools" "platforms;android-34" "platforms;android-36" "build-tools;34.0.0" "ndk;27.0.11718014" "cmake;3.22.1" || true
-          echo "ANDROID_NDK_HOME=$ANDROID_HOME/ndk/27.0.11718014" >> $GITHUB_ENV
-
-      - name: AUTO-FIX Gradle 9.4.1 / KSP 2.3.2 version alignment
-        run: |
-          set -x
-          echo "=== Check root build.gradle.kts ==="
-          cat build.gradle.kts || cat build.gradle || true
-          
-          # If root does not define plugins with apply false, overwrite it
-          if ! grep -q 'com.google.devtools.ksp.*apply false' build.gradle.kts; then
-            echo "Root build.gradle.kts is old, replacing with fixed version"
-            cat > build.gradle.kts <<'ROOT'
-          plugins {
-              id("com.android.application") version "8.7.3" apply false
-              id("com.android.library") version "8.7.3" apply false
-              id("org.jetbrains.kotlin.android") version "2.3.2" apply false
-              id("org.jetbrains.kotlin.plugin.parcelize") version "2.3.2" apply false
-              id("org.jetbrains.kotlin.plugin.serialization") version "2.3.2" apply false
-              id("com.google.devtools.ksp") version "2.3.2-1.0.28" apply false
-          }
-          tasks.register("clean", Delete::class) {
-              delete(rootProject.layout.buildDirectory)
-          }
-          ROOT
-          fi
-
-          echo "=== Fix app/build.gradle.kts to remove hardcoded versions ==="
-          sed -i 's/id("com.google.devtools.ksp") version ".*"/id("com.google.devtools.ksp")/' app/build.gradle.kts || true
-          sed -i "s/id('com.google.devtools.ksp') version '.*'/id('com.google.devtools.ksp')/" app/build.gradle.kts || true
-          sed -i 's/id("org.jetbrains.kotlin.plugin.serialization") version ".*"/id("org.jetbrains.kotlin.plugin.serialization")/' app/build.gradle.kts || true
-          sed -i 's/id("org.jetbrains.kotlin.android") version ".*"/id("org.jetbrains.kotlin.android")/' app/build.gradle.kts || true
-          sed -i 's/id("org.jetbrains.kotlin.plugin.parcelize") version ".*"/id("org.jetbrains.kotlin.plugin.parcelize")/' app/build.gradle.kts || true
-          
-          echo "=== AFTER ==="
-          head -15 app/build.gradle.kts
-          head -15 build.gradle.kts
+          sdkmanager --install "platform-tools" "platforms;android-36" "build-tools;36.0.0" "ndk;28.2.13676358" "cmake;3.22.1" || true
+          echo "ANDROID_NDK_HOME=$ANDROID_HOME/ndk/28.2.13676358" >> $GITHUB_ENV
 
       - name: Grant gradlew permission
         run: chmod +x gradlew
