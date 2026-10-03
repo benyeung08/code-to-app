@@ -163,6 +163,7 @@ jobs:
             -Dkotlin.compiler.execution.strategy=in-process \
             -PskipShellTemplateSync=true \
             -PskipStackBundlesSync=true \
+            -PallowDebugSignedRelease=true \
             :app:assembleStandardDebug > assemble.log 2>&1
           echo "exit=$?"
 
@@ -191,6 +192,20 @@ jobs:
           git add apk-out
           git commit -m "Debug APK run ${{ github.run_number }} (${{ github.sha }})" || echo "no apk"
           git push -f origin apk
+
+
+      - name: Push assemble log to ci-logs
+        if: always()
+        run: |
+          git config user.name "ci-bot"
+          git config user.email "ci-bot@users.noreply.github.com"
+          git fetch origin ci-logs || true
+          git checkout -B ci-logs origin/ci-logs 2>/dev/null || git checkout --orphan ci-logs
+          mkdir -p logs
+          cp assemble.log logs/assemble.log 2>/dev/null || true
+          git add logs/assemble.log
+          git commit -m "assemble log run ${{ github.run_number }} (${{ github.sha }})" || echo "no change"
+          git push -f origin ci-logs
 
       - name: Upload APK artifact
         if: success()
