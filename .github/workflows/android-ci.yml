@@ -127,3 +127,76 @@ jobs:
           git add logs
           git commit -m "CI logs run ${{ github.run_number }} (${{ github.sha }})" || echo "nothing to commit"
           git push -f origin ci-logs
+
+  build-apk:
+    # 与 check 并行：每次 push 都产出一个可安装的 debug APK
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+
+    steps:
+      - name: Download code
+        uses: actions/checkout@v6
+
+      - name: Prepare Java
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Prepare Android tools
+        uses: android-actions/setup-android@v3
+        with:
+          packages: ""
+
+      - name: Install needed tools
+        run: |
+          sdkmanager --install \
+            "platform-tools" \
+            "platforms;android-36" \
+            "build-tools;36.0.0" \
+            "cmake;3.22.1" \
+            "ndk;28.2.13676358"
+
+      - name: Build debug APK
+        run: |
+          ./gradlew --console=plain --no-daemon --no-configuration-cache \
+            -Dkotlin.compiler.execution.strategy=in-process \
+            -PskipShellTemplateSync=true \
+            -PskipStackBundlesSync=true \
+            :app:assembleStandardDebug > assemble.log 2>&1
+          echo "exit=$?"
+
+      - name: Show build error
+        if: failure()
+        run: |
+          grep -E "What went wrong:|FAILURE:" -A 15 assemble.log | head -40 || true
+          grep -hE "^e: " assemble.log | sort -u | head -25 || true
+
+      - name: Collect APK
+        run: |
+          mkdir -p apk-out
+          find app/build/outputs/apk -name "*.apk" -exec cp {} apk-out/ \; || true
+          ls -lh apk-out
+
+      # Artifact 需要登录才能下载，所以额外推到 apk 分支 —— GitHub 网页上
+      # 切到 apk 分支即可直接点开下载，不用登录。
+      - name: Push APK to apk branch
+        if: success()
+        run: |
+          git config user.name "ci-bot"
+          git config user.email "ci-bot@users.noreply.github.com"
+          git checkout --orphan apk
+          git rm -rf --cached . >/dev/null 2>&1 || true
+          rm -rf .github app shell clone-host feature-stacks modules docs examples scripts sample-bundles gradle 2>/dev/null || true
+          git add apk-out
+          git commit -m "Debug APK run ${{ github.run_number }} (${{ github.sha }})" || echo "no apk"
+          git push -f origin apk
+
+      - name: Upload APK artifact
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: app-standard-debug-${{ github.run_number }}
+          path: app/build/outputs/apk/standard/debug/*.apk
+          if-no-files-found: error
+          retention-days: 30
