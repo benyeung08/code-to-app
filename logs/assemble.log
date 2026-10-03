@@ -1,0 +1,565 @@
+Downloading https://services.gradle.org/distributions/gradle-9.4.1-bin.zip
+.............10%.............20%.............30%.............40%.............50%.............60%..............70%.............80%.............90%.............100%
+
+Welcome to Gradle 9.4.1!
+
+Here are the highlights of this release:
+ - Java 26 support
+ - Non-class-based JVM tests
+ - Enhanced console progress bar
+
+For more details see https://docs.gradle.org/9.4.1/release-notes.html
+
+To honour the JVM settings for this build a single-use Daemon process will be forked. For more on this, please refer to https://docs.gradle.org/9.4.1/userguide/gradle_daemon.html#sec:disabling_the_daemon in the Gradle documentation.
+Daemon will be stopped at the end of the build 
+
+> Configure project :app
+WARNING: The option setting 'android.usesSdkInManifest.disallowed=false' is deprecated.
+The current default is 'true'.
+It will be removed in version 10.0 of the Android Gradle plugin.
+WARNING: The option setting 'android.sdk.defaultTargetSdkToCompileSdkIfUnset=false' is deprecated.
+The current default is 'true'.
+It will be removed in version 10.0 of the Android Gradle plugin.
+WARNING: The option setting 'android.enableAppCompileTimeRClass=false' is deprecated.
+The current default is 'true'.
+It will be removed in version 10.0 of the Android Gradle plugin.
+WARNING: The option setting 'android.builtInKotlin=false' is deprecated.
+The current default is 'true'.
+It will be removed in version 10.0 of the Android Gradle plugin.
+WARNING: The option setting 'android.newDsl=false' is deprecated.
+The current default is 'true'.
+It will be removed in version 10.0 of the Android Gradle plugin.
+WARNING: The option setting 'android.r8.optimizedResourceShrinking=false' is deprecated.
+The current default is 'true'.
+It will be removed in version 10.0 of the Android Gradle plugin.
+WARNING: The option setting 'android.defaults.buildfeatures.resvalues=true' is deprecated.
+The current default is 'false'.
+It will be removed in version 10.0 of the Android Gradle plugin.
+WARNING: API 'applicationVariants' is obsolete and has been replaced with 'AndroidComponentsExtension'.
+It will be removed in version 10.0 of the Android Gradle plugin.
+The legacy variant API is disabled by default in AGP 9.0, but can be re-enabled by adding 
+    android.newDsl=false
+to this project's gradle.properties file.
+For more information, see http://developer.android.com/build/r/new-dsl.
+
+To determine what is calling applicationVariants, use -Pandroid.debug.obsoleteApi=true on the command line to display more information.
+WARNING: API 'testVariants' is obsolete and has been replaced with 'AndroidComponentsExtension'.
+It will be removed in version 10.0 of the Android Gradle plugin.
+The legacy variant API is disabled by default in AGP 9.0, but can be re-enabled by adding 
+    android.newDsl=false
+to this project's gradle.properties file.
+For more information, see http://developer.android.com/build/r/new-dsl.
+
+To determine what is calling testVariants, use -Pandroid.debug.obsoleteApi=true on the command line to display more information.
+WARNING: API 'unitTestVariants' is obsolete and has been replaced with 'AndroidComponentsExtension'.
+It will be removed in version 10.0 of the Android Gradle plugin.
+The legacy variant API is disabled by default in AGP 9.0, but can be re-enabled by adding 
+    android.newDsl=false
+to this project's gradle.properties file.
+For more information, see http://developer.android.com/build/r/new-dsl.
+
+To determine what is calling unitTestVariants, use -Pandroid.debug.obsoleteApi=true on the command line to display more information.
+w: file:///home/runner/work/code-to-app/code-to-app/app/build.gradle.kts:40:1: 'fun Project.android(configure: Action<BaseAppModuleExtension>): Unit' is deprecated. Replaced by com.android.build.api.dsl.ApplicationExtension.
+This class is not used for the public extensions in AGP when android.newDsl=true, which is the default in AGP 9.0, and will be removed in AGP 10.0.
+w: file:///home/runner/work/code-to-app/code-to-app/app/build.gradle.kts:148:5: 'fun BaseAppModuleExtension.kotlinOptions(configure: Action<DeprecatedKotlinJvmOptions>): Unit' is deprecated. Please migrate to the compilerOptions DSL. More details are here: https://kotl.in/u1r8ln.
+w: file:///home/runner/work/code-to-app/code-to-app/app/build.gradle.kts:149:9: 'var jvmTarget: String' is deprecated. Please migrate to the compilerOptions DSL. More details are here: https://kotl.in/u1r8ln.
+w: file:///home/runner/work/code-to-app/code-to-app/app/build.gradle.kts:266:21: 'val Project.android: BaseAppModuleExtension' is deprecated. Replaced by com.android.build.api.dsl.ApplicationExtension.
+This class is not used for the public extensions in AGP when android.newDsl=true, which is the default in AGP 9.0, and will be removed in AGP 10.0.
+
+> Configure project :feature-stacks:admob
+WARNING: API 'libraryVariants' is obsolete and has been replaced with 'AndroidComponentsExtension'.
+It will be removed in version 10.0 of the Android Gradle plugin.
+The legacy variant API is disabled by default in AGP 9.0, but can be re-enabled by adding 
+    android.newDsl=false
+to this project's gradle.properties file.
+For more information, see http://developer.android.com/build/r/new-dsl.
+
+To determine what is calling libraryVariants, use -Pandroid.debug.obsoleteApi=true on the command line to display more information.
+w: file:///home/runner/work/code-to-app/code-to-app/feature-stacks/admob/build.gradle.kts:27:1: 'fun Project.android(configure: Action<LibraryExtension>): Unit' is deprecated. Replaced by com.android.build.api.dsl.LibraryExtension.
+This class is not used for the public extensions in AGP when android.newDsl=true, which is the default in AGP 9.0, and will be removed in AGP 10.0.
+w: file:///home/runner/work/code-to-app/code-to-app/feature-stacks/admob/build.gradle.kts:42:18: 'fun srcDir(srcDir: Any): Any' is deprecated. Use `directories` mutable set instead.
+w: file:///home/runner/work/code-to-app/code-to-app/feature-stacks/admob/build.gradle.kts:51:5: 'fun LibraryExtension.kotlinOptions(configure: Action<DeprecatedKotlinJvmOptions>): Unit' is deprecated. Please migrate to the compilerOptions DSL. More details are here: https://kotl.in/u1r8ln.
+w: file:///home/runner/work/code-to-app/code-to-app/feature-stacks/admob/build.gradle.kts:52:9: 'var jvmTarget: String' is deprecated. Please migrate to the compilerOptions DSL. More details are here: https://kotl.in/u1r8ln.
+w: file:///home/runner/work/code-to-app/code-to-app/feature-stacks/admob/build.gradle.kts:355:18: 'val Project.android: LibraryExtension' is deprecated. Replaced by com.android.build.api.dsl.LibraryExtension.
+This class is not used for the public extensions in AGP when android.newDsl=true, which is the default in AGP 9.0, and will be removed in AGP 10.0.
+WARNING: The property android.dependency.excludeLibraryComponentsFromConstraints improves project import performance for very large projects. It should be enabled to improve performance.
+To suppress this warning, add android.generateSyncIssueWhenLibraryConstraintsAreEnabled=false to gradle.properties
+WARNING: The property android.dependency.excludeLibraryComponentsFromConstraints improves project import performance for very large projects. It should be enabled to improve performance.
+To suppress this warning, add android.generateSyncIssueWhenLibraryConstraintsAreEnabled=false to gradle.properties
+WARNING: The property android.dependency.excludeLibraryComponentsFromConstraints improves project import performance for very large projects. It should be enabled to improve performance.
+To suppress this warning, add android.generateSyncIssueWhenLibraryConstraintsAreEnabled=false to gradle.properties
+WARNING: The property android.dependency.excludeLibraryComponentsFromConstraints improves project import performance for very large projects. It should be enabled to improve performance.
+To suppress this warning, add android.generateSyncIssueWhenLibraryConstraintsAreEnabled=false to gradle.properties
+
+> Configure project :app
+WARNING: The property android.dependency.excludeLibraryComponentsFromConstraints improves project import performance for very large projects. It should be enabled to improve performance.
+To suppress this warning, add android.generateSyncIssueWhenLibraryConstraintsAreEnabled=false to gradle.properties
+WARNING: The property android.dependency.excludeLibraryComponentsFromConstraints improves project import performance for very large projects. It should be enabled to improve performance.
+To suppress this warning, add android.generateSyncIssueWhenLibraryConstraintsAreEnabled=false to gradle.properties
+WARNING: The property android.dependency.excludeLibraryComponentsFromConstraints improves project import performance for very large projects. It should be enabled to improve performance.
+To suppress this warning, add android.generateSyncIssueWhenLibraryConstraintsAreEnabled=false to gradle.properties
+WARNING: The property android.dependency.excludeLibraryComponentsFromConstraints improves project import performance for very large projects. It should be enabled to improve performance.
+To suppress this warning, add android.generateSyncIssueWhenLibraryConstraintsAreEnabled=false to gradle.properties
+WARNING: The property android.dependency.excludeLibraryComponentsFromConstraints improves project import performance for very large projects. It should be enabled to improve performance.
+To suppress this warning, add android.generateSyncIssueWhenLibraryConstraintsAreEnabled=false to gradle.properties
+WARNING: The property android.dependency.excludeLibraryComponentsFromConstraints improves project import performance for very large projects. It should be enabled to improve performance.
+To suppress this warning, add android.generateSyncIssueWhenLibraryConstraintsAreEnabled=false to gradle.properties
+WARNING: The property android.dependency.excludeLibraryComponentsFromConstraints improves project import performance for very large projects. It should be enabled to improve performance.
+To suppress this warning, add android.generateSyncIssueWhenLibraryConstraintsAreEnabled=false to gradle.properties
+WARNING: The property android.dependency.excludeLibraryComponentsFromConstraints improves project import performance for very large projects. It should be enabled to improve performance.
+To suppress this warning, add android.generateSyncIssueWhenLibraryConstraintsAreEnabled=false to gradle.properties
+
+> Configure project :clone-host
+w: file:///home/runner/work/code-to-app/code-to-app/clone-host/build.gradle.kts:6:1: 'fun Project.android(configure: Action<LibraryExtension>): Unit' is deprecated. Replaced by com.android.build.api.dsl.LibraryExtension.
+This class is not used for the public extensions in AGP when android.newDsl=true, which is the default in AGP 9.0, and will be removed in AGP 10.0.
+w: file:///home/runner/work/code-to-app/code-to-app/clone-host/build.gradle.kts:19:5: 'fun LibraryExtension.kotlinOptions(configure: Action<DeprecatedKotlinJvmOptions>): Unit' is deprecated. Please migrate to the compilerOptions DSL. More details are here: https://kotl.in/u1r8ln.
+w: file:///home/runner/work/code-to-app/code-to-app/clone-host/build.gradle.kts:20:9: 'var jvmTarget: String' is deprecated. Please migrate to the compilerOptions DSL. More details are here: https://kotl.in/u1r8ln.
+WARNING: The property android.dependency.excludeLibraryComponentsFromConstraints improves project import performance for very large projects. It should be enabled to improve performance.
+To suppress this warning, add android.generateSyncIssueWhenLibraryConstraintsAreEnabled=false to gradle.properties
+WARNING: The property android.dependency.excludeLibraryComponentsFromConstraints improves project import performance for very large projects. It should be enabled to improve performance.
+To suppress this warning, add android.generateSyncIssueWhenLibraryConstraintsAreEnabled=false to gradle.properties
+WARNING: The property android.dependency.excludeLibraryComponentsFromConstraints improves project import performance for very large projects. It should be enabled to improve performance.
+To suppress this warning, add android.generateSyncIssueWhenLibraryConstraintsAreEnabled=false to gradle.properties
+WARNING: The property android.dependency.excludeLibraryComponentsFromConstraints improves project import performance for very large projects. It should be enabled to improve performance.
+To suppress this warning, add android.generateSyncIssueWhenLibraryConstraintsAreEnabled=false to gradle.properties
+
+> Configure project :shell
+w: file:///home/runner/work/code-to-app/code-to-app/shell/build.gradle.kts:17:1: 'fun Project.android(configure: Action<BaseAppModuleExtension>): Unit' is deprecated. Replaced by com.android.build.api.dsl.ApplicationExtension.
+This class is not used for the public extensions in AGP when android.newDsl=true, which is the default in AGP 9.0, and will be removed in AGP 10.0.
+w: file:///home/runner/work/code-to-app/code-to-app/shell/build.gradle.kts:89:18: 'fun srcDirs(vararg srcDirs: Any): Any' is deprecated. Use `directories` mutable set instead.
+w: file:///home/runner/work/code-to-app/code-to-app/shell/build.gradle.kts:94:17: 'fun srcDirs(vararg srcDirs: Any): Any' is deprecated. Use `directories` mutable set instead.
+w: file:///home/runner/work/code-to-app/code-to-app/shell/build.gradle.kts:95:20: 'fun srcDirs(vararg srcDirs: Any): Any' is deprecated. Use `directories` mutable set instead.
+w: file:///home/runner/work/code-to-app/code-to-app/shell/build.gradle.kts:116:5: 'fun BaseAppModuleExtension.kotlinOptions(configure: Action<DeprecatedKotlinJvmOptions>): Unit' is deprecated. Please migrate to the compilerOptions DSL. More details are here: https://kotl.in/u1r8ln.
+w: file:///home/runner/work/code-to-app/code-to-app/shell/build.gradle.kts:117:9: 'var jvmTarget: String' is deprecated. Please migrate to the compilerOptions DSL. More details are here: https://kotl.in/u1r8ln.
+WARNING: The property android.dependency.excludeLibraryComponentsFromConstraints improves project import performance for very large projects. It should be enabled to improve performance.
+To suppress this warning, add android.generateSyncIssueWhenLibraryConstraintsAreEnabled=false to gradle.properties
+WARNING: The property android.dependency.excludeLibraryComponentsFromConstraints improves project import performance for very large projects. It should be enabled to improve performance.
+To suppress this warning, add android.generateSyncIssueWhenLibraryConstraintsAreEnabled=false to gradle.properties
+WARNING: The property android.dependency.excludeLibraryComponentsFromConstraints improves project import performance for very large projects. It should be enabled to improve performance.
+To suppress this warning, add android.generateSyncIssueWhenLibraryConstraintsAreEnabled=false to gradle.properties
+WARNING: The property android.dependency.excludeLibraryComponentsFromConstraints improves project import performance for very large projects. It should be enabled to improve performance.
+To suppress this warning, add android.generateSyncIssueWhenLibraryConstraintsAreEnabled=false to gradle.properties
+
+> Task :clone-host:preBuild UP-TO-DATE
+> Task :app:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :app:protobufDummy UP-TO-DATE
+> Task :clone-host:preReleaseBuild UP-TO-DATE
+> Task :app:extractDebugProto
+> Task :clone-host:checkReleaseAarMetadata
+> Task :clone-host:mergeReleaseJniLibFolders
+> Task :clone-host:mergeReleaseNativeLibs NO-SOURCE
+> Task :clone-host:stripReleaseDebugSymbols NO-SOURCE
+> Task :clone-host:generateReleaseResValues
+> Task :clone-host:copyReleaseJniLibsProjectAndLocalJars
+> Task :clone-host:extractDeepLinksForAarRelease
+> Task :clone-host:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :clone-host:generateReleaseResources
+> Task :clone-host:packageReleaseResources
+> Task :clone-host:processReleaseNavigationResources
+> Task :clone-host:generateReleaseAssets UP-TO-DATE
+> Task :clone-host:mergeReleaseAssets
+> Task :clone-host:javaPreCompileRelease
+> Task :clone-host:prepareLintJarForPublish
+> Task :clone-host:prepareReleaseArtProfile
+> Task :clone-host:parseReleaseLocalResources
+> Task :clone-host:writeReleaseAarMetadata
+> Task :clone-host:mapReleaseSourceSetPaths
+> Task :clone-host:mergeReleaseResources
+> Task :clone-host:generateReleaseRFile
+> Task :clone-host:processReleaseManifest
+> Task :clone-host:verifyReleaseResources
+> Task :clone-host:compileReleaseKotlin
+> Task :app:extractIncludeStandardDebugProto
+> Task :app:extractProto
+> Task :app:extractStandardDebugProto
+> Task :app:extractStandardProto
+> Task :app:generateStandardDebugProto
+> Task :app:generateStandardDebugAssets UP-TO-DATE
+> Task :clone-host:extractReleaseAnnotations
+> Task :clone-host:compileReleaseJavaWithJavac NO-SOURCE
+> Task :clone-host:mergeReleaseGeneratedProguardFiles
+> Task :clone-host:mergeReleaseConsumerProguardFiles
+> Task :clone-host:processReleaseJavaRes
+> Task :clone-host:mergeReleaseJavaResource
+> Task :clone-host:syncReleaseLibJars
+> Task :clone-host:bundleReleaseAar
+> Task :clone-host:assembleRelease
+> Task :app:syncCloneHostDex SKIPPED
+> Task :app:preBuild UP-TO-DATE
+> Task :app:preStandardDebugBuild UP-TO-DATE
+> Task :app:mergeStandardDebugNativeDebugMetadata NO-SOURCE
+> Task :app:generateStandardDebugBuildConfig
+> Task :app:generateStandardDebugResValues FROM-CACHE
+> Task :app:checkStandardDebugAarMetadata
+> Task :app:mapStandardDebugSourceSetPaths
+> Task :app:processStandardDebugNavigationResources
+> Task :app:compileStandardDebugNavigationResources
+> Task :app:generateStandardDebugResources
+> Task :app:packageStandardDebugResources
+> Task :app:createStandardDebugCompatibleScreenManifests
+> Task :app:extractDeepLinksStandardDebug
+> Task :app:parseStandardDebugLocalResources
+> Task :app:processStandardDebugMainManifest
+> Task :app:processStandardDebugManifest
+> Task :app:mergeStandardDebugResources
+> Task :app:javaPreCompileStandardDebug
+> Task :app:mergeStandardDebugAssets
+> Task :app:processStandardDebugManifestForPackage
+> Task :app:compressStandardDebugAssets
+> Task :app:processStandardDebugResources
+> Task :app:generateStandardDebugGlobalSynthetics
+> Task :app:checkStandardDebugDuplicateClasses
+> Task :app:desugarStandardDebugFileDependencies
+> Task :app:kspStandardDebugKotlin
+> Task :app:mergeExtDexStandardDebug
+> Task :app:preGplayDebugBuild UP-TO-DATE
+> Task :app:mergeLibDexStandardDebug
+> Task :app:configureCMakeDebug[arm64-v8a]
+
+> Task :app:buildCMakeDebug[arm64-v8a]
+C/C++: ninja: Entering directory `/home/runner/work/code-to-app/code-to-app/app/.cxx/Debug/3c336x1g/arm64-v8a'
+C/C++: /home/runner/work/code-to-app/code-to-app/app/src/main/cpp/browser_kernel.c:419:9: warning: unused variable 'len' [-Wunused-variable]
+C/C++:   419 |     int len = (int)strlen(sanitized);
+C/C++:       |         ^~~
+C/C++: 1 warning generated.
+
+> Task :app:configureCMakeDebug[armeabi-v7a]
+
+> Task :app:buildCMakeDebug[armeabi-v7a]
+C/C++: ninja: Entering directory `/home/runner/work/code-to-app/code-to-app/app/.cxx/Debug/3c336x1g/armeabi-v7a'
+C/C++: /home/runner/work/code-to-app/code-to-app/app/src/main/cpp/browser_kernel.c:419:9: warning: unused variable 'len' [-Wunused-variable]
+C/C++:   419 |     int len = (int)strlen(sanitized);
+C/C++:       |         ^~~
+C/C++: 1 warning generated.
+
+> Task :app:configureCMakeDebug[x86]
+
+> Task :app:buildCMakeDebug[x86]
+C/C++: ninja: Entering directory `/home/runner/work/code-to-app/code-to-app/app/.cxx/Debug/3c336x1g/x86'
+C/C++: /home/runner/work/code-to-app/code-to-app/app/src/main/cpp/browser_kernel.c:419:9: warning: unused variable 'len' [-Wunused-variable]
+C/C++:   419 |     int len = (int)strlen(sanitized);
+C/C++:       |         ^~~
+C/C++: 1 warning generated.
+
+> Task :app:configureCMakeDebug[x86_64]
+
+> Task :app:buildCMakeDebug[x86_64]
+C/C++: ninja: Entering directory `/home/runner/work/code-to-app/code-to-app/app/.cxx/Debug/3c336x1g/x86_64'
+C/C++: /home/runner/work/code-to-app/code-to-app/app/src/main/cpp/browser_kernel.c:419:9: warning: unused variable 'len' [-Wunused-variable]
+C/C++:   419 |     int len = (int)strlen(sanitized);
+C/C++:       |         ^~~
+C/C++: 1 warning generated.
+
+> Task :app:mergeStandardDebugJniLibFolders
+> Task :app:mergeStandardDebugNativeLibs
+> Task :app:validateSigningStandardDebug
+> Task :app:writeStandardDebugAppMetadata
+> Task :app:writeStandardDebugSigningConfigVersions
+> Task :app:stripStandardDebugDebugSymbols
+> Task :app:compileStandardDebugKotlin
+w: file:///home/runner/work/code-to-app/code-to-app/app/build/generated/ksp/standardDebug/kotlin/com/webtoapp/data/dao/WebAppDao_Impl.kt:91:13 Condition is always 'false'.
+w: file:///home/runner/work/code-to-app/code-to-app/app/build/generated/ksp/standardDebug/kotlin/com/webtoapp/data/dao/WebAppDao_Impl.kt:98:13 Condition is always 'false'.
+w: file:///home/runner/work/code-to-app/code-to-app/app/build/generated/ksp/standardDebug/kotlin/com/webtoapp/data/dao/WebAppDao_Impl.kt:105:13 Condition is always 'false'.
+w: file:///home/runner/work/code-to-app/code-to-app/app/build/generated/ksp/standardDebug/kotlin/com/webtoapp/data/dao/WebAppDao_Impl.kt:112:13 Condition is always 'false'.
+w: file:///home/runner/work/code-to-app/code-to-app/app/build/generated/ksp/standardDebug/kotlin/com/webtoapp/data/dao/WebAppDao_Impl.kt:119:13 Condition is always 'false'.
+w: file:///home/runner/work/code-to-app/code-to-app/app/build/generated/ksp/standardDebug/kotlin/com/webtoapp/data/dao/WebAppDao_Impl.kt:126:13 Condition is always 'false'.
+w: file:///home/runner/work/code-to-app/code-to-app/app/build/generated/ksp/standardDebug/kotlin/com/webtoapp/data/dao/WebAppDao_Impl.kt:133:13 Condition is always 'false'.
+w: file:///home/runner/work/code-to-app/code-to-app/app/build/generated/ksp/standardDebug/kotlin/com/webtoapp/data/dao/WebAppDao_Impl.kt:140:13 Condition is always 'false'.
+w: file:///home/runner/work/code-to-app/code-to-app/app/build/generated/ksp/standardDebug/kotlin/com/webtoapp/data/dao/WebAppDao_Impl.kt:147:13 Condition is always 'false'.
+w: file:///home/runner/work/code-to-app/code-to-app/app/build/generated/ksp/standardDebug/kotlin/com/webtoapp/data/dao/WebAppDao_Impl.kt:160:13 Condition is always 'false'.
+w: file:///home/runner/work/code-to-app/code-to-app/app/build/generated/ksp/standardDebug/kotlin/com/webtoapp/data/dao/WebAppDao_Impl.kt:171:13 Condition is always 'false'.
+w: file:///home/runner/work/code-to-app/code-to-app/app/build/generated/ksp/standardDebug/kotlin/com/webtoapp/data/dao/WebAppDao_Impl.kt:180:13 Condition is always 'false'.
+w: file:///home/runner/work/code-to-app/code-to-app/app/build/generated/ksp/standardDebug/kotlin/com/webtoapp/data/dao/WebAppDao_Impl.kt:197:13 Condition is always 'false'.
+w: file:///home/runner/work/code-to-app/code-to-app/app/build/generated/ksp/standardDebug/kotlin/com/webtoapp/data/dao/WebAppDao_Impl.kt:206:13 Condition is always 'false'.
+w: file:///home/runner/work/code-to-app/code-to-app/app/build/generated/ksp/standardDebug/kotlin/com/webtoapp/data/dao/WebAppDao_Impl.kt:213:13 Condition is always 'false'.
+w: file:///home/runner/work/code-to-app/code-to-app/app/build/generated/ksp/standardDebug/kotlin/com/webtoapp/data/dao/WebAppDao_Impl.kt:223:13 Condition is always 'false'.
+w: file:///home/runner/work/code-to-app/code-to-app/app/build/generated/ksp/standardDebug/kotlin/com/webtoapp/data/dao/WebAppDao_Impl.kt:240:13 Condition is always 'false'.
+w: file:///home/runner/work/code-to-app/code-to-app/app/build/generated/ksp/standardDebug/kotlin/com/webtoapp/data/dao/WebAppDao_Impl.kt:247:13 Condition is always 'false'.
+w: file:///home/runner/work/code-to-app/code-to-app/app/build/generated/ksp/standardDebug/kotlin/com/webtoapp/data/dao/WebAppDao_Impl.kt:254:13 Condition is always 'false'.
+w: file:///home/runner/work/code-to-app/code-to-app/app/build/generated/ksp/standardDebug/kotlin/com/webtoapp/data/dao/WebAppDao_Impl.kt:261:13 Condition is always 'false'.
+w: file:///home/runner/work/code-to-app/code-to-app/app/build/generated/ksp/standardDebug/kotlin/com/webtoapp/data/dao/WebAppDao_Impl.kt:307:13 Condition is always 'false'.
+w: file:///home/runner/work/code-to-app/code-to-app/app/build/generated/ksp/standardDebug/kotlin/com/webtoapp/data/dao/WebAppDao_Impl.kt:314:13 Condition is always 'false'.
+w: file:///home/runner/work/code-to-app/code-to-app/app/build/generated/ksp/standardDebug/kotlin/com/webtoapp/data/dao/WebAppDao_Impl.kt:321:13 Condition is always 'false'.
+w: file:///home/runner/work/code-to-app/code-to-app/app/build/generated/ksp/standardDebug/kotlin/com/webtoapp/data/dao/WebAppDao_Impl.kt:328:13 Condition is always 'false'.
+w: file:///home/runner/work/code-to-app/code-to-app/app/build/generated/ksp/standardDebug/kotlin/com/webtoapp/data/dao/WebAppDao_Impl.kt:335:13 Condition is always 'false'.
+w: file:///home/runner/work/code-to-app/code-to-app/app/build/generated/ksp/standardDebug/kotlin/com/webtoapp/data/dao/WebAppDao_Impl.kt:342:13 Condition is always 'false'.
+w: file:///home/runner/work/code-to-app/code-to-app/app/build/generated/ksp/standardDebug/kotlin/com/webtoapp/data/dao/WebAppDao_Impl.kt:349:13 Condition is always 'false'.
+w: file:///home/runner/work/code-to-app/code-to-app/app/build/generated/ksp/standardDebug/kotlin/com/webtoapp/data/dao/WebAppDao_Impl.kt:356:13 Condition is always 'false'.
+w: file:///home/runner/work/code-to-app/code-to-app/app/build/generated/ksp/standardDebug/kotlin/com/webtoapp/data/dao/WebAppDao_Impl.kt:363:13 Condition is always 'false'.
+w: file:///home/runner/work/code-to-app/code-to-app/app/build/generated/ksp/standardDebug/kotlin/com/webtoapp/data/dao/WebAppDao_Impl.kt:376:13 Condition is always 'false'.
+w: file:///home/runner/work/code-to-app/code-to-app/app/build/generated/ksp/standardDebug/kotlin/com/webtoapp/data/dao/WebAppDao_Impl.kt:387:13 Condition is always 'false'.
+w: file:///home/runner/work/code-to-app/code-to-app/app/build/generated/ksp/standardDebug/kotlin/com/webtoapp/data/dao/WebAppDao_Impl.kt:396:13 Condition is always 'false'.
+w: file:///home/runner/work/code-to-app/code-to-app/app/build/generated/ksp/standardDebug/kotlin/com/webtoapp/data/dao/WebAppDao_Impl.kt:413:13 Condition is always 'false'.
+w: file:///home/runner/work/code-to-app/code-to-app/app/build/generated/ksp/standardDebug/kotlin/com/webtoapp/data/dao/WebAppDao_Impl.kt:422:13 Condition is always 'false'.
+w: file:///home/runner/work/code-to-app/code-to-app/app/build/generated/ksp/standardDebug/kotlin/com/webtoapp/data/dao/WebAppDao_Impl.kt:429:13 Condition is always 'false'.
+w: file:///home/runner/work/code-to-app/code-to-app/app/build/generated/ksp/standardDebug/kotlin/com/webtoapp/data/dao/WebAppDao_Impl.kt:439:13 Condition is always 'false'.
+w: file:///home/runner/work/code-to-app/code-to-app/app/build/generated/ksp/standardDebug/kotlin/com/webtoapp/data/dao/WebAppDao_Impl.kt:456:13 Condition is always 'false'.
+w: file:///home/runner/work/code-to-app/code-to-app/app/build/generated/ksp/standardDebug/kotlin/com/webtoapp/data/dao/WebAppDao_Impl.kt:463:13 Condition is always 'false'.
+w: file:///home/runner/work/code-to-app/code-to-app/app/build/generated/ksp/standardDebug/kotlin/com/webtoapp/data/dao/WebAppDao_Impl.kt:470:13 Condition is always 'false'.
+w: file:///home/runner/work/code-to-app/code-to-app/app/build/generated/ksp/standardDebug/kotlin/com/webtoapp/data/dao/WebAppDao_Impl.kt:477:13 Condition is always 'false'.
+w: file:///home/runner/work/code-to-app/code-to-app/app/src/main/java/com/webtoapp/WebToAppApplication.kt:141:33 'static field TRIM_MEMORY_RUNNING_MODERATE: Int' is deprecated. Deprecated in Java.
+w: file:///home/runner/work/code-to-app/code-to-app/app/src/main/java/com/webtoapp/WebToAppApplication.kt:142:33 'static field TRIM_MEMORY_RUNNING_LOW: Int' is deprecated. Deprecated in Java.
+w: file:///home/runner/work/code-to-app/code-to-app/app/src/main/java/com/webtoapp/WebToAppApplication.kt:143:33 'static field TRIM_MEMORY_RUNNING_CRITICAL: Int' is deprecated. Deprecated in Java.
+w: file:///home/runner/work/code-to-app/code-to-app/app/src/main/java/com/webtoapp/WebToAppApplication.kt:146:33 'static field TRIM_MEMORY_MODERATE: Int' is deprecated. Deprecated in Java.
+w: file:///home/runner/work/code-to-app/code-to-app/app/src/main/java/com/webtoapp/WebToAppApplication.kt:147:33 'static field TRIM_MEMORY_COMPLETE: Int' is deprecated. Deprecated in Java.
+w: file:///home/runner/work/code-to-app/code-to-app/app/src/main/java/com/webtoapp/core/ai/AiApiClient.kt:1604:61 Unchecked cast of 'Map<*, *>!' to 'Map<String, Any?>'.
+w: file:///home/runner/work/code-to-app/code-to-app/app/src/main/java/com/webtoapp/core/ai/AiApiClient.kt:1718:65 Unchecked cast of 'Map<*, *>!' to 'Map<String, Any?>'.
+w: file:///home/runner/work/code-to-app/code-to-app/app/src/main/java/com/webtoapp/core/ai/AiApiClient.kt:1811:70 Unchecked cast of 'Map<*, *>!' to 'Map<String, Any?>'.
+w: file:///home/runner/work/code-to-app/code-to-app/app/src/main/java/com/webtoapp/core/ai/AiConfigManager.kt:313:34 Condition is always 'false'.
+w: file:///home/runner/work/code-to-app/code-to-app/app/src/main/java/com/webtoapp/core/ai/AiConfigManager.kt:328:29 Condition is always 'false'.
+w: file:///home/runner/work/code-to-app/code-to-app/app/src/main/java/com/webtoapp/core/ai/AiConfigManager.kt:344:35 Condition is always 'false'.
+w: file:///home/runner/work/code-to-app/code-to-app/app/src/main/java/com/webtoapp/core/ai/AiConfigManager.kt:360:56 Condition is always 'false'.
+w: file:///home/runner/work/code-to-app/code-to-app/app/src/main/java/com/webtoapp/core/apkbuilder/ApkBuilder.kt:1639:25 Condition is always 'true'.
+w: file:///home/runner/work/code-to-app/code-to-app/app/src/main/java/com/webtoapp/core/apkbuilder/ApkBuilder.kt:1724:61 'val adBlock: AdBlocker' is deprecated. 编辑器侧请使用 Koin 注入: val blocker: AdBlocker by inject().
+w: file:///home/runner/work/code-to-app/code-to-app/app/src/main/java/com/webtoapp/core/apkbuilder/ApkBuilder.kt:1787:25 Condition is always 'true'.
+w: file:///home/runner/work/code-to-app/code-to-app/app/src/main/java/com/webtoapp/core/apkbuilder/ApkBuilder.kt:1790:32 Condition is always 'true'.
+w: file:///home/runner/work/code-to-app/code-to-app/app/src/main/java/com/webtoapp/core/apkbuilder/ApkBuilder.kt:1794:25 Condition is always 'true'.
+w: file:///home/runner/work/code-to-app/code-to-app/app/src/main/java/com/webtoapp/core/apkbuilder/ApkBuilder.kt:3150:21 Condition is always 'true'.
+w: file:///home/runner/work/code-to-app/code-to-app/app/src/main/java/com/webtoapp/core/appmodifier/CloneManifestRewriter.kt:96:29 Condition is always 'true'.
+w: file:///home/runner/work/code-to-app/code-to-app/app/src/main/java/com/webtoapp/core/autostart/AutoStartLauncher.kt:24:37 'val shellMode: ShellModeManager' is deprecated. 编辑器侧请使用 Koin 注入: val mgr: ShellModeManager by inject().
+w: file:///home/runner/work/code-to-app/code-to-app/app/src/main/java/com/webtoapp/core/autostart/BootReceiver.kt:49:37 'val shellMode: ShellModeManager' is deprecated. 编辑器侧请使用 Koin 注入: val mgr: ShellModeManager by inject().
+w: file:///home/runner/work/code-to-app/code-to-app/app/src/main/java/com/webtoapp/core/autostart/BootReceiver.kt:56:41 'val shellMode: ShellModeManager' is deprecated. 编辑器侧请使用 Koin 注入: val mgr: ShellModeManager by inject().
+w: file:///home/runner/work/code-to-app/code-to-app/app/src/main/java/com/webtoapp/core/autostart/BootReceiver.kt:127:37 'val shellMode: ShellModeManager' is deprecated. 编辑器侧请使用 Koin 注入: val mgr: ShellModeManager by inject().
+w: file:///home/runner/work/code-to-app/code-to-app/app/src/main/java/com/webtoapp/core/autostart/BootReceiver.kt:138:37 'val shellMode: ShellModeManager' is deprecated. 编辑器侧请使用 Koin 注入: val mgr: ShellModeManager by inject().
+w: file:///home/runner/work/code-to-app/code-to-app/app/src/main/java/com/webtoapp/core/autostart/ScheduledStartReceiver.kt:33:37 'val shellMode: ShellModeManager' is deprecated. 编辑器侧请使用 Koin 注入: val mgr: ShellModeManager by inject().
+w: file:///home/runner/work/code-to-app/code-to-app/app/src/main/java/com/webtoapp/core/autostart/ScheduledStartReceiver.kt:60:33 'val shellMode: ShellModeManager' is deprecated. 编辑器侧请使用 Koin 注入: val mgr: ShellModeManager by inject().
+w: file:///home/runner/work/code-to-app/code-to-app/app/src/main/java/com/webtoapp/core/engine/GeckoViewEngine.kt:1672:33 Condition is always 'true'.
+w: file:///home/runner/work/code-to-app/code-to-app/app/src/main/java/com/webtoapp/core/engine/SystemWebViewEngine.kt:40:56 The corresponding parameter in the supertype 'WebViewCallbacks' is named 'callback'. This may cause problems when calling this function with named arguments.
+w: file:///home/runner/work/code-to-app/code-to-app/app/src/main/java/com/webtoapp/core/engine/SystemWebViewEngine.kt:46:67 The corresponding parameter in the supertype 'WebViewCallbacks' is named 'callback'. This may cause problems when calling this function with named arguments.
+w: file:///home/runner/work/code-to-app/code-to-app/app/src/main/java/com/webtoapp/core/extension/ChromeExtensionRuntime.kt:54:17 'var databaseEnabled: Boolean' is deprecated. Deprecated in Java.
+w: file:///home/runner/work/code-to-app/code-to-app/app/src/main/java/com/webtoapp/core/extension/ExtensionPopupManager.kt:30:17 'var databaseEnabled: Boolean' is deprecated. Deprecated in Java.
+w: file:///home/runner/work/code-to-app/code-to-app/app/src/main/java/com/webtoapp/core/floatingwindow/FloatingWindowManager.kt:195:56 'static field SOFT_INPUT_ADJUST_RESIZE: Int' is deprecated. Deprecated in Java.
+w: file:///home/runner/work/code-to-app/code-to-app/app/src/main/java/com/webtoapp/core/floatingwindow/FloatingWindowService.kt:134:54 'val shellMode: ShellModeManager' is deprecated. 编辑器侧请使用 Koin 注入: val mgr: ShellModeManager by inject().
+w: file:///home/runner/work/code-to-app/code-to-app/app/src/main/java/com/webtoapp/core/floatingwindow/FloatingWindowService.kt:264:46 'val adBlock: AdBlocker' is deprecated. 编辑器侧请使用 Koin 注入: val blocker: AdBlocker by inject().
+w: file:///home/runner/work/code-to-app/code-to-app/app/src/main/java/com/webtoapp/core/floatingwindow/FloatingWindowService.kt:487:14 'fun addAction(p0: Int, p1: CharSequence!, p2: PendingIntent!): Notification.Builder!' is deprecated. Deprecated in Java.
+w: file:///home/runner/work/code-to-app/code-to-app/app/src/main/java/com/webtoapp/core/golang/GoToolchainManager.kt:397:29 'val nextTarEntry: TarArchiveEntry!' is deprecated. Deprecated in Java.
+w: file:///home/runner/work/code-to-app/code-to-app/app/src/main/java/com/webtoapp/core/golang/GoToolchainManager.kt:405:33 'val nextTarEntry: TarArchiveEntry!' is deprecated. Deprecated in Java.
+w: file:///home/runner/work/code-to-app/code-to-app/app/src/main/java/com/webtoapp/core/golang/GoToolchainManager.kt:410:33 'val nextTarEntry: TarArchiveEntry!' is deprecated. Deprecated in Java.
+w: file:///home/runner/work/code-to-app/code-to-app/app/src/main/java/com/webtoapp/core/golang/GoToolchainManager.kt:415:33 'val nextTarEntry: TarArchiveEntry!' is deprecated. Deprecated in Java.
+w: file:///home/runner/work/code-to-app/code-to-app/app/src/main/java/com/webtoapp/core/golang/GoToolchainManager.kt:452:29 'val nextTarEntry: TarArchiveEntry!' is deprecated. Deprecated in Java.
+w: file:///home/runner/work/code-to-app/code-to-app/app/src/main/java/com/webtoapp/core/i18n/LanguageManager.kt:24:39 'constructor(p0: String!): Locale' is deprecated. Deprecated in Java.
+w: file:///home/runner/work/code-to-app/code-to-app/app/src/main/java/com/webtoapp/core/i18n/LanguageManager.kt:25:49 'constructor(p0: String!): Locale' is deprecated. Deprecated in Java.
+w: file:///home/runner/work/code-to-app/code-to-app/app/src/main/java/com/webtoapp/core/i18n/LanguageManager.kt:26:41 'constructor(p0: String!): Locale' is deprecated. Deprecated in Java.
+w: file:///home/runner/work/code-to-app/code-to-app/app/src/main/java/com/webtoapp/core/i18n/LanguageManager.kt:27:40 'constructor(p0: String!): Locale' is deprecated. Deprecated in Java.
+w: file:///home/runner/work/code-to-app/code-to-app/app/src/main/java/com/webtoapp/core/i18n/LanguageManager.kt:28:39 'constructor(p0: String!): Locale' is deprecated. Deprecated in Java.
+w: file:///home/runner/work/code-to-app/code-to-app/app/src/main/java/com/webtoapp/core/i18n/LanguageManager.kt:29:41 'constructor(p0: String!): Locale' is deprecated. Deprecated in Java.
+w: file:///home/runner/work/code-to-app/code-to-app/app/src/main/java/com/webtoapp/core/kernel/BrowserIdentity.kt:152:27 Condition is always 'true'.
+w: file:///home/runner/work/code-to-app/code-to-app/app/src/main/java/com/webtoapp/core/kernel/BrowserIdentity.kt:176:45 Condition is always 'true'.
+w: file:///home/runner/work/code-to-app/code-to-app/app/src/main/java/com/webtoapp/core/linux/LocalBuildEnvironment.kt:853:33 'val nextTarEntry: TarArchiveEntry!' is deprecated. Deprecated in Java.
+w: file:///home/runner/work/code-to-app/code-to-app/app/src/main/java/com/webtoapp/core/linux/LocalBuildEnvironment.kt:858:37 'val nextTarEntry: TarArchiveEntry!' is deprecated. Deprecated in Java.
+w: file:///home/runner/work/code-to-app/code-to-app/app/src/main/java/com/webtoapp/core/linux/LocalBuildEnvironment.kt:870:33 'val nextTarEntry: TarArchiveEntry!' is deprecated. Deprecated in Java.
+w: file:///home/runner/work/code-to-app/code-to-app/app/src/main/java/com/webtoapp/core/linux/NativeNodeEngine.kt:135:33 'val nextTarEntry: TarArchiveEntry!' is deprecated. Deprecated in Java.
+w: file:///home/runner/work/code-to-app/code-to-app/app/src/main/java/com/webtoapp/core/linux/NativeNodeEngine.kt:143:33 'val nextTarEntry: TarArchiveEntry!' is deprecated. Deprecated in Java.
+w: file:///home/runner/work/code-to-app/code-to-app/app/src/main/java/com/webtoapp/core/logging/AppLogger.kt:445:69 'val id: Long' is deprecated. Deprecated in Java.
+w: file:///home/runner/work/code-to-app/code-to-app/app/src/main/java/com/webtoapp/core/port/WtaAppPortDiscovery.kt:78:31 'fun get(p0: String!): Any?' is deprecated. Deprecated in Java.
+w: file:///home/runner/work/code-to-app/code-to-app/app/src/main/java/com/webtoapp/core/port/WtaAppPortDiscovery.kt:185:31 'fun get(p0: String!): Any?' is deprecated. Deprecated in Java.
+w: file:///home/runner/work/code-to-app/code-to-app/app/src/main/java/com/webtoapp/core/pwa/PwaAnalyzer.kt:312:65 Java type mismatch: inferred type is 'Nothing?', but 'String' was expected.
+w: file:///home/runner/work/code-to-app/code-to-app/app/src/main/java/com/webtoapp/core/pwa/PwaAnalyzer.kt:313:63 Java type mismatch: inferred type is 'Nothing?', but 'String' was expected.
+w: file:///home/runner/work/code-to-app/code-to-app/app/src/main/java/com/webtoapp/core/pwa/PwaAnalyzer.kt:314:69 Java type mismatch: inferred type is 'Nothing?', but 'String' was expected.
+w: file:///home/runner/work/code-to-app/code-to-app/app/src/main/java/com/webtoapp/core/runtime/GradleInstaller.kt:152:37 'val nextTarEntry: TarArchiveEntry!' is deprecated. Deprecated in Java.
+w: file:///home/runner/work/code-to-app/code-to-app/app/src/main/java/com/webtoapp/core/runtime/GradleInstaller.kt:159:37 'val nextTarEntry: TarArchiveEntry!' is deprecated. Deprecated in Java.
+w: file:///home/runner/work/code-to-app/code-to-app/app/src/main/java/com/webtoapp/core/stats/WebsiteScreenshotService.kt:95:25 'var allowFileAccessFromFileURLs: Boolean' is deprecated. Deprecated in Java.
+w: file:///home/runner/work/code-to-app/code-to-app/app/src/main/java/com/webtoapp/core/stats/WebsiteScreenshotService.kt:96:25 'var allowUniversalAccessFromFileURLs: Boolean' is deprecated. Deprecated in Java.
+w: file:///home/runner/work/code-to-app/code-to-app/app/src/main/java/com/webtoapp/core/webview/CronetForwarder.kt:12:8 'class UploadDataProviders : Any' is deprecated. Deprecated in Java.
+w: file:///home/runner/work/code-to-app/code-to-app/app/src/main/java/com/webtoapp/core/webview/CronetForwarder.kt:338:50 'class UploadDataProviders : Any' is deprecated. Deprecated in Java.
+w: file:///home/runner/work/code-to-app/code-to-app/app/src/main/java/com/webtoapp/core/webview/LongPressHandler.kt:146:35 'static field ANCHOR_TYPE: Int' is deprecated. Deprecated in Java.
+w: file:///home/runner/work/code-to-app/code-to-app/app/src/main/java/com/webtoapp/core/webview/LongPressHandler.kt:158:29 'val scale: Float' is deprecated. Deprecated in Java.
+w: file:///home/runner/work/code-to-app/code-to-app/app/src/main/java/com/webtoapp/core/webview/NativeBridge.kt:936:134 'field versionCode: Int' is deprecated. Deprecated in Java.
+w: file:///home/runner/work/code-to-app/code-to-app/app/src/main/java/com/webtoapp/core/webview/WebViewManager.kt:1656:17 'var databaseEnabled: Boolean' is deprecated. Deprecated in Java.
+w: file:///home/runner/work/code-to-app/code-to-app/app/src/main/java/com/webtoapp/core/webview/WebViewManager.kt:1789:17 'var allowFileAccessFromFileURLs: Boolean' is deprecated. Deprecated in Java.
+w: file:///home/runner/work/code-to-app/code-to-app/app/src/main/java/com/webtoapp/core/webview/WebViewManager.kt:1790:17 'var allowUniversalAccessFromFileURLs: Boolean' is deprecated. Deprecated in Java.
+w: file:///home/runner/work/code-to-app/code-to-app/app/src/main/java/com/webtoapp/core/webview/WebViewManager.kt:2637:21 Condition is always 'true'.
+w: file:///home/runner/work/code-to-app/code-to-app/app/src/main/java/com/webtoapp/core/webview/WebViewManager.kt:2644:21 Condition is always 'true'.
+w: file:///home/runner/work/code-to-app/code-to-app/app/src/main/java/com/webtoapp/core/webview/WebViewManager.kt:2659:44 Condition is always 'true'.
+w: file:///home/runner/work/code-to-app/code-to-app/app/src/main/java/com/webtoapp/core/webview/WebViewManager.kt:3127:44 'fun getHttpAuthUsernamePassword(p0: String!, p1: String!): Array<(out) String!>?' is deprecated. Deprecated in Java.
+w: file:///home/runner/work/code-to-app/code-to-app/app/src/main/java/com/webtoapp/core/webview/WebViewManager.kt:3208:34 'fun setHttpAuthUsernamePassword(p0: String!, p1: String!, p2: String!, p3: String!): Unit' is deprecated. Deprecated in Java.
+w: file:///home/runner/work/code-to-app/code-to-app/app/src/main/java/com/webtoapp/core/webview/WebViewMemoryTrimmer.kt:35:38 'static field TRIM_MEMORY_COMPLETE: Int' is deprecated. Deprecated in Java.
+w: file:///home/runner/work/code-to-app/code-to-app/app/src/main/java/com/webtoapp/core/webview/WebViewMemoryTrimmer.kt:38:38 'static field TRIM_MEMORY_RUNNING_LOW: Int' is deprecated. Deprecated in Java.
+w: file:///home/runner/work/code-to-app/code-to-app/app/src/main/java/com/webtoapp/core/webview/WebViewPool.kt:135:13 'var databaseEnabled: Boolean' is deprecated. Deprecated in Java.
+w: file:///home/runner/work/code-to-app/code-to-app/app/src/main/java/com/webtoapp/data/database/AppDatabase.kt:1305:18 'fun fallbackToDestructiveMigrationOnDowngrade(): RoomDatabase.Builder<AppDatabase>' is deprecated. Replace by overloaded version with parameter to indicate if all tables should be dropped or not.
+w: file:///home/runner/work/code-to-app/code-to-app/app/src/main/java/com/webtoapp/data/database/AppDatabase.kt:1306:18 'fun fallbackToDestructiveMigrationFrom(vararg startVersions: Int): RoomDatabase.Builder<AppDatabase>' is deprecated. Replace by overloaded version with parameter to indicate if all tables should be dropped or not.
+w: file:///home/runner/work/code-to-app/code-to-app/app/src/main/java/com/webtoapp/ui/MainActivity.kt:76:52 'val shellMode: ShellModeManager' is deprecated. 编辑器侧请使用 Koin 注入: val mgr: ShellModeManager by inject().
+w: file:///home/runner/work/code-to-app/code-to-app/app/src/main/java/com/webtoapp/ui/MainActivity.kt:152:28 'var statusBarColor: Int' is deprecated. Deprecated in Java.
+w: file:///home/runner/work/code-to-app/code-to-app/app/src/main/java/com/webtoapp/ui/MainActivity.kt:155:28 'var navigationBarColor: Int' is deprecated. Deprecated in Java.
+w: file:///home/runner/work/code-to-app/code-to-app/app/src/main/java/com/webtoapp/ui/MainActivity.kt:325:33 'val shellMode: ShellModeManager' is deprecated. 编辑器侧请使用 Koin 注入: val mgr: ShellModeManager by inject().
+w: file:///home/runner/work/code-to-app/code-to-app/app/src/main/java/com/webtoapp/ui/agent/AgentScreen.kt:132:21 'val LocalClipboardManager: ProvidableCompositionLocal<ClipboardManager>' is deprecated. Use LocalClipboard instead which supports suspend functions.
+w: file:///home/runner/work/code-to-app/code-to-app/app/src/main/java/com/webtoapp/ui/agent/components/AgentDrawer.kt:536:61 'val Icons.Outlined.OpenInNew: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Outlined.OpenInNew.
+w: file:///home/runner/work/code-to-app/code-to-app/app/src/main/java/com/webtoapp/ui/agent/components/CodeRenderer.kt:136:21 'val LocalClipboardManager: ProvidableCompositionLocal<ClipboardManager>' is deprecated. Use LocalClipboard instead which supports suspend functions.
+w: file:///home/runner/work/code-to-app/code-to-app/app/src/main/java/com/webtoapp/ui/agent/components/Composer.kt:269:53 'val Icons.Outlined.InsertDriveFile: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Outlined.InsertDriveFile.
+w: file:///home/runner/work/code-to-app/code-to-app/app/src/main/java/com/webtoapp/ui/agent/components/ContextPickerDialog.kt:71:17 'fun TabRow(selectedTabIndex: Int, modifier: Modifier = ..., containerColor: Color = ..., contentColor: Color = ..., indicator: @Composable() ComposableFunction1<@ParameterName(...) List<TabPosition>, Unit> = ..., divider: @Composable() ComposableFunction0<Unit> = ..., tabs: @Composable() ComposableFunction0<Unit>): Unit' is deprecated. Replaced with PrimaryTabRow and SecondaryTabRow.
+w: file:///home/runner/work/code-to-app/code-to-app/app/src/main/java/com/webtoapp/ui/agent/components/MessageBubbles.kt:904:21 'val LocalClipboardManager: ProvidableCompositionLocal<ClipboardManager>' is deprecated. Use LocalClipboard instead which supports suspend functions.
+w: file:///home/runner/work/code-to-app/code-to-app/app/src/main/java/com/webtoapp/ui/agent/components/MessageBubbles.kt:1206:21 'val LocalClipboardManager: ProvidableCompositionLocal<ClipboardManager>' is deprecated. Use LocalClipboard instead which supports suspend functions.
+w: file:///home/runner/work/code-to-app/code-to-app/app/src/main/java/com/webtoapp/ui/agent/components/MessageBubbles.kt:1275:21 'val LocalClipboardManager: ProvidableCompositionLocal<ClipboardManager>' is deprecated. Use LocalClipboard instead which supports suspend functions.
+w: file:///home/runner/work/code-to-app/code-to-app/app/src/main/java/com/webtoapp/ui/codepreview/HtmlPreviewActivity.kt:348:9 'var databaseEnabled: Boolean' is deprecated. Deprecated in Java.
+w: file:///home/runner/work/code-to-app/code-to-app/app/src/main/java/com/webtoapp/ui/codepreview/HtmlPreviewActivity.kt:444:28 'val LocalClipboardManager: ProvidableCompositionLocal<ClipboardManager>' is deprecated. Use LocalClipboard instead which supports suspend functions.
+w: file:///home/runner/work/code-to-app/code-to-app/app/src/main/java/com/webtoapp/ui/codepreview/HtmlPreviewActivity.kt:758:28 'val LocalClipboardManager: ProvidableCompositionLocal<ClipboardManager>' is deprecated. Use LocalClipboard instead which supports suspend functions.
+w: file:///home/runner/work/code-to-app/code-to-app/app/src/main/java/com/webtoapp/ui/codepreview/HtmlPreviewActivity.kt:882:28 'val LocalClipboardManager: ProvidableCompositionLocal<ClipboardManager>' is deprecated. Use LocalClipboard instead which supports suspend functions.
+w: file:///home/runner/work/code-to-app/code-to-app/app/src/main/java/com/webtoapp/ui/components/ActivationCodeCard.kt:101:28 'val LocalClipboardManager: ProvidableCompositionLocal<ClipboardManager>' is deprecated. Use LocalClipboard instead which supports suspend functions.
+w: file:///home/runner/work/code-to-app/code-to-app/app/src/main/java/com/webtoapp/ui/components/ActivationCodeCard.kt:196:51 'val Icons.Outlined.ListAlt: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Outlined.ListAlt.
+w: file:///home/runner/work/code-to-app/code-to-app/app/src/main/java/com/webtoapp/ui/components/ActivationCodeCard.kt:915:28 'val LocalClipboardManager: ProvidableCompositionLocal<ClipboardManager>' is deprecated. Use LocalClipboard instead which supports suspend functions.
+w: file:///home/runner/work/code-to-app/code-to-app/app/src/main/java/com/webtoapp/ui/components/AutoStartCard.kt:82:26 'val LocalLifecycleOwner: ProvidableCompositionLocal<LifecycleOwner>' is deprecated. Moved to lifecycle-runtime-compose library in androidx.lifecycle.compose package.
+w: file:///home/runner/work/code-to-app/code-to-app/app/src/main/java/com/webtoapp/ui/components/AutoStartCard.kt:339:56 'val Icons.Outlined.NavigateNext: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Outlined.NavigateNext.
+w: file:///home/runner/work/code-to-app/code-to-app/app/src/main/java/com/webtoapp/ui/components/AutoStartCard.kt:382:56 'val Icons.Outlined.NavigateNext: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Outlined.NavigateNext.
+w: file:///home/runner/work/code-to-app/code-to-app/app/src/main/java/com/webtoapp/ui/components/AutoStartCard.kt:429:56 'val Icons.Outlined.NavigateNext: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Outlined.NavigateNext.
+w: file:///home/runner/work/code-to-app/code-to-app/app/src/main/java/com/webtoapp/ui/components/BgmSelector.kt:798:50 'val Icons.Outlined.Label: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Outlined.Label.
+w: file:///home/runner/work/code-to-app/code-to-app/app/src/main/java/com/webtoapp/ui/components/BgmSelector.kt:880:50 'val Icons.Outlined.Label: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Outlined.Label.
+w: file:///home/runner/work/code-to-app/code-to-app/app/src/main/java/com/webtoapp/ui/components/DataBackupDialog.kt:84:53 'val repository: WebAppRepository' is deprecated. 编辑器侧请使用 Koin 注入: val repo: WebAppRepository by inject().
+w: file:///home/runner/work/code-to-app/code-to-app/app/src/main/java/com/webtoapp/ui/components/GreasyForkSearchContent.kt:327:40 'val Icons.Filled.OpenInNew: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Filled.OpenInNew.
+w: file:///home/runner/work/code-to-app/code-to-app/app/src/main/java/com/webtoapp/ui/components/IconGeneratorDialog.kt:144:34 'fun Modifier.menuAnchor(): Modifier' is deprecated. Use overload that takes ExposedDropdownMenuAnchorType and enabled parameters.
+w: file:///home/runner/work/code-to-app/code-to-app/app/src/main/java/com/webtoapp/ui/components/IsolationConfigCard.kt:302:55 'val Icons.Outlined.VolumeUp: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Outlined.VolumeUp.
+w: file:///home/runner/work/code-to-app/code-to-app/app/src/main/java/com/webtoapp/ui/components/LanguageSelector.kt:501:26 'fun Modifier.menuAnchor(): Modifier' is deprecated. Use overload that takes ExposedDropdownMenuAnchorType and enabled parameters.
+w: file:///home/runner/work/code-to-app/code-to-app/app/src/main/java/com/webtoapp/ui/components/ManualLrcAligner.kt:640:43 'val Icons.Filled.KeyboardArrowLeft: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Filled.KeyboardArrowLeft.
+w: file:///home/runner/work/code-to-app/code-to-app/app/src/main/java/com/webtoapp/ui/components/ManualLrcAligner.kt:714:43 'val Icons.Filled.KeyboardArrowRight: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Filled.KeyboardArrowRight.
+w: file:///home/runner/work/code-to-app/code-to-app/app/src/main/java/com/webtoapp/ui/components/WtaErrorView.kt:78:21 'val LocalClipboardManager: ProvidableCompositionLocal<ClipboardManager>' is deprecated. Use LocalClipboard instead which supports suspend functions.
+w: file:///home/runner/work/code-to-app/code-to-app/app/src/main/java/com/webtoapp/ui/media/MediaAppActivity.kt:137:16 'var statusBarColor: Int' is deprecated. Deprecated in Java.
+w: file:///home/runner/work/code-to-app/code-to-app/app/src/main/java/com/webtoapp/ui/media/MediaAppActivity.kt:138:16 'var navigationBarColor: Int' is deprecated. Deprecated in Java.
+w: file:///home/runner/work/code-to-app/code-to-app/app/src/main/java/com/webtoapp/ui/navigation/AppNavigation.kt:816:53 'val repository: WebAppRepository' is deprecated. 编辑器侧请使用 Koin 注入: val repo: WebAppRepository by inject().
+w: file:///home/runner/work/code-to-app/code-to-app/app/src/main/java/com/webtoapp/ui/screens/AboutScreen.kt:473:39 'val Icons.Outlined.MenuBook: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Outlined.MenuBook.
+w: file:///home/runner/work/code-to-app/code-to-app/app/src/main/java/com/webtoapp/ui/screens/AboutScreen.kt:479:39 'val Icons.Outlined.Send: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Outlined.Send.
+w: file:///home/runner/work/code-to-app/code-to-app/app/src/main/java/com/webtoapp/ui/screens/AiSettingsScreen.kt:818:30 'fun Modifier.menuAnchor(): Modifier' is deprecated. Use overload that takes ExposedDropdownMenuAnchorType and enabled parameters.
+w: file:///home/runner/work/code-to-app/code-to-app/app/src/main/java/com/webtoapp/ui/screens/AiSettingsScreen.kt:881:52 'val Icons.Outlined.OpenInNew: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Outlined.OpenInNew.
+w: file:///home/runner/work/code-to-app/code-to-app/app/src/main/java/com/webtoapp/ui/screens/AiSettingsScreen.kt:944:34 'fun Modifier.menuAnchor(): Modifier' is deprecated. Use overload that takes ExposedDropdownMenuAnchorType and enabled parameters.
+w: file:///home/runner/work/code-to-app/code-to-app/app/src/main/java/com/webtoapp/ui/screens/AiSettingsScreen.kt:1151:30 'fun Modifier.menuAnchor(): Modifier' is deprecated. Use overload that takes ExposedDropdownMenuAnchorType and enabled parameters.
+w: file:///home/runner/work/code-to-app/code-to-app/app/src/main/java/com/webtoapp/ui/screens/AppPreviewResolver.kt:253:42 Condition is always 'true'.
+w: file:///home/runner/work/code-to-app/code-to-app/app/src/main/java/com/webtoapp/ui/screens/BrowserKernelScreen.kt:656:36 'val Icons.Outlined.HelpOutline: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Outlined.HelpOutline.
+w: file:///home/runner/work/code-to-app/code-to-app/app/src/main/java/com/webtoapp/ui/screens/BuildApkScreen.kt:104:53 'val repository: WebAppRepository' is deprecated. 编辑器侧请使用 Koin 注入: val repo: WebAppRepository by inject().
+w: file:///home/runner/work/code-to-app/code-to-app/app/src/main/java/com/webtoapp/ui/screens/BuildApkScreen.kt:134:53 'val repository: WebAppRepository' is deprecated. 编辑器侧请使用 Koin 注入: val repo: WebAppRepository by inject().
+w: file:///home/runner/work/code-to-app/code-to-app/app/src/main/java/com/webtoapp/ui/screens/BuildApkScreen.kt:1011:28 'val LocalClipboardManager: ProvidableCompositionLocal<ClipboardManager>' is deprecated. Use LocalClipboard instead which supports suspend functions.
+w: file:///home/runner/work/code-to-app/code-to-app/app/src/main/java/com/webtoapp/ui/screens/BuildApkScreen.kt:1391:28 'val LocalClipboardManager: ProvidableCompositionLocal<ClipboardManager>' is deprecated. Use LocalClipboard instead which supports suspend functions.
+w: file:///home/runner/work/code-to-app/code-to-app/app/src/main/java/com/webtoapp/ui/screens/CreateAppAnnouncementCard.kt:368:56 'typealias MenuAnchorType = ExposedDropdownMenuAnchorType' is deprecated. Renamed to ExposedDropdownMenuAnchorType.
+w: file:///home/runner/work/code-to-app/code-to-app/app/src/main/java/com/webtoapp/ui/screens/CreateAppScreen.kt:1295:26 'fun Modifier.menuAnchor(): Modifier' is deprecated. Use overload that takes ExposedDropdownMenuAnchorType and enabled parameters.
+w: file:///home/runner/work/code-to-app/code-to-app/app/src/main/java/com/webtoapp/ui/screens/CreateAppScreen.kt:1381:30 'fun Modifier.menuAnchor(): Modifier' is deprecated. Use overload that takes ExposedDropdownMenuAnchorType and enabled parameters.
+w: file:///home/runner/work/code-to-app/code-to-app/app/src/main/java/com/webtoapp/ui/screens/CreateAppScreen.kt:1433:30 'fun Modifier.menuAnchor(): Modifier' is deprecated. Use overload that takes ExposedDropdownMenuAnchorType and enabled parameters.
+w: file:///home/runner/work/code-to-app/code-to-app/app/src/main/java/com/webtoapp/ui/screens/CreateAppUserScripts.kt:228:30 'fun Modifier.menuAnchor(): Modifier' is deprecated. Use overload that takes ExposedDropdownMenuAnchorType and enabled parameters.
+w: file:///home/runner/work/code-to-app/code-to-app/app/src/main/java/com/webtoapp/ui/screens/CreateAppWebViewCards.kt:440:65 'val adBlock: AdBlocker' is deprecated. 编辑器侧请使用 Koin 注入: val blocker: AdBlocker by inject().
+w: file:///home/runner/work/code-to-app/code-to-app/app/src/main/java/com/webtoapp/ui/screens/CreateAppWebViewCards.kt:2506:43 'val Icons.Outlined.AltRoute: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Outlined.AltRoute.
+w: file:///home/runner/work/code-to-app/code-to-app/app/src/main/java/com/webtoapp/ui/screens/CreateAppWebViewCards.kt:4360:68 'constructor(capitalization: KeyboardCapitalization = ..., autoCorrect: Boolean, keyboardType: KeyboardType = ..., imeAction: ImeAction = ..., platformImeOptions: PlatformImeOptions? = ..., showKeyboardOnFocus: Boolean? = ..., hintLocales: LocaleList? = ...): KeyboardOptions' is deprecated. Please use the new constructor that takes optional autoCorrectEnabled parameter.
+w: file:///home/runner/work/code-to-app/code-to-app/app/src/main/java/com/webtoapp/ui/screens/CreateFrontendAppScreen.kt:947:28 'val LocalClipboardManager: ProvidableCompositionLocal<ClipboardManager>' is deprecated. Use LocalClipboard instead which supports suspend functions.
+w: file:///home/runner/work/code-to-app/code-to-app/app/src/main/java/com/webtoapp/ui/screens/CreateFrontendAppScreen.kt:1040:28 'val LocalClipboardManager: ProvidableCompositionLocal<ClipboardManager>' is deprecated. Use LocalClipboard instead which supports suspend functions.
+w: file:///home/runner/work/code-to-app/code-to-app/app/src/main/java/com/webtoapp/ui/screens/CreateFrontendAppScreen.kt:1305:32 'val LocalClipboardManager: ProvidableCompositionLocal<ClipboardManager>' is deprecated. Use LocalClipboard instead which supports suspend functions.
+w: file:///home/runner/work/code-to-app/code-to-app/app/src/main/java/com/webtoapp/ui/screens/CreateGalleryAppScreen.kt:237:13 'fun TabRow(selectedTabIndex: Int, modifier: Modifier = ..., containerColor: Color = ..., contentColor: Color = ..., indicator: @Composable() ComposableFunction1<@ParameterName(...) List<TabPosition>, Unit> = ..., divider: @Composable() ComposableFunction0<Unit> = ..., tabs: @Composable() ComposableFunction0<Unit>): Unit' is deprecated. Replaced with PrimaryTabRow and SecondaryTabRow.
+w: file:///home/runner/work/code-to-app/code-to-app/app/src/main/java/com/webtoapp/ui/screens/CreateGalleryAppScreen.kt:765:47 'val Icons.Outlined.ArrowForward: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Outlined.ArrowForward.
+w: file:///home/runner/work/code-to-app/code-to-app/app/src/main/java/com/webtoapp/ui/screens/CreateGalleryAppScreen.kt:941:47 'val Icons.Outlined.ViewList: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Outlined.ViewList.
+w: file:///home/runner/work/code-to-app/code-to-app/app/src/main/java/com/webtoapp/ui/screens/CreateGalleryAppScreen.kt:996:30 'fun Modifier.menuAnchor(): Modifier' is deprecated. Use overload that takes ExposedDropdownMenuAnchorType and enabled parameters.
+w: file:///home/runner/work/code-to-app/code-to-app/app/src/main/java/com/webtoapp/ui/screens/CreateGalleryAppScreen.kt:1388:34 'fun Modifier.menuAnchor(): Modifier' is deprecated. Use overload that takes ExposedDropdownMenuAnchorType and enabled parameters.
+w: file:///home/runner/work/code-to-app/code-to-app/app/src/main/java/com/webtoapp/ui/screens/CreateGoAppScreen.kt:87:55 'val LocalLifecycleOwner: ProvidableCompositionLocal<LifecycleOwner>' is deprecated. Moved to lifecycle-runtime-compose library in androidx.lifecycle.compose package.
+w: file:///home/runner/work/code-to-app/code-to-app/app/src/main/java/com/webtoapp/ui/screens/CreateHtmlAppScreen.kt:635:21 'fun ScrollableTabRow(selectedTabIndex: Int, modifier: Modifier = ..., containerColor: Color = ..., contentColor: Color = ..., edgePadding: Dp = ..., indicator: @Composable() ComposableFunction1<@ParameterName(...) List<TabPosition>, Unit> = ..., divider: @Composable() ComposableFunction0<Unit> = ..., tabs: @Composable() ComposableFunction0<Unit>): Unit' is deprecated. Replaced with PrimaryScrollableTabRow and SecondaryScrollableTabRow tab variants.
+w: file:///home/runner/work/code-to-app/code-to-app/app/src/main/java/com/webtoapp/ui/screens/CreateMultiWebAppScreen.kt:762:52 'val Icons.Outlined.ViewSidebar: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Outlined.ViewSidebar.
+w: file:///home/runner/work/code-to-app/code-to-app/app/src/main/java/com/webtoapp/ui/screens/CreateOfflinePackScreen.kt:130:57 'val Icons.Outlined.Label: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Outlined.Label.
+w: file:///home/runner/work/code-to-app/code-to-app/app/src/main/java/com/webtoapp/ui/screens/HomeScreen.kt:579:44 'fun rememberSwipeToDismissBoxState(initialValue: SwipeToDismissBoxValue = ..., confirmValueChange: (SwipeToDismissBoxValue) -> Boolean = ..., positionalThreshold: (@ParameterName(...) Float) -> Float = ...): SwipeToDismissBoxState' is deprecated. confirmValueChange is deprecated without replacement. Rather than relying on a callback to veto state changes, the anchor set should not include disallowed anchors. See androidx.compose.foundation.samples.AnchoredDraggableDynamicAnchorsSample for an example of using dynamic anchors over confirmValueChange.
+w: file:///home/runner/work/code-to-app/code-to-app/app/src/main/java/com/webtoapp/ui/screens/HomeScreen.kt:1033:44 'fun rememberPlainTooltipPositionProvider(spacingBetweenTooltipAndAnchor: Dp = ...): PopupPositionProvider' is deprecated. Deprecated in favor of rememberTooltipPositionProvider API.
+w: file:///home/runner/work/code-to-app/code-to-app/app/src/main/java/com/webtoapp/ui/screens/HomeScreen.kt:1075:44 'fun rememberPlainTooltipPositionProvider(spacingBetweenTooltipAndAnchor: Dp = ...): PopupPositionProvider' is deprecated. Deprecated in favor of rememberTooltipPositionProvider API.
+w: file:///home/runner/work/code-to-app/code-to-app/app/src/main/java/com/webtoapp/ui/screens/InstallProjectDepsCard.kt:288:28 'val LocalClipboardManager: ProvidableCompositionLocal<ClipboardManager>' is deprecated. Use LocalClipboard instead which supports suspend functions.
+w: file:///home/runner/work/code-to-app/code-to-app/app/src/main/java/com/webtoapp/ui/screens/ModuleMarketScreen.kt:288:44 'val Icons.Filled.OpenInNew: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Filled.OpenInNew.
+w: file:///home/runner/work/code-to-app/code-to-app/app/src/main/java/com/webtoapp/ui/screens/ModuleMarketScreen.kt:930:36 'val Icons.Filled.OpenInNew: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Filled.OpenInNew.
+w: file:///home/runner/work/code-to-app/code-to-app/app/src/main/java/com/webtoapp/ui/screens/ModuleMarketScreen.kt:1079:49 'val Icons.Filled.OpenInNew: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Filled.OpenInNew.
+w: file:///home/runner/work/code-to-app/code-to-app/app/src/main/java/com/webtoapp/ui/screens/PermissionConfigScreen.kt:153:66 'val Icons.Outlined.DirectionsWalk: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Outlined.DirectionsWalk.
+w: file:///home/runner/work/code-to-app/code-to-app/app/src/main/java/com/webtoapp/ui/screens/PermissionConfigScreen.kt:173:54 'val Icons.Outlined.Send: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Outlined.Send.
+w: file:///home/runner/work/code-to-app/code-to-app/app/src/main/java/com/webtoapp/ui/screens/PermissionConfigScreen.kt:177:67 'val Icons.Outlined.PhoneForwarded: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Outlined.PhoneForwarded.
+w: file:///home/runner/work/code-to-app/code-to-app/app/src/main/java/com/webtoapp/ui/shared/WindowHelper.kt:47:33 'var statusBarColor: Int' is deprecated. Deprecated in Java.
+w: file:///home/runner/work/code-to-app/code-to-app/app/src/main/java/com/webtoapp/ui/shared/WindowHelper.kt:57:33 'var statusBarColor: Int' is deprecated. Deprecated in Java.
+w: file:///home/runner/work/code-to-app/code-to-app/app/src/main/java/com/webtoapp/ui/shared/WindowHelper.kt:64:37 'var statusBarColor: Int' is deprecated. Deprecated in Java.
+w: file:///home/runner/work/code-to-app/code-to-app/app/src/main/java/com/webtoapp/ui/shared/WindowHelper.kt:68:37 'var statusBarColor: Int' is deprecated. Deprecated in Java.
+w: file:///home/runner/work/code-to-app/code-to-app/app/src/main/java/com/webtoapp/ui/shared/WindowHelper.kt:141:73 'static field FLAG_FULLSCREEN: Int' is deprecated. Deprecated in Java.
+w: file:///home/runner/work/code-to-app/code-to-app/app/src/main/java/com/webtoapp/ui/shared/WindowHelper.kt:143:75 'static field FLAG_FULLSCREEN: Int' is deprecated. Deprecated in Java.
+w: file:///home/runner/work/code-to-app/code-to-app/app/src/main/java/com/webtoapp/ui/shared/WindowHelper.kt:148:41 'var navigationBarColor: Int' is deprecated. Deprecated in Java.
+w: file:///home/runner/work/code-to-app/code-to-app/app/src/main/java/com/webtoapp/ui/shared/WindowHelper.kt:158:45 'var statusBarColor: Int' is deprecated. Deprecated in Java.
+w: file:///home/runner/work/code-to-app/code-to-app/app/src/main/java/com/webtoapp/ui/shared/WindowHelper.kt:169:53 'var statusBarColor: Int' is deprecated. Deprecated in Java.
+w: file:///home/runner/work/code-to-app/code-to-app/app/src/main/java/com/webtoapp/ui/shared/WindowHelper.kt:174:53 'var statusBarColor: Int' is deprecated. Deprecated in Java.
+w: file:///home/runner/work/code-to-app/code-to-app/app/src/main/java/com/webtoapp/ui/shared/WindowHelper.kt:180:57 'var statusBarColor: Int' is deprecated. Deprecated in Java.
+w: file:///home/runner/work/code-to-app/code-to-app/app/src/main/java/com/webtoapp/ui/shared/WindowHelper.kt:183:57 'var statusBarColor: Int' is deprecated. Deprecated in Java.
+w: file:///home/runner/work/code-to-app/code-to-app/app/src/main/java/com/webtoapp/ui/shared/WindowHelper.kt:192:41 'var statusBarColor: Int' is deprecated. Deprecated in Java.
+w: file:///home/runner/work/code-to-app/code-to-app/app/src/main/java/com/webtoapp/ui/shared/WindowHelper.kt:226:41 'var navigationBarColor: Int' is deprecated. Deprecated in Java.
+w: file:///home/runner/work/code-to-app/code-to-app/app/src/main/java/com/webtoapp/ui/shared/WindowHelper.kt:230:41 'var statusBarColor: Int' is deprecated. Deprecated in Java.
+w: file:///home/runner/work/code-to-app/code-to-app/app/src/main/java/com/webtoapp/ui/shared/WindowHelper.kt:242:49 'var statusBarColor: Int' is deprecated. Deprecated in Java.
+w: file:///home/runner/work/code-to-app/code-to-app/app/src/main/java/com/webtoapp/ui/shared/WindowHelper.kt:248:49 'var statusBarColor: Int' is deprecated. Deprecated in Java.
+w: file:///home/runner/work/code-to-app/code-to-app/app/src/main/java/com/webtoapp/ui/shared/WindowHelper.kt:271:37 'var navigationBarColor: Int' is deprecated. Deprecated in Java.
+w: file:///home/runner/work/code-to-app/code-to-app/app/src/main/java/com/webtoapp/ui/shared/WindowHelper.kt:271:74 'var statusBarColor: Int' is deprecated. Deprecated in Java.
+w: file:///home/runner/work/code-to-app/code-to-app/app/src/main/java/com/webtoapp/ui/shared/WindowHelper.kt:332:79 'static field SOFT_INPUT_ADJUST_RESIZE: Int' is deprecated. Deprecated in Java.
+w: file:///home/runner/work/code-to-app/code-to-app/app/src/main/java/com/webtoapp/ui/shell/ConsolePanel.kt:52:28 'val LocalClipboardManager: ProvidableCompositionLocal<ClipboardManager>' is deprecated. Use LocalClipboard instead which supports suspend functions.
+w: file:///home/runner/work/code-to-app/code-to-app/app/src/main/java/com/webtoapp/ui/shell/ShellActivity.kt:199:49 'val shellMode: ShellModeManager' is deprecated. 编辑器侧请使用 Koin 注入: val mgr: ShellModeManager by inject().
+w: file:///home/runner/work/code-to-app/code-to-app/app/src/main/java/com/webtoapp/ui/shell/ShellActivity.kt:254:16 Check for instance is always 'true'.
+w: file:///home/runner/work/code-to-app/code-to-app/app/src/main/java/com/webtoapp/ui/shell/ShellActivity.kt:395:46 'val shellMode: ShellModeManager' is deprecated. 编辑器侧请使用 Koin 注入: val mgr: ShellModeManager by inject().
+w: file:///home/runner/work/code-to-app/code-to-app/app/src/main/java/com/webtoapp/ui/shell/ShellActivity.kt:444:33 'val shellMode: ShellModeManager' is deprecated. 编辑器侧请使用 Koin 注入: val mgr: ShellModeManager by inject().
+w: file:///home/runner/work/code-to-app/code-to-app/app/src/main/java/com/webtoapp/ui/shell/ShellActivity.kt:449:42 'val shellMode: ShellModeManager' is deprecated. 编辑器侧请使用 Koin 注入: val mgr: ShellModeManager by inject().
+w: file:///home/runner/work/code-to-app/code-to-app/app/src/main/java/com/webtoapp/ui/shell/ShellActivity.kt:858:43 'val shellMode: ShellModeManager' is deprecated. 编辑器侧请使用 Koin 注入: val mgr: ShellModeManager by inject().
+w: file:///home/runner/work/code-to-app/code-to-app/app/src/main/java/com/webtoapp/ui/shell/ShellActivity.kt:994:47 'val shellMode: ShellModeManager' is deprecated. 编辑器侧请使用 Koin 注入: val mgr: ShellModeManager by inject().
+w: file:///home/runner/work/code-to-app/code-to-app/app/src/main/java/com/webtoapp/ui/shell/ShellActivity.kt:1015:46 'val shellMode: ShellModeManager' is deprecated. 编辑器侧请使用 Koin 注入: val mgr: ShellModeManager by inject().
+w: file:///home/runner/work/code-to-app/code-to-app/app/src/main/java/com/webtoapp/ui/shell/ShellActivity.kt:1174:46 'val shellMode: ShellModeManager' is deprecated. 编辑器侧请使用 Koin 注入: val mgr: ShellModeManager by inject().
+w: file:///home/runner/work/code-to-app/code-to-app/app/src/main/java/com/webtoapp/ui/shell/ShellActivity.kt:1229:58 'static field TRIM_MEMORY_RUNNING_LOW: Int' is deprecated. Deprecated in Java.
+w: file:///home/runner/work/code-to-app/code-to-app/app/src/main/java/com/webtoapp/ui/shell/ShellActivity.kt:1326:41 'val shellMode: ShellModeManager' is deprecated. 编辑器侧请使用 Koin 注入: val mgr: ShellModeManager by inject().
+w: file:///home/runner/work/code-to-app/code-to-app/app/src/main/java/com/webtoapp/ui/shell/ShellActivity.kt:1328:54 'val shellMode: ShellModeManager' is deprecated. 编辑器侧请使用 Koin 注入: val mgr: ShellModeManager by inject().
+w: file:///home/runner/work/code-to-app/code-to-app/app/src/main/java/com/webtoapp/ui/shell/ShellActivityInit.kt:17:50 'val shellMode: ShellModeManager' is deprecated. 编辑器侧请使用 Koin 注入: val mgr: ShellModeManager by inject().
+w: file:///home/runner/work/code-to-app/code-to-app/app/src/main/java/com/webtoapp/ui/shell/ShellBrowserView.kt:72:57 'val adBlock: AdBlocker' is deprecated. 编辑器侧请使用 Koin 注入: val blocker: AdBlocker by inject().
+w: file:///home/runner/work/code-to-app/code-to-app/app/src/main/java/com/webtoapp/ui/shell/ShellDialogs.kt:26:42 'val activation: ActivationManager' is deprecated. 编辑器侧请使用 Koin 注入: val mgr: ActivationManager by inject().
+w: file:///home/runner/work/code-to-app/code-to-app/app/src/main/java/com/webtoapp/ui/shell/ShellDialogs.kt:93:44 'val announcement: AnnouncementManager' is deprecated. 编辑器侧请使用 Koin 注入: val mgr: AnnouncementManager by inject().
+w: file:///home/runner/work/code-to-app/code-to-app/app/src/main/java/com/webtoapp/ui/shell/ShellPermissionDelegate.kt:50:46 'val shellMode: ShellModeManager' is deprecated. 编辑器侧请使用 Koin 注入: val mgr: ShellModeManager by inject().
+w: file:///home/runner/work/code-to-app/code-to-app/app/src/main/java/com/webtoapp/ui/shell/ShellPermissionDelegate.kt:178:46 'val shellMode: ShellModeManager' is deprecated. 编辑器侧请使用 Koin 注入: val mgr: ShellModeManager by inject().
+w: file:///home/runner/work/code-to-app/code-to-app/app/src/main/java/com/webtoapp/ui/shell/ShellPermissionDelegate.kt:512:9 'var onFileChooserResult: ((Array<Uri>) -> Unit)?' is deprecated. Use handleFileChooser() instead.
+w: file:///home/runner/work/code-to-app/code-to-app/app/src/main/java/com/webtoapp/ui/shell/ShellScreen.kt:75:42 'val activation: ActivationManager' is deprecated. 编辑器侧请使用 Koin 注入: val mgr: ActivationManager by inject().
+w: file:///home/runner/work/code-to-app/code-to-app/app/src/main/java/com/webtoapp/ui/shell/ShellScreen.kt:76:44 'val announcement: AnnouncementManager' is deprecated. 编辑器侧请使用 Koin 注入: val mgr: AnnouncementManager by inject().
+w: file:///home/runner/work/code-to-app/code-to-app/app/src/main/java/com/webtoapp/ui/shell/ShellScreen.kt:77:41 'val adBlock: AdBlocker' is deprecated. 编辑器侧请使用 Koin 注入: val blocker: AdBlocker by inject().
+w: file:///home/runner/work/code-to-app/code-to-app/app/src/main/java/com/webtoapp/ui/shell/ShellScreen.kt:431:55 'val LocalLifecycleOwner: ProvidableCompositionLocal<LifecycleOwner>' is deprecated. Moved to lifecycle-runtime-compose library in androidx.lifecycle.compose package.
+w: file:///home/runner/work/code-to-app/code-to-app/app/src/main/java/com/webtoapp/ui/shell/ShellStartupPermissions.kt:186:33 'static field PROCESS_OUTGOING_CALLS: String' is deprecated. Deprecated in Java.
+w: file:///home/runner/work/code-to-app/code-to-app/app/src/main/java/com/webtoapp/ui/shell/ShellWebViewCallbacks.kt:255:59 'static field ANCHOR_TYPE: Int' is deprecated. Deprecated in Java.
+w: file:///home/runner/work/code-to-app/code-to-app/app/src/main/java/com/webtoapp/ui/shell/ShellWebViewCallbacks.kt:285:39 'static field ANCHOR_TYPE: Int' is deprecated. Deprecated in Java.
+w: file:///home/runner/work/code-to-app/code-to-app/app/src/main/java/com/webtoapp/ui/splash/SplashLauncherActivity.kt:116:55 'val activation: ActivationManager' is deprecated. 编辑器侧请使用 Koin 注入: val mgr: ActivationManager by inject().
+w: file:///home/runner/work/code-to-app/code-to-app/app/src/main/java/com/webtoapp/ui/splash/SplashLauncherActivity.kt:186:50 'val announcement: AnnouncementManager' is deprecated. 编辑器侧请使用 Koin 注入: val mgr: AnnouncementManager by inject().
+w: file:///home/runner/work/code-to-app/code-to-app/app/src/main/java/com/webtoapp/ui/splash/SplashLauncherActivity.kt:203:46 'val announcement: AnnouncementManager' is deprecated. 编辑器侧请使用 Koin 注入: val mgr: AnnouncementManager by inject().
+w: file:///home/runner/work/code-to-app/code-to-app/app/src/main/java/com/webtoapp/ui/webview/WebViewActivity.kt:1055:16 Check for instance is always 'true'.
+w: file:///home/runner/work/code-to-app/code-to-app/app/src/main/java/com/webtoapp/ui/webview/WebViewActivity.kt:1263:58 'static field TRIM_MEMORY_RUNNING_LOW: Int' is deprecated. Deprecated in Java.
+w: file:///home/runner/work/code-to-app/code-to-app/app/src/main/java/com/webtoapp/ui/webview/WebViewActivity.kt:1333:42 'val repository: WebAppRepository' is deprecated. 编辑器侧请使用 Koin 注入: val repo: WebAppRepository by inject().
+w: file:///home/runner/work/code-to-app/code-to-app/app/src/main/java/com/webtoapp/ui/webview/WebViewActivity.kt:1334:42 'val activation: ActivationManager' is deprecated. 编辑器侧请使用 Koin 注入: val mgr: ActivationManager by inject().
+w: file:///home/runner/work/code-to-app/code-to-app/app/src/main/java/com/webtoapp/ui/webview/WebViewActivity.kt:1335:44 'val announcement: AnnouncementManager' is deprecated. 编辑器侧请使用 Koin 注入: val mgr: AnnouncementManager by inject().
+w: file:///home/runner/work/code-to-app/code-to-app/app/src/main/java/com/webtoapp/ui/webview/WebViewActivity.kt:1336:41 'val adBlock: AdBlocker' is deprecated. 编辑器侧请使用 Koin 注入: val blocker: AdBlocker by inject().
+w: file:///home/runner/work/code-to-app/code-to-app/app/src/main/java/com/webtoapp/ui/webview/WebViewActivity.kt:2639:51 The corresponding parameter in the supertype 'WebViewCallbacks' is named 'canGoBack'. This may cause problems when calling this function with named arguments.
+w: file:///home/runner/work/code-to-app/code-to-app/app/src/main/java/com/webtoapp/ui/webview/WebViewActivity.kt:2639:74 The corresponding parameter in the supertype 'WebViewCallbacks' is named 'canGoForward'. This may cause problems when calling this function with named arguments.
+w: file:///home/runner/work/code-to-app/code-to-app/app/src/main/java/com/webtoapp/ui/webview/WebViewActivity.kt:2889:63 'static field ANCHOR_TYPE: Int' is deprecated. Deprecated in Java.
+w: file:///home/runner/work/code-to-app/code-to-app/app/src/main/java/com/webtoapp/ui/webview/WebViewActivity.kt:2923:43 'static field ANCHOR_TYPE: Int' is deprecated. Deprecated in Java.
+w: file:///home/runner/work/code-to-app/code-to-app/app/src/main/java/com/webtoapp/ui/webview/WebViewActivity.kt:2978:55 'val LocalLifecycleOwner: ProvidableCompositionLocal<LifecycleOwner>' is deprecated. Moved to lifecycle-runtime-compose library in androidx.lifecycle.compose package.
+w: file:///home/runner/work/code-to-app/code-to-app/app/src/main/java/com/webtoapp/ui/webview/WebViewActivity.kt:3657:82 'val adBlock: AdBlocker' is deprecated. 编辑器侧请使用 Koin 注入: val blocker: AdBlocker by inject().
+w: file:///home/runner/work/code-to-app/code-to-app/app/src/main/java/com/webtoapp/util/SvgIconMapper.kt:14:49 'val Icons.Outlined.InsertDriveFile: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Outlined.InsertDriveFile.
+w: file:///home/runner/work/code-to-app/code-to-app/app/src/main/java/com/webtoapp/util/SvgIconMapper.kt:15:49 'val Icons.Outlined.Assignment: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Outlined.Assignment.
+w: file:///home/runner/work/code-to-app/code-to-app/app/src/main/java/com/webtoapp/util/SvgIconMapper.kt:20:49 'val Icons.Outlined.MenuBook: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Outlined.MenuBook.
+w: file:///home/runner/work/code-to-app/code-to-app/app/src/main/java/com/webtoapp/util/SvgIconMapper.kt:52:48 'val Icons.Outlined.Help: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Outlined.Help.
+w: file:///home/runner/work/code-to-app/code-to-app/app/src/main/java/com/webtoapp/util/SvgIconMapper.kt:66:49 'val Icons.Outlined.VolumeUp: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Outlined.VolumeUp.
+w: file:///home/runner/work/code-to-app/code-to-app/app/src/main/java/com/webtoapp/util/SvgIconMapper.kt:104:49 'val Icons.Outlined.Chat: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Outlined.Chat.
+w: file:///home/runner/work/code-to-app/code-to-app/app/src/main/java/com/webtoapp/util/SvgIconMapper.kt:120:32 'val Icons.Outlined.InsertDriveFile: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Outlined.InsertDriveFile.
+w: file:///home/runner/work/code-to-app/code-to-app/app/src/main/java/com/webtoapp/util/SvgIconMapper.kt:121:32 'val Icons.Outlined.MenuBook: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Outlined.MenuBook.
+w: file:///home/runner/work/code-to-app/code-to-app/app/src/main/java/com/webtoapp/util/SvgIconMapper.kt:130:49 'val Icons.Outlined.List: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Outlined.List.
+w: file:///home/runner/work/code-to-app/code-to-app/app/src/main/java/com/webtoapp/util/SvgIconMapper.kt:135:49 'val Icons.Outlined.MenuBook: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Outlined.MenuBook.
+w: file:///home/runner/work/code-to-app/code-to-app/app/src/main/java/com/webtoapp/util/SvgIconMapper.kt:151:49 'val Icons.Outlined.HelpOutline: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Outlined.HelpOutline.
+
+> Task :app:compileStandardDebugJavaWithJavac
+/home/runner/work/code-to-app/code-to-app/app/build/generated/sources/proto/standardDebug/java/com/android/bundle/Config.java:3472: warning: [dep-ann] deprecated item is not annotated with @Deprecated
+    private void setInjectMinSdk(boolean value) {
+                 ^
+/home/runner/work/code-to-app/code-to-app/app/build/generated/sources/proto/standardDebug/java/com/android/bundle/Config.java:3481: warning: [dep-ann] deprecated item is not annotated with @Deprecated
+    private void clearInjectMinSdk() {
+                 ^
+/home/runner/work/code-to-app/code-to-app/app/build/generated/sources/proto/standardDebug/java/com/android/aapt/Resources.java:16925: warning: [dep-ann] deprecated item is not annotated with @Deprecated
+    private void setDimensionValueDeprecated(float value) {
+                 ^
+/home/runner/work/code-to-app/code-to-app/app/build/generated/sources/proto/standardDebug/java/com/android/aapt/Resources.java:16934: warning: [dep-ann] deprecated item is not annotated with @Deprecated
+    private void clearDimensionValueDeprecated() {
+                 ^
+/home/runner/work/code-to-app/code-to-app/app/build/generated/sources/proto/standardDebug/java/com/android/aapt/Resources.java:16971: warning: [dep-ann] deprecated item is not annotated with @Deprecated
+    private void setFractionValueDeprecated(float value) {
+                 ^
+/home/runner/work/code-to-app/code-to-app/app/build/generated/sources/proto/standardDebug/java/com/android/aapt/Resources.java:16980: warning: [dep-ann] deprecated item is not annotated with @Deprecated
+    private void clearFractionValueDeprecated() {
+                 ^
+6 warnings
+
+> Task :app:dexBuilderStandardDebug
+> Task :app:processStandardDebugJavaRes
+> Task :app:mergeStandardDebugJavaResource
+> Task :app:mergeProjectDexStandardDebug
+> Task :app:packageStandardDebug
+> Task :app:createStandardDebugApkListingFileRedirect
+> Task :app:assembleStandardDebug
+
+[Incubating] Problems report is available at: file:///home/runner/work/code-to-app/code-to-app/build/reports/problems/problems-report.html
+
+BUILD SUCCESSFUL in 8m 5s
+80 actionable tasks: 79 executed, 1 from cache
