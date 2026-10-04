@@ -61,10 +61,11 @@ android {
         minSdk = 23
 
         targetSdk = 36
-        // versionCode 必须比同一 applicationId 的旧版大才能升级；
-        // 这里包名已换成 com.codetoapp.app（全新 app），所以从 1 重新开始。
-        versionCode = 1
-        versionName = "1.0.0-beta1"
+        // 升级自 code-to-app-v1.0.0-beta1-run129-debug.apk（versionCode 1）。
+        // 包名不变（com.codetoapp.app），所以只要 versionCode 比 1 大，
+        // 安装时就会被识别为「覆盖升级」，旧数据保留、不会变成第二个 app。
+        versionCode = 2
+        versionName = "1.0.0 beta2"
         buildConfigField("boolean", "SHELL_RUNTIME_ONLY", "false")
 
         vectorDrawables {
