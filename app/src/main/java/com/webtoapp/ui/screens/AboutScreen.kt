@@ -636,6 +636,7 @@ private fun GitHubRepoCard(onClick: () -> Unit) {
     }
 }
 
+@Composable
 private fun ContactTile(
     entry: ContactEntry,
     modifier: Modifier = Modifier,
