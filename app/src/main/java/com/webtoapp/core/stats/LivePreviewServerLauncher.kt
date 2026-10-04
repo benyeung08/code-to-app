@@ -78,7 +78,7 @@ object LivePreviewServerLauncher {
         return when (app.appType) {
             AppType.NODEJS_APP -> startNode(context, app)
             AppType.PYTHON_APP -> startPython(context, app)
-            AppType.GO_APP -> startGo(context, app)
+            AppType.GO_APP, AppType.CODETOAPP -> startGo(context, app)
             AppType.PHP_APP -> startPhp(context, app)
             AppType.WORDPRESS -> startWordPress(context, app)
             else -> null
