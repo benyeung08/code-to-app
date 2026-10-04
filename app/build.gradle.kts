@@ -64,7 +64,7 @@ android {
         // 升级自 code-to-app-v1.0.0-beta1-run129-debug.apk（versionCode 1）。
         // 包名不变（com.codetoapp.app），所以只要 versionCode 比 1 大，
         // 安装时就会被识别为「覆盖升级」，旧数据保留、不会变成第二个 app。
-        versionCode = 2
+        versionCode = 3
         // ⚠️ 必须是连字符 -beta2，不能写成空格 "1.0.0 beta2"：
         // 1) 带空格时 APK 文件名会出现空格（code-to-app-v1.0.0 beta2-run139-debug.apk）
         // 2) Version.parse() 会把 "1.0.0 beta2" 的 patch 段 "0 beta2" 解析失败归零，
