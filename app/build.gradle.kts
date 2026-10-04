@@ -53,12 +53,18 @@ android {
     compileSdk = 36
 
     defaultConfig {
-        applicationId = "com.webtoapp"
+        // ⚠️ 已由 com.webtoapp 改为 com.codetoapp.app
+        // namespace 保持 com.webtoapp 不变 —— 它决定 R / BuildConfig 的生成位置，
+        // 改它就要把 663 个 .kt 的 package 全部重写，没必要。
+        // Android 允许 applicationId 与 namespace 不同。
+        applicationId = "com.codetoapp.app"
         minSdk = 23
 
         targetSdk = 36
-        versionCode = 72
-        versionName = "2.7.0"
+        // versionCode 必须比同一 applicationId 的旧版大才能升级；
+        // 这里包名已换成 com.codetoapp.app（全新 app），所以从 1 重新开始。
+        versionCode = 1
+        versionName = "1.0.0-beta1"
         buildConfigField("boolean", "SHELL_RUNTIME_ONLY", "false")
 
         vectorDrawables {
