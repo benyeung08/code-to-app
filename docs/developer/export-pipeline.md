@@ -1,66 +1,76 @@
-# Export Pipeline
+---
+title: 导出流水线
+---
 
-The export pipeline turns a `WebApp` model into a signed APK. It lives in `app/src/main/java/com/webtoapp/core/apkbuilder/` (~24 files).
+# 导出流水线
 
-## Key classes
+导出是这个项目最复杂的部分：它要在 Android 应用内部，完成通常在 PC 上用 `aapt2` + `apksigner` 做的事。
 
-| File | Role |
+## 为什么不用远程构建
+
+CodeToApp **没有**远程构建队列。所有二进制改写、签名、对齐都在设备上完成，好处是：
+
+- 离线可用
+- 源码不离开设备
+- 没有队列等待
+
+代价是首次构建较慢（要初始化运行时与外壳模板）。
+
+## 关键组件
+
+| 组件 | 职责 |
 | --- | --- |
-| `ApkBuilder.kt` | Orchestrates APK assembly + signing. Contains `WebApp.toApkConfig(...)`. |
-| `ApkConfig.kt` | The master config schema: `data class ApkConfig(meta, activation, adBlock, webView, proxy, dns, nodejs, phpApp, pythonApp, goApp, multiWeb, ...)`. Everything an exported APK can encode. |
-| `ApkConfigJsonFactory.kt` | Serializes `ApkConfig` to the assets JSON the shell reads; includes `ApkConfigValidator`. |
-| `ApkTemplate.kt` / `ShellTemplateProvider.kt` | Locate and load the shell template APK. |
-| `ApkBuildCache.kt` | Incremental rebuild; defines `enum class IncrementalBuildMode` (`ModifyApkMode` only covers `FULL`/`CONTENT_OVERLAY`). |
-| `AxmlEditor` / `AxmlRebuilder` | Edit/rebuild the binary AndroidManifest (AXML). |
-| `ArscEditor` / `ArscRebuilder` | Edit/rebuild the binary resource table (resources.arsc). |
-| `JarSigner.kt` | Signs the APK with the `com.android.apksig` library directly (`ApkSigner`, V1/V2/V3 toggles). |
-| `ZipAligner` / `ZipUtils` | Zip alignment and low-level zip manipulation. |
-| `ElfAligner16k.kt` | 16KB-page ELF alignment for native `.so` files. |
-| `RuntimeAssetEmbedder.kt` | Injects runtime assets (Node/PHP/Python/Go) into the APK. |
-| `NetworkSecurityConfigBuilder.kt` | Generates the network security config XML. |
+| `ApkBuilder` | 总调度：配置 → 外壳 → 输出 |
+| `AxmlEditor` | 二进制 AXML 改写（包名、应用名） |
+| `AxmlRebuilder` | 重建 manifest，注入 intent-filter |
+| `ArscEditor` | 资源表改写 |
+| `ApkExportPreflight` | 导出前检查 |
+| `ExportRuntimeEnsure` | 确保运行时依赖就位 |
+| `ProjectDirCleaner` | 清理构建中间产物 |
+| apksig | V1/V2/V3 签名 |
 
-Related: `core/playstore/aab/` handles AAB/Play packaging; `core/crypto/` (`AssetEncryptor`, `EncryptedApkBuilder`, `KeyManager`) handles asset encryption.
+## 二进制 AXML 改写
 
-## The flow
+AndroidManifest 在 APK 里是**编译后的二进制格式**，不是 XML 文本。所以不能做字符串替换，必须：
 
-```text
-WebApp (editor model)
-  → WebApp.toApkConfig()          [ApkBuilder.kt]
-  → ApkConfig                     [typed schema, *Block sub-objects]
-  → ApkConfigJsonFactory          [serialize to app_config.json]
-  → embed into template assets
-  → patch AXML / ARSC (identity, permissions, icon)
-  → embed runtime assets (if a server runtime)
-  → sign (V1/V2/V3)
-  → output APK
-```
+1. 解析 binary AXML 的 chunk 结构
+2. 在字符串池里定位 `package` 属性
+3. 改写字符串并重建池
+4. 重新计算 chunk 偏移与长度
 
-## `ApkConfig` structure
+`AxmlEditor` 里的 `ORIGINAL_PACKAGE` 常量就是这一步要匹配的目标串。
 
-`ApkConfig` is composed of a `MetaBlock` plus dozens of feature blocks (`WebViewBlock`, `ProxyBlock`, `DnsBlock`, `NodejsBlock`, `PhpAppBlock`, `PythonAppBlock`, `GoAppBlock`, `MultiWebBlock`, `AdBlockBlock`, …). Convenience getters on `ApkConfig` flatten these (`appName`, `targetUrl`, `adBlockEnabled`, …).
+::: danger FAIL-LOUD 设计
+如果在 manifest 里找不到目标包名字符串，`AxmlEditor` 会**直接抛异常**，
+而不是静默产出一个坏包。这是刻意的：静默失败会产出一个看起来能装、但运行时崩溃的 APK。
+:::
 
-The JSON field names produced by `ApkConfigJsonFactory` **must match** the `@SerializedName` annotations in the shell config class — see [Config Field Drift](/developer/config-drift).
+## 权限裁剪
 
-## Incremental rebuild (`ApkBuildCache`)
+外壳模板为了通用性声明了较宽的权限集。导出时会按应用实际配置裁剪掉用不到的权限，
+降低杀软误报概率。
 
-Three modes (`enum class IncrementalBuildMode`):
+## 资源加密
 
-| Mode | Meaning |
-| --- | --- |
-| `FULL` | Rebuild from template. Always used for encrypted builds. |
-| `CONTENT_OVERLAY` | Only app content changed; overlay onto a prior build. |
-| `REUSE_UNSIGNED` | Re-sign a previously built unsigned APK. |
+可选的 AES-256-GCM 加密：把注入的 JS/CSS/HTML 资源加密后打包，运行时解密。
+用于保护你不希望被轻易提取的注入脚本。
 
-Rules:
+## 16 KB 页对齐
 
-- Cache keys are **content-stable hashes** — never mtime-based.
-- Template / entry identities must be content-stable.
-- Encrypted builds always force a full rebuild.
-- **Do not** feed signed or renamed APKs back into full `modifyApk` as templates.
+新版 Android 要求原生库按 16 KB 页对齐。导出流水线会自动处理 `.so` 的对齐，
+不满足时给出警告。
 
-## Native library embedding
+## 签名
 
-- **Node.js** export must embed `libnode_bridge.so` + `libnode.so` (16KB-aligned via `ElfAligner16k`) + `libc++_shared.so`.
-- **Go** export must embed `libgo_exec_loader.so`.
+用内置 apksig 完成：
 
-Missing any native lib causes `loadNode` / `loadJniBridge` failure at runtime.
+- **V1**（JAR 签名）—— 兼容老设备
+- **V2**（APK 签名方案 v2）—— Android 7+
+- **V3** —— Android 9+，支持密钥轮换
+
+## 调试技巧
+
+导出失败时，先看 `ApkExportPreflight` 的报错。它会明确指出缺什么，
+而不是笼统地说「导出失败」。
+
+常见的一类失败是外壳模板被改坏 —— 检查 `:shell` 模块的 `applicationId` 是否还是 `com.webtoapp`。

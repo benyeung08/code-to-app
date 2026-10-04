@@ -1,43 +1,68 @@
-# Developer Docs
+---
+title: 开发者概览
+---
 
-This section is for people working on WebToApp itself — contributors, deep customizers, and AI coding agents. It explains how the codebase is organized and how the two things that trip everyone up actually work: the **export pipeline** and **shell sync**.
+# 开发者文档
 
-::: tip Authoritative reference
-[`AGENTS.md`](https://github.com/shiaho777/web-to-app/blob/main/AGENTS.md) at the repo root is the authoritative guide for AI agents and deep contributors. These pages expand on it with more context.
+## 技术栈
+
+| 层 | 技术 |
+| --- | --- |
+| UI | Jetpack Compose（Material 3） |
+| 语言 | Kotlin 2.x |
+| 构建 | Gradle (Kotlin DSL) + KSP |
+| 数据库 | Room |
+| 原生 | CMake + NDK（C/C++） |
+| 序列化 | Gson + ProtoBuf |
+| 网络 | OkHttp / Chromium 网络栈 |
+| 文档站 | VitePress 1.6 + Vue 3 |
+
+## 模块结构
+
+```text
+:app            主应用（com.codetoapp.app）
+:shell          导出的 APK 外壳模板（com.webtoapp）
+:clone-host     克隆功能宿主
+:feature-stacks 功能模块（admob 等）
+:modules        插件模块
+```
+
+::: warning 外壳包名不要改
+`:shell` 的 `applicationId` 必须保持 `com.webtoapp`。
+`ApkBuilder` 靠这个字符串在 AXML 里做包名替换。
+改了它，导出 APK 时会直接 FAIL-LOUD 抛「Package name string not found in manifest」。
 :::
 
-## Repository layout
+## 本地构建
 
-| Path | Role |
+```bash
+./gradlew :app:assembleStandardDebug \
+  -PallowDebugSignedRelease=true \
+  -PskipShellTemplateSync=true \
+  -PskipStackBundlesSync=true
+```
+
+| 参数 | 作用 |
 | --- | --- |
-| `app/` | Full builder host: editor UI, export pipeline, runtimes, preview. The main application module. |
-| `shell/` | Runtime template. Built to `app/src/main/assets/template/webview_shell.apk` via `:shell:assembleRelease` + `:app:syncShellTemplateApk`. |
-| `clone-host/` | Host-side APK clone / identity reshape support library (compiled to a DEX asset). |
-| `modules/` | Module Market catalog (`registry.json` + per-module folders). |
-| `scripts/` | Build helpers and gates (`check_config_field_drift.py`). |
-| `docs/` | This documentation site. |
+| `-PallowDebugSignedRelease=true` | 允许用 debug 签名构建 release 变体（CI 必需） |
+| `-PskipShellTemplateSync=true` | 跳过外壳模板同步，加快构建 |
+| `-PskipStackBundlesSync=true` | 跳过运行时 bundle 同步 |
 
-Runtime Kotlin is authored under `app/` and synced into `shell/` by `syncShellRuntimeSources`. **Edit the `app/` source once; do not permanently fork copies under `shell/`.**
+## 测试
 
-## The three Gradle modules
+```bash
+./gradlew :app:testStandardDebugUnitTest
+```
 
-- **`:app`** — the builder. `applicationId = com.webtoapp`, `compileSdk = 36`, `minSdk = 23`, `targetSdk = 36`, `buildConfigField SHELL_RUNTIME_ONLY = false`.
-- **`:shell`** — the runtime template embedded into generated APKs. Same `compileSdk`/`minSdk`/version as `:app`, but `targetSdk = 28` (generated apps keep the low targetSdk for fork+exec runtimes) and `SHELL_RUNTIME_ONLY = true`. Its sources are synced from `app/`.
-- **`:clone-host`** — a minimal `com.android.library` (namespace `com.webtoapp.clone`) with no dependencies, compiled to a DEX asset for `AppCloner`.
+## 文档站本地预览
 
-## Package structure (`app/src/main/java/com/webtoapp`)
+```bash
+cd docs
+npm install
+npm run dev
+```
 
-- **`core/*`** — ~53 sub-packages of business/runtime logic: `apkbuilder`, `shell`, `webview`, `engine`, `extension`, `crypto`, `nodejs`, `php`, `python`, `golang`, `wordpress`, `linux`, `port`, `dns`, `network`, `adblock`, `agent`, and more.
-- **`data/*`** — persistence: Room DAOs, database, type converters, and the `WebApp` model + nested `*Config` classes.
-- **`ui/*`** — Jetpack Compose screens, components, design system, and the shell UI.
-- **`di/`** — Koin dependency injection.
-- **`util/`** — helpers and constants.
+## 下一步
 
-Native C++ lives under `app/src/main/cpp/` (crypto, integrity, anti-debug, `node_bridge`, `node_launcher`, `go_exec_loader`).
-
-## Where to read next
-
-- [Architecture](/developer/architecture) — the preview-vs-export mental model.
-- [Export Pipeline](/developer/export-pipeline) — how a `WebApp` becomes a signed APK.
-- [Shell Sync & Template](/developer/shell-sync) — how runtime code reaches generated apps.
-- [Config Field Drift](/developer/config-drift) — the most common silent failure.
+- [导出流水线](/developer/export-pipeline)
+- [架构](/developer/architecture)
