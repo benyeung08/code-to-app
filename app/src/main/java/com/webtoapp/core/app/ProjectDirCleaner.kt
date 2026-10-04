@@ -85,7 +85,7 @@ object ProjectDirCleaner {
                     deleteIfSandboxed(GoRuntime(appContext).getProjectDir(pid))
                 }
             }
-            AppType.FRONTEND -> {
+            AppType.FRONTEND, AppType.CODETOAPP -> {
                 // Frontend projects live under frontend_builds/<projectId>.
                 app.htmlConfig?.projectId?.takeIf { it.isNotBlank() }?.let { pid ->
                     deleteIfSandboxed(File(appContext.filesDir, "frontend_builds/$pid"))
