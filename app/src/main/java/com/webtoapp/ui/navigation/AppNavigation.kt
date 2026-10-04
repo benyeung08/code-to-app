@@ -195,7 +195,7 @@ fun AppNavigation() {
                                 com.webtoapp.data.model.AppType.VIDEO -> navController.navigate(Routes.editMediaApp(webApp.id))
                                 com.webtoapp.data.model.AppType.GALLERY -> navController.navigate(Routes.editGalleryApp(webApp.id))
                                 com.webtoapp.data.model.AppType.HTML -> navController.navigate(Routes.editHtmlApp(webApp.id))
-                                com.webtoapp.data.model.AppType.FRONTEND -> navController.navigate(Routes.editFrontendApp(webApp.id))
+                                com.webtoapp.data.model.AppType.FRONTEND, AppType.CODETOAPP -> navController.navigate(Routes.editFrontendApp(webApp.id))
                                 com.webtoapp.data.model.AppType.NODEJS_APP -> navController.navigate(Routes.editNodeJsApp(webApp.id))
                                 com.webtoapp.data.model.AppType.WORDPRESS -> {
                                     viewModel.editApp(webApp)
