@@ -448,7 +448,8 @@ class AppCloner(private val context: Context) {
                                     modifiedData = rewriteResult.axmlData
                                     originalLauncherActivity = rewriteResult.originalLauncherActivity
                                     AppLogger.d("AppCloner", "Original launcher activity: $originalLauncherActivity")
-                                } else if (originalPackageName == "com.webtoapp") {
+                                } else if (originalPackageName == "com.codetoapp.app") {
+                                    // 被克隆的就是宿主 app 自己 -> 走轻量字符串替换路径
                                     modifiedData = axmlEditor.modifyPackageName(originalData, newPackageName)
                                 } else {
                                     modifiedData = axmlRebuilder.expandAndModify(
