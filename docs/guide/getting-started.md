@@ -1,86 +1,67 @@
-# Getting Started
+---
+title: 快速上手
+---
 
-This walkthrough takes you from a fresh install to your first signed APK. At each step it notes what the app is actually doing under the hood, so the flow makes sense in terms of the code.
+# 快速上手
 
-## 1. Install and launch
+## 1. 安装
 
-Install the WebToApp builder on a device running **Android 6.0 (API 23) or newer**.
+下载最新 debug APK：
 
-<div class="wta-install">
-
-**Download the builder**
-
-<LatestRelease variant="install" />
-
-Get the APK from [GitHub Releases](https://github.com/shiaho777/web-to-app/releases) and install it like any other APK. The button auto-detects the newest version.
-
-</div>
-
-On launch, `WebToAppApplication` starts in **builder mode** (`SHELL_RUNTIME_ONLY = false`): it initializes the i18n strings, the Room database, and the dependency graph, then shows **My Apps** — the home screen that lists every app you create. See [Main Screen](/guide/main-screen/my-apps).
-
-## 2. Create an app definition
-
-At the bottom of **My Apps**, tap **Create**. A panel expands with a 3-column grid of the 12 [app types](/guide/app-types/):
-
-**Web · Multi-Web · HTML · Offline Pack · Frontend · PHP · WordPress · Node.js · Python · Go · Media · Gallery**
-
-Tap **Web** for your first app. The Web editor opens.
-
-## 3. Fill in the basics
-
-Fill in the top **Basic info** card:
-
-- **App name**
-- **Target URL** — e.g. `https://example.com`
-- **Icon** — optional; a type-specific default is used otherwise
-
-The rest of the editor is a long list of optional capability cards (fullscreen, splash, ad blocking, DNS, disguise, …). Ignore them for now — defaults are used. Each is covered under [App Configuration](/guide/config/).
-
-Tap **Save**. Under the hood, the editor assembles a `WebApp` object (with `appType = WEB` and a `webViewConfig`) and writes it to the `web_apps` Room table. Your app now appears in the list.
-
-## 4. Preview
-
-On **My Apps**, tap your app's card. The preview router checks the app's `appType` and launches the matching runtime:
-
-- `IMAGE` / `VIDEO` → the media player activity
-- `GALLERY` → the gallery player activity
-- everything else (including `WEB`) → the WebView activity
-
-For a Web app, the WebView activity loads your URL with your configured settings — the same code the exported app will run. (Tap the card's ⋮ button instead to open the [action menu](/guide/app-actions/edit-core-config).)
-
-::: warning Preview ≠ export
-Preview runs the **host** path (everything on the builder's classpath). Export runs the **shell** path, reading your config from an embedded JSON. A feature can work in preview yet vanish after export if a config field doesn't survive that trip. See [Config Field Drift](/developer/config-drift).
-:::
-
-## 5. Build the APK
-
-Tap ⋮ on your app's card, then **Build APK**. In the dialog you can:
-
-- pick the **browser engine** (System WebView or GeckoView),
-- optionally enable **resource encryption**, **isolation**, **background run**, and **notifications**,
-- force a **full rebuild** (otherwise an incremental mode is chosen automatically).
-
-Tap build. The `ApkBuilder` takes the shell template APK, patches its package name / icon / permissions, embeds your `WebApp` config as `app_config.json`, and signs the result (V1/V2/V3). See [Build APK](/guide/app-actions/build-apk).
-
-## 6. Install it
-
-Open **⋮ → [File Manager](/guide/more-features/file-manager)** from the top-right of My Apps. Your APK is there — install it or share it. When you launch it, that APK runs in **shell mode** (`SHELL_RUNTIME_ONLY = true`): `ShellModeManager` reads *your* embedded `app_config.json` and drives the runtime, fully independent of the builder.
-
-## Next steps
-
-- Tour the [Main Screen](/guide/main-screen/my-apps).
-- Learn what each [app type](/guide/app-types/) does.
-- Explore the per-app [App Actions](/guide/app-actions/edit-core-config).
-- Open the top-right **⋮** menu — see [More Features](/guide/more-features/agent).
-
-## Build from source
-
-Requirements: Android Studio Hedgehog or newer, JDK 17. The Gradle wrapper pins Gradle 9.4.1.
-
-```bash
-git clone https://github.com/shiaho777/web-to-app.git
-cd web-to-app
-./gradlew assembleDebug
+```
+https://github.com/benyeung08/code-to-app/raw/apk/builds/latest.apk
 ```
 
-For release builds, configure signing through `local.properties` and `app/build.gradle.kts`.
+::: warning 安装前注意
+本版本为 **debug 签名**，与旧版签名不一致，**无法直接覆盖安装**。
+如果你之前装过其他包名的版本，请先卸载再安装。
+:::
+
+安装后允许「来自此来源的应用」即可。
+
+## 2. 创建第一个应用
+
+1. 打开 CodeToApp，点首页右下角的 **+**
+2. 从网格里选一个类型（第一次建议选 **网页**）
+3. 填名称与 URL，例如 `https://example.com`
+4. 点 **保存**
+
+回到首页就会看到刚建的应用卡片，点开即可运行。
+
+## 3. 微调配置
+
+每个应用共用同一套配置卡片：
+
+- **基础** —— 名称、图标、URL
+- **浏览器与界面** —— 工具栏、全屏、横竖屏、常亮
+- **媒体与交互** —— 启动动画、背景音乐、公告、长按菜单
+- **扩展与网络** —— 插件模块、广告拦截、自定义 DNS
+- **伪装** —— 设备伪装、浏览器指纹
+- **启动与运行时** —— 自动启动、高级设置
+- **高级与导出** —— APK 导出配置
+
+## 4. 导出 APK
+
+在应用详情里选 **导出 APK**，选择签名方式后等待构建完成。产物在：
+
+```
+内部存储/Android/data/com.codetoapp.app/files/export/
+```
+
+::: tip 构建耗时
+首次构建要下载并初始化运行时，可能需要几分钟。后续构建会复用缓存，快很多。
+:::
+
+## 常见问题
+
+**为什么导出的 APK 装不上？**
+
+检查是否使用了 debug 签名但设备上已存在同包名的 release 版本。先卸载再装。
+
+**本地服务器起不来？**
+
+fork+exec 运行时需要 `targetSdk <= 28`。如果你改过导出配置把 targetSdk 调高了，把它降回来。
+
+**找不到运行时？**
+
+首次使用某个运行时（Node/Python/Go/PHP）时需要在应用内下载对应的二进制包，请确保网络可用。
