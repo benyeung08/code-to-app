@@ -52,7 +52,7 @@ fun WtaAppIcon(
                 AppType.VIDEO -> R.drawable.ic_type_media
                 AppType.HTML -> R.drawable.ic_type_html
                 AppType.GALLERY -> R.drawable.ic_type_gallery
-                AppType.FRONTEND -> R.drawable.ic_type_frontend
+                AppType.FRONTEND, AppType.CODETOAPP -> R.drawable.ic_type_frontend
                 AppType.WORDPRESS -> R.drawable.ic_type_wordpress
                 AppType.NODEJS_APP -> R.drawable.ic_type_nodejs
                 AppType.PHP_APP -> R.drawable.ic_type_php
