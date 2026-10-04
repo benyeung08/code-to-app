@@ -120,7 +120,7 @@ class CreateAppTool : Tool {
         val fileConfig = appType == AppType.GALLERY || appType == AppType.MULTI_WEB
         val kind = when (appType) {
             AppType.HTML -> DetectedArtifact.Kind.Html
-            AppType.FRONTEND -> DetectedArtifact.Kind.FrontendReact
+            AppType.FRONTEND, AppType.CODETOAPP -> DetectedArtifact.Kind.FrontendReact
             AppType.NODEJS_APP -> DetectedArtifact.Kind.NodeJs
             AppType.PHP_APP -> DetectedArtifact.Kind.Php
             AppType.PYTHON_APP -> DetectedArtifact.Kind.Python
@@ -130,7 +130,7 @@ class CreateAppTool : Tool {
             else -> return ToolResult.error("CreateApp: $appType cannot be created from a source dir.")
         }
         val entryFile = when (appType) {
-            AppType.HTML, AppType.FRONTEND -> "index.html"
+            AppType.HTML, AppType.FRONTEND, AppType.CODETOAPP -> "index.html"
             AppType.NODEJS_APP -> "index.js"
             AppType.PHP_APP -> "index.php"
             AppType.GALLERY -> "$sourceDir/gallery.json"
