@@ -1,364 +1,154 @@
-/**
- * WebToApp brand theme.
- * Accent is a confident blue that reads well in both light and dark mode.
- * deliberately flat: no hero glow, no gradient text — plain color only.
- * Buttons stay black in both themes: dark background, light text.
- */
 :root {
-  --vp-c-brand-1: #2563eb;
-  --vp-c-brand-2: #3b82f6;
-  --vp-c-brand-3: #60a5fa;
-  --vp-c-brand-soft: rgba(59, 130, 246, 0.14);
+  --vp-c-brand-1: #7c5cff;
+  --vp-c-brand-2: #9b7dff;
+  --vp-c-brand-3: #5b3df0;
+  --vp-c-brand-soft: rgba(124, 92, 255, 0.14);
 
-  --vp-home-hero-name-color: var(--vp-c-brand-1);
-  --vp-home-hero-image-background-image: none;
-  --vp-home-hero-image-filter: none;
+  --vp-home-hero-name-color: transparent;
+  --vp-home-hero-name-background: -webkit-linear-gradient(
+    120deg,
+    #ff5f6d,
+    #ffc371,
+    #4ade80,
+    #38bdf8,
+    #a78bfa,
+    #f472b6
+  );
+
+  --vp-home-hero-image-background-image: -webkit-linear-gradient(
+    -45deg,
+    #ff5f6d 10%,
+    #ffc371 30%,
+    #4ade80 50%,
+    #38bdf8 70%,
+    #a78bfa 90%
+  );
+  --vp-home-hero-image-filter: blur(40px);
 }
 
-.dark {
-  --vp-c-brand-1: #60a5fa;
-  --vp-c-brand-2: #3b82f6;
-  --vp-c-brand-3: #2563eb;
-  --vp-c-brand-soft: rgba(96, 165, 250, 0.16);
-
-  --vp-home-hero-name-color: var(--vp-c-brand-1);
-  --vp-home-hero-image-background-image: none;
-  --vp-home-hero-image-filter: none;
-}
-
-/* Buttons: black in light and dark mode instead of the blue accent. */
-:root,
-.dark {
-  --vp-button-brand-bg: #171717;
-  --vp-button-brand-hover-bg: #262626;
-  --vp-button-brand-active-bg: #262626;
-  --vp-button-brand-text: #ffffff;
-  --vp-button-brand-hover-text: #ffffff;
-  --vp-button-brand-active-text: #ffffff;
-
-  --vp-button-alt-bg: #2b2b2b;
-  --vp-button-alt-hover-bg: #383838;
-  --vp-button-alt-active-bg: #383838;
-  --vp-button-alt-text: #ffffff;
-  --vp-button-alt-hover-text: #ffffff;
-  --vp-button-alt-active-text: #ffffff;
-}
-
-/*
- * Homepage content below the features grid. The markdown lives inside
- * VPHomeContent's 1280px container; .wta-home narrows to 1152px so the
- * custom sections line up with the features grid above.
- */
-.wta-home {
-  max-width: 1152px;
-  margin: 0 auto;
-  padding: 8px 0 48px;
-}
-
-.wta-home h2 {
-  margin-top: 56px;
-  margin-bottom: 20px;
-  padding-top: 0;
-  border-top: none;
-  font-size: 28px;
-}
-
-/* Three-step getting started: numbered cards in a responsive row. */
-.wta-steps {
-  counter-reset: wta-step;
-}
-
-.wta-steps ol {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 16px;
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-
-@media (max-width: 959px) {
-  .wta-steps ol {
-    grid-template-columns: 1fr;
+@media (min-width: 640px) {
+  :root {
+    --vp-home-hero-image-filter: blur(56px);
   }
 }
 
-.wta-steps li {
-  counter-increment: wta-step;
-  position: relative;
-  padding: 20px 20px 16px 62px;
-  border: 1px solid var(--vp-c-divider);
-  border-radius: 12px;
-  background-color: var(--vp-c-bg-soft);
+/* 首页三段式流程 */
+.cta-steps {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 16px;
+  margin: 24px 0;
 }
 
-.wta-steps li::before {
-  content: counter(wta-step);
-  position: absolute;
-  left: 18px;
-  top: 20px;
-  display: flex;
+.cta-step {
+  position: relative;
+  padding: 20px 20px 18px;
+  border: 1px solid var(--vp-c-divider);
+  border-radius: 12px;
+  background: var(--vp-c-bg-soft);
+}
+
+.cta-step-num {
+  display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 28px;
-  height: 28px;
+  width: 26px;
+  height: 26px;
   border-radius: 50%;
-  background-color: #171717;
-  color: #ffffff;
-  font-size: 14px;
-  font-weight: 700;
-}
-
-.dark .wta-steps li::before {
-  background-color: #2e2e2e;
-}
-
-.wta-steps li p {
-  margin: 0 0 8px;
-}
-
-.wta-steps li p:last-child {
-  margin-bottom: 0;
-  color: var(--vp-c-text-2);
-  font-size: 14px;
-}
-
-.wta-steps li a {
-  font-weight: 500;
-  text-decoration: none;
-}
-
-/* Tile grids: app types and toolbox, mirroring the features card language. */
-.wta-types {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 16px;
-}
-
-@media (max-width: 959px) {
-  .wta-types {
-    grid-template-columns: repeat(2, 1fr);
-  }
-}
-
-@media (max-width: 639px) {
-  .wta-types {
-    grid-template-columns: 1fr;
-  }
-}
-
-.wta-types > div {
-  border: 1px solid var(--vp-c-divider);
-  border-radius: 12px;
-  background-color: var(--vp-c-bg-soft);
-  padding: 16px 20px;
-  transition: border-color 0.25s, background-color 0.25s;
-}
-
-.wta-types > div:hover {
-  border-color: var(--vp-c-text-1);
-}
-
-.wta-types p {
-  margin: 0;
-  padding: 4px 0;
-  line-height: 1.7;
-  font-size: 14px;
-  color: var(--vp-c-text-2);
-}
-
-.wta-types p > a {
-  color: var(--vp-c-text-1);
-  font-weight: 600;
-  text-decoration: none;
-  transition: color 0.25s;
-}
-
-.wta-types p > a:hover {
-  color: var(--vp-c-brand-1);
-}
-
-/* Stat strip: number + label pairs in a flat row. */
-.wta-stats {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 16px;
-}
-
-@media (max-width: 767px) {
-  .wta-stats {
-    grid-template-columns: repeat(2, 1fr);
-  }
-}
-
-.wta-stat {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  padding: 24px 12px;
-  border: 1px solid var(--vp-c-divider);
-  border-radius: 12px;
-  background-color: var(--vp-c-bg-soft);
-}
-
-.wta-stat b {
-  font-size: 32px;
-  font-weight: 700;
-  line-height: 1.2;
-  color: var(--vp-c-text-1);
-}
-
-.wta-stat span {
-  margin-top: 4px;
+  background: var(--vp-c-brand-1);
+  color: #fff;
   font-size: 13px;
+  font-weight: 700;
+  margin-bottom: 10px;
+}
+
+.cta-step h3 {
+  margin: 0 0 6px;
+  font-size: 16px;
+  line-height: 1.4;
+  border: none;
+  padding: 0;
+}
+
+.cta-step p {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.6;
   color: var(--vp-c-text-2);
 }
 
-/* Closing call-to-action. */
-.wta-cta {
-  margin-top: 56px;
+/* 应用类型网格 */
+.type-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 14px;
+  margin: 24px 0;
+}
+
+.type-card {
+  padding: 18px;
+  border: 1px solid var(--vp-c-divider);
+  border-radius: 12px;
+  background: var(--vp-c-bg-soft);
+  transition: border-color 0.2s, transform 0.2s;
+}
+
+.type-card:hover {
+  border-color: var(--vp-c-brand-1);
+  transform: translateY(-2px);
+}
+
+.type-card-brand {
+  border-color: var(--vp-c-brand-1);
+  background: var(--vp-c-brand-soft);
+}
+
+.type-icon {
+  display: block;
+  font-size: 22px;
+  margin-bottom: 8px;
+}
+
+.type-card strong {
+  display: block;
+  margin-bottom: 6px;
+  font-size: 14px;
+}
+
+.type-card p {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--vp-c-text-2);
+}
+
+/* 底部 CTA */
+.cta-final {
+  margin: 48px 0 8px;
   padding: 32px 24px;
   text-align: center;
   border: 1px solid var(--vp-c-divider);
-  border-radius: 12px;
-  background-color: var(--vp-c-bg-soft);
+  border-radius: 16px;
+  background: var(--vp-c-bg-soft);
 }
 
-.wta-cta p {
-  margin: 0 0 16px;
-  font-size: 18px;
-  font-weight: 600;
-  color: var(--vp-c-text-1);
+.cta-final h2 {
+  margin-top: 0;
+  border: none;
+  padding: 0;
 }
 
-.wta-cta a {
+.cta-button {
   display: inline-block;
-  padding: 6px 20px;
-  border-radius: 20px;
-  background-color: #171717;
-  color: #ffffff !important;
-  font-size: 14px;
+  padding: 10px 22px;
+  border-radius: 8px;
+  background: var(--vp-c-brand-1);
+  color: #fff;
   font-weight: 600;
   text-decoration: none;
-  transition: background-color 0.25s;
 }
 
-.wta-cta a:hover {
-  background-color: #262626;
-}
-
-.dark .wta-cta a {
-  background-color: #2e2e2e;
-}
-
-.dark .wta-cta a:hover {
-  background-color: #3a3a3a;
-}
-
-/* Feature cards: calmer hover that matches the flat look. */
-.VPFeature.link:hover {
-  border-color: var(--vp-c-text-1);
-}
-
-/*
- * Hero download button, rendered through the home-hero-actions-after slot.
- * Shares the black-pill grammar of the brand buttons above.
- */
-.wta-release {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: center;
-  gap: 8px 12px;
-  margin-top: 20px;
-}
-
-/*
- * On homepages the LatestRelease slot follows the hero actions container in
- * the same inline formatting context. Because the shrink-to-fit .main column
- * is narrower than buttons + pill together, the pill usually wraps to its
- * own row right below the actions (it stays inline when they do fit);
- * margin-top minus .actions' -6px bottom margin leaves a small gutter there.
- * The pill must be inline-flex, not inline: an inline box's line box is
- * sized by font metrics, so the 40px button bleeds above it into the actions
- * row — that was the overlap bug. Baseline alignment keeps the pill's text
- * on the buttons' text baseline when they share a row. Row alignment
- * (centered below 960px, left above) follows .container's text-align,
- * matching how VitePress aligns the actions row itself.
- */
-.VPHero .actions {
-  display: inline-flex;
-}
-
-.VPHero .wta-release {
-  display: inline-flex;
-  vertical-align: baseline;
-  margin-top: 12px;
-}
-
-.wta-release-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  padding: 0 20px;
-  line-height: 38px;
-  border: 1px solid transparent;
-  border-radius: 20px;
-  background-color: #171717;
-  color: #ffffff;
-  font-size: 14px;
-  font-weight: 600;
-  white-space: nowrap;
-  text-decoration: none;
-  transition: background-color 0.25s;
-}
-
-.wta-release-btn:hover {
-  background-color: #262626;
-}
-
-.dark .wta-release-btn {
-  background-color: #2e2e2e;
-}
-
-.dark .wta-release-btn:hover {
-  background-color: #3a3a3a;
-}
-
-.wta-release-btn svg {
-  width: 16px;
-  height: 16px;
-  flex-shrink: 0;
-}
-
-.wta-release-meta {
-  font-size: 12px;
-  color: var(--vp-c-text-3);
-}
-
-/* Install-download block for guide pages. */
-.wta-install {
-  margin: 16px 0;
-  padding: 20px 24px;
-  border: 1px solid var(--vp-c-divider);
-  border-radius: 12px;
-  background-color: var(--vp-c-bg-soft);
-}
-
-.wta-install p {
-  margin: 0 0 12px;
-  font-weight: 600;
-  color: var(--vp-c-text-1);
-}
-
-.wta-install p:last-child {
-  margin-bottom: 0;
-  font-weight: 400;
-  font-size: 14px;
-  color: var(--vp-c-text-2);
-}
-
-.wta-install .wta-release {
-  justify-content: flex-start;
-  margin-top: 4px;
+.cta-button:hover {
+  background: var(--vp-c-brand-2);
+  color: #fff;
 }
