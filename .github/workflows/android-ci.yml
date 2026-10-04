@@ -113,8 +113,10 @@ jobs:
           echo "--- 摘要已写入 Job Summary ---"
 
       # 把完整日志推到 ci-logs 分支，外部可以直接读取（不受 GitHub 登录/截断限制）
+      # 日志推送只是诊断用途，失败不应该让整个 job 标红。
       - name: Push logs to ci-logs branch
         if: always()
+        continue-on-error: true
         run: |
           git config user.name "ci-bot"
           git config user.email "ci-bot@users.noreply.github.com"
@@ -190,18 +192,22 @@ jobs:
           echo "APK_NAME=$OUT" >> "$GITHUB_ENV"
           ls -lh apk-out
 
-      - name: Push assemble log to ci-logs
+      # ⚠️ 改推到独立分支 ci-logs-build：
+      # check 与 build-apk 两个 job 并行跑，同时 push 同一个 ci-logs 分支会撞锁
+      # (remote: cannot lock ref 'refs/heads/ci-logs')。分支分开就互不干扰。
+      - name: Push assemble log to ci-logs-build branch
         if: always()
+        continue-on-error: true
         run: |
           git config user.name "ci-bot"
           git config user.email "ci-bot@users.noreply.github.com"
-          git fetch origin ci-logs || true
-          git checkout -B ci-logs origin/ci-logs 2>/dev/null || git checkout --orphan ci-logs
+          git fetch origin ci-logs-build || true
+          git checkout -B ci-logs-build origin/ci-logs-build 2>/dev/null || git checkout --orphan ci-logs-build
           mkdir -p logs
           cp assemble.log logs/assemble.log 2>/dev/null || true
           git add logs/assemble.log
           git commit -m "assemble log run ${{ github.run_number }} (${{ github.sha }})" || echo "no change"
-          git push -f origin ci-logs
+          git push -f origin ci-logs-build
 
       # Artifact 需要登录才能下载，所以额外推到 apk 分支 —— GitHub 网页上
       # 切到 apk 分支即可直接点开下载，不用登录。
