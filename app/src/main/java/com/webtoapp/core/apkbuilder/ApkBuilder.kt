@@ -4208,7 +4208,7 @@ private fun WebApp.computeEffectiveTargetUrl(packageName: String): String = when
             "nodejs://localhost"
         else -> "file:///android_asset/nodejs_app/index.html"
     }
-    com.webtoapp.data.model.AppType.FRONTEND -> {
+    com.webtoapp.data.model.AppType.FRONTEND, AppType.CODETOAPP -> {
         val entryFile = htmlConfig?.getValidEntryFile() ?: "index.html"
         buildPackagedHtmlShellEntryUrl(packageName, entryFile)
     }
@@ -5105,7 +5105,7 @@ internal fun buildSiteShellConfig(    sourceWebApp: WebApp,
     val json = ApkConfigJsonFactory.toShellConfigJson(apkConfig)
     val shell = com.webtoapp.util.GsonProvider.gson.fromJson(json, com.webtoapp.core.shell.ShellConfig::class.java)
     val assetBase = when (sourceWebApp.appType) {
-        com.webtoapp.data.model.AppType.HTML, com.webtoapp.data.model.AppType.FRONTEND -> "html"
+        com.webtoapp.data.model.AppType.HTML, com.webtoapp.data.model.AppType.FRONTEND, AppType.CODETOAPP -> "html"
         com.webtoapp.data.model.AppType.NODEJS_APP -> "nodejs_app"
         com.webtoapp.data.model.AppType.PHP_APP -> "php_app"
         com.webtoapp.data.model.AppType.PYTHON_APP -> "python_app"

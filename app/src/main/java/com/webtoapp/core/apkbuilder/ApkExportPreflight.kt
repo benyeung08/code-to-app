@@ -65,7 +65,7 @@ object ApkExportPreflight {
                 else -> null
             },
             htmlFiles = when (appType) {
-                AppType.HTML, AppType.FRONTEND -> htmlConfig?.files.orEmpty()
+                AppType.HTML, AppType.FRONTEND, AppType.CODETOAPP -> htmlConfig?.files.orEmpty()
                 else -> emptyList()
             },
             galleryItems = if (appType == AppType.GALLERY) galleryConfig?.items.orEmpty() else emptyList(),
