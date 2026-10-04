@@ -882,7 +882,7 @@ fun BasicInfoCard(
                             )
                         )
                     }
-                    AppType.HTML, AppType.FRONTEND -> {
+                    AppType.HTML, AppType.FRONTEND, AppType.CODETOAPP -> {
 
                         val htmlConfig = editState.htmlConfig
                         val fileCount = htmlConfig?.files?.size ?: 0

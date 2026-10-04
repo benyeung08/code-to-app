@@ -31,7 +31,7 @@ internal fun resolveAppPreviewSpec(context: Context, app: WebApp): AppPreviewSpe
             AppPreviewSpec(previewFilePath = previewFile?.absolutePath)
         }
         AppType.HTML,
-        AppType.FRONTEND -> resolveHtmlPreviewSpec(context, app)
+        AppType.FRONTEND, AppType.CODETOAPP -> resolveHtmlPreviewSpec(context, app)
         AppType.WORDPRESS -> resolveWordPressPreviewSpec(context, app)
         AppType.NODEJS_APP -> resolveNodePreviewSpec(context, app)
         AppType.PHP_APP -> resolvePhpPreviewSpec(context, app)

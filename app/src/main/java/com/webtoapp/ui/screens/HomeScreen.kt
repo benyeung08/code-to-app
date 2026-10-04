@@ -114,6 +114,7 @@ fun HomeScreen(
     onCreatePhpApp: () -> Unit = {},
     onCreatePythonApp: () -> Unit = {},
     onCreateGoApp: () -> Unit = {},
+    onCreateCodeToApp: () -> Unit = {},
     onCreateMultiWebApp: () -> Unit = {},
     onCreateOfflinePack: () -> Unit = {},
     onEditApp: (WebApp) -> Unit,
@@ -194,6 +195,7 @@ fun HomeScreen(
         CreateActionItem(Strings.appTypeNodeJs, R.drawable.ic_type_nodejs, onCreateNodeJsApp),
         CreateActionItem(Strings.appTypePython, R.drawable.ic_type_python, onCreatePythonApp),
         CreateActionItem(Strings.appTypeGo, R.drawable.ic_type_go, onCreateGoApp),
+        CreateActionItem(Strings.appTypeCodeToApp, R.drawable.ic_type_codetoapp, onCreateCodeToApp),
         CreateActionItem(Strings.createMediaApp, R.drawable.ic_type_media, onCreateMediaApp),
         CreateActionItem(Strings.appTypeGallery, R.drawable.ic_type_gallery, onCreateGalleryApp)
     )
@@ -1127,7 +1129,7 @@ fun AppCard(
         com.webtoapp.data.model.AppType.IMAGE -> app.url.ifBlank { Strings.appTypeImage }
         com.webtoapp.data.model.AppType.VIDEO -> app.url.ifBlank { Strings.appTypeVideo }
         com.webtoapp.data.model.AppType.HTML,
-        com.webtoapp.data.model.AppType.FRONTEND -> app.url.ifBlank { Strings.appTypeHtml }
+        com.webtoapp.data.model.AppType.FRONTEND, AppType.CODETOAPP -> app.url.ifBlank { Strings.appTypeHtml }
         com.webtoapp.data.model.AppType.GALLERY -> app.url.ifBlank { Strings.appTypeGallery }
         else -> app.url
     }
@@ -1167,7 +1169,7 @@ fun AppCard(
                             com.webtoapp.data.model.AppType.VIDEO -> R.drawable.ic_type_media
                             com.webtoapp.data.model.AppType.HTML -> R.drawable.ic_type_html
                             com.webtoapp.data.model.AppType.GALLERY -> R.drawable.ic_type_gallery
-                            com.webtoapp.data.model.AppType.FRONTEND -> R.drawable.ic_type_frontend
+                            com.webtoapp.data.model.AppType.FRONTEND, AppType.CODETOAPP -> R.drawable.ic_type_frontend
                             com.webtoapp.data.model.AppType.WORDPRESS -> R.drawable.ic_type_wordpress
                             com.webtoapp.data.model.AppType.NODEJS_APP -> R.drawable.ic_type_nodejs
                             com.webtoapp.data.model.AppType.PHP_APP -> R.drawable.ic_type_php
@@ -1296,7 +1298,7 @@ fun AppCard(
                                 com.webtoapp.data.model.AppType.VIDEO -> R.drawable.ic_type_media
                                 com.webtoapp.data.model.AppType.HTML -> R.drawable.ic_type_html
                                 com.webtoapp.data.model.AppType.GALLERY -> R.drawable.ic_type_gallery
-                                com.webtoapp.data.model.AppType.FRONTEND -> R.drawable.ic_type_frontend
+                                com.webtoapp.data.model.AppType.FRONTEND, AppType.CODETOAPP -> R.drawable.ic_type_frontend
                                 com.webtoapp.data.model.AppType.WORDPRESS -> R.drawable.ic_type_wordpress
                                 com.webtoapp.data.model.AppType.NODEJS_APP -> R.drawable.ic_type_nodejs
                                 com.webtoapp.data.model.AppType.PHP_APP -> R.drawable.ic_type_php
@@ -1453,7 +1455,7 @@ fun AppTypeChip(appType: com.webtoapp.data.model.AppType) {
             Icons.Outlined.PhotoLibrary,
             Strings.appTypeGallery
         )
-        com.webtoapp.data.model.AppType.FRONTEND -> Pair(
+        com.webtoapp.data.model.AppType.FRONTEND, AppType.CODETOAPP -> Pair(
             Icons.Outlined.Rocket,
             Strings.appTypeFrontend
         )
@@ -1590,4 +1592,3 @@ private fun CreateActionTile(
         )
     }
 }
-
