@@ -114,24 +114,6 @@ jobs:
 
       # 把完整日志推到 ci-logs 分支，外部可以直接读取（不受 GitHub 登录/截断限制）
       # 日志推送只是诊断用途，失败不应该让整个 job 标红。
-      - name: Push logs to ci-logs branch
-        if: always()
-        continue-on-error: true
-        run: |
-          git config user.name "ci-bot"
-          git config user.email "ci-bot@users.noreply.github.com"
-          git checkout --orphan ci-logs
-          git rm -rf --cached . >/dev/null 2>&1 || true
-          rm -rf .github app shell clone-host feature-stacks modules docs examples scripts sample-bundles gradle 2>/dev/null || true
-          mkdir -p logs
-          for f in compile-app.log compile-shell.log unit-test.log; do
-            [ -f "$f" ] && cp "$f" "logs/$f" || true
-          done
-          cp /tmp/summary.md logs/summary.md 2>/dev/null || true
-          git add logs
-          git commit -m "CI logs run ${{ github.run_number }} (${{ github.sha }})" || echo "nothing to commit"
-          git push -f origin ci-logs
-
   build-apk:
     # 与 check 并行：每次 push 都产出一个可安装的 debug APK
     runs-on: ubuntu-latest
@@ -195,37 +177,30 @@ jobs:
       # ⚠️ 改推到独立分支 ci-logs-build：
       # check 与 build-apk 两个 job 并行跑，同时 push 同一个 ci-logs 分支会撞锁
       # (remote: cannot lock ref 'refs/heads/ci-logs')。分支分开就互不干扰。
-      - name: Push assemble log to ci-logs-build branch
-        if: always()
-        continue-on-error: true
-        run: |
-          git config user.name "ci-bot"
-          git config user.email "ci-bot@users.noreply.github.com"
-          git fetch origin ci-logs-build || true
-          git checkout -B ci-logs-build origin/ci-logs-build 2>/dev/null || git checkout --orphan ci-logs-build
-          mkdir -p logs
-          cp assemble.log logs/assemble.log 2>/dev/null || true
-          git add logs/assemble.log
-          git commit -m "assemble log run ${{ github.run_number }} (${{ github.sha }})" || echo "no change"
-          git push -f origin ci-logs-build
-
-      # Artifact 需要登录才能下载，所以额外推到 apk 分支 —— GitHub 网页上
-      # 切到 apk 分支即可直接点开下载，不用登录。
       - name: Push APK to apk branch
         if: success()
+        continue-on-error: true
         run: |
+          set -x
           git config user.name "ci-bot"
           git config user.email "ci-bot@users.noreply.github.com"
+          # apk 分支已经被塞进整个仓库（1900+ 文件），先彻底清空重建，
+          # 只留 builds/ 一个目录，分支体积从几百 MB 降到几十 MB。
           git fetch origin apk || true
           git checkout -B apk origin/apk 2>/dev/null || git checkout --orphan apk
+          git rm -rq --cached . 2>/dev/null || true
+          find . -maxdepth 1 -mindepth 1 -not -name .git -not -name builds -exec rm -rf {} + 2>/dev/null || true
           mkdir -p builds
+          # APK_NAME 可能含空格（versionName 写成 "1.0.0 beta2" 时），必须加引号
           cp "apk-out/$APK_NAME" builds/ 2>/dev/null || true
-          cp "apk-out/latest.apk" builds/latest.apk 2>/dev/null || true
-          # 只保留最近 8 个 build，避免仓库越滚越大
-          ls -1t builds/*.apk | tail -n +9 | xargs -r rm -f
+          cp apk-out/latest.apk builds/latest.apk 2>/dev/null || true
+          # 只保留最近 8 个 build
+          ls -1t builds/*.apk 2>/dev/null | tail -n +9 | while read f; do rm -f "$f"; done
+          ls -lh builds
           git add -f builds
-          git commit -m "APK: $APK_NAME (${{ github.sha }})" || echo "no apk"
-          git push origin apk
+          git commit -m "APK run ${{ github.run_number }} (${{ github.sha }})" || echo "nothing to commit"
+          # 用 -f：分支刚被彻底重写过，普通 push 一定是非快进，会被拒绝
+          git push -f origin apk
 
 
       # 只在真的产出 APK 时才上传：if-no-files-found 改成 warn，
