@@ -1,0 +1,2503 @@
+package com.webtoapp.ui.screens
+
+import android.net.Uri
+import android.widget.Toast
+import com.webtoapp.ui.design.WtaSwitch
+import com.webtoapp.ui.components.PremiumOutlinedButton
+import android.provider.DocumentsContract
+import com.webtoapp.core.logging.AppLogger
+import android.provider.OpenableColumns
+import androidx.activity.compose.BackHandler
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.outlined.InsertDriveFile
+import androidx.compose.material.icons.automirrored.outlined.List
+import androidx.compose.material.icons.filled.*
+import androidx.compose.material.icons.outlined.*
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
+import com.webtoapp.core.i18n.Strings
+import com.webtoapp.core.linux.HtmlProjectOptimizer
+import com.webtoapp.core.linux.NativeNodeEngine
+import com.webtoapp.data.model.HtmlConfig
+import com.webtoapp.data.model.HtmlFile
+import com.webtoapp.data.model.HtmlFileType
+import com.webtoapp.data.model.HtmlLoadMode
+import com.webtoapp.ui.components.*
+import com.webtoapp.ui.design.WtaStatusBanner
+import com.webtoapp.ui.design.WtaStatusTone
+import com.webtoapp.ui.screens.create.WtaCreateFlowScaffold
+import com.webtoapp.ui.screens.create.WtaCreateFlowSection
+import com.webtoapp.util.HtmlProjectProcessor
+import com.webtoapp.util.ZipProjectImporter
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import java.io.File
+import androidx.compose.ui.graphics.Color
+import com.webtoapp.ui.components.EnhancedElevatedCard
+import com.webtoapp.ui.animation.CardExpandTransition
+import com.webtoapp.ui.animation.CardCollapseTransition
+import com.webtoapp.data.model.PortConflictMode
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.ui.text.input.KeyboardType
+import com.webtoapp.ui.design.WtaSettingCard
+import com.webtoapp.ui.design.WtaToggleRow
+import com.webtoapp.ui.design.WtaSectionDivider
+import com.webtoapp.ui.design.WtaSpacing
+
+private data class HtmlEditorStateSnapshot(
+    val appName: String = "",
+    val manualFiles: List<HtmlFile> = emptyList(),
+    val appIcon: Uri? = null,
+    val enableJavaScript: Boolean = true,
+    val enableLocalStorage: Boolean = true,
+    val loadMode: HtmlLoadMode = HtmlLoadMode.FILE
+)
+
+private fun HtmlProjectProcessor.ProjectIssue.isActionableAnalysisIssue(): Boolean {
+    return severity == HtmlProjectProcessor.IssueSeverity.ERROR ||
+        severity == HtmlProjectProcessor.IssueSeverity.WARNING
+}
+
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
+@Composable
+fun CreateHtmlAppScreen(
+    existingAppId: Long? = null,
+    onBack: () -> Unit,
+    onCreated: (
+        name: String,
+        htmlConfig: HtmlConfig?,
+        iconUri: Uri?,
+        themeType: String
+    ) -> Unit,
+    onZipCreated: (
+        name: String,
+        extractedDir: String,
+        entryFile: String,
+        iconUri: Uri?,
+        enableJavaScript: Boolean,
+        enableLocalStorage: Boolean,
+        loadMode: HtmlLoadMode,
+        port: Int,
+        portConflictMode: PortConflictMode
+    ) -> Unit = { _, _, _, _, _, _, _, _, _ -> },
+    importDir: String? = null,
+    importProjectName: String? = null
+) {
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+    val isEditMode = existingAppId != null
+
+    var selectedTabIndex by remember { mutableIntStateOf(0) }
+
+    var existingApp by remember { mutableStateOf<com.webtoapp.data.model.WebApp?>(null) }
+    LaunchedEffect(existingAppId) {
+        if (existingAppId != null) {
+            existingApp = org.koin.java.KoinJavaComponent.get<com.webtoapp.data.repository.WebAppRepository>(com.webtoapp.data.repository.WebAppRepository::class.java)
+                .getWebAppById(existingAppId)
+                .first()
+        }
+    }
+    var appName by remember { mutableStateOf(importProjectName ?: "") }
+    var appIcon by remember { mutableStateOf<Uri?>(null) }
+    var appIconPath by remember { mutableStateOf<String?>(null) }
+
+    var zipAnalysis by remember { mutableStateOf<ZipProjectImporter.ZipProjectAnalysis?>(null) }
+    var zipImporting by remember { mutableStateOf(false) }
+    var zipError by remember { mutableStateOf<String?>(null) }
+    var zipEntryFile by remember { mutableStateOf("") }
+    var showEntryFileDialog by remember { mutableStateOf(false) }
+    var showFileListDialog by remember { mutableStateOf(false) }
+
+    var folderAnalysis by remember { mutableStateOf<ZipProjectImporter.ZipProjectAnalysis?>(null) }
+    var folderImporting by remember { mutableStateOf(false) }
+    var folderError by remember { mutableStateOf<String?>(null) }
+    var folderEntryFile by remember { mutableStateOf("") }
+    var showFolderEntryFileDialog by remember { mutableStateOf(false) }
+    var showFolderFileListDialog by remember { mutableStateOf(false) }
+
+    var manualFiles by remember { mutableStateOf<List<HtmlFile>>(emptyList()) }
+
+    var enableJavaScript by remember { mutableStateOf(true) }
+    var enableLocalStorage by remember { mutableStateOf(true) }
+    var loadMode by remember { mutableStateOf(HtmlLoadMode.FILE) }
+    var serverPort by remember { mutableStateOf(0) }
+    var portConflictMode by remember { mutableStateOf(PortConflictMode.AUTO_KILL) }
+
+    var themeType by remember { mutableStateOf("AURORA") }
+
+    var enableOptimize by remember { mutableStateOf(false) }
+    var isOptimizing by remember { mutableStateOf(false) }
+    var optimizeResult by remember { mutableStateOf<HtmlProjectOptimizer.OptimizeResult?>(null) }
+    val esbuildAvailable = remember { NativeNodeEngine.isAvailable(context) }
+
+    LaunchedEffect(existingApp) {
+        existingApp?.let { app ->
+
+            appName = app.name
+            appIconPath = app.iconPath
+
+            app.htmlConfig?.let { config ->
+
+                val restoredFiles = config.files.filter { java.io.File(it.path).exists() }.toMutableList()
+
+                if (config.projectId.isNotBlank()) {
+                    val projectDir = java.io.File(context.filesDir, "html_projects/${config.projectId}")
+                    if (projectDir.exists()) {
+                        val restoredNames = restoredFiles.map { it.name }.toSet()
+                        projectDir.listFiles()?.forEach { file ->
+                            if (file.isFile && file.name !in restoredNames) {
+                                val type = getFileType(file.name)
+                                restoredFiles.add(HtmlFile(
+                                    name = file.name,
+                                    path = file.absolutePath,
+                                    type = type
+                                ))
+                            }
+                        }
+                    }
+                }
+                manualFiles = restoredFiles
+
+                enableJavaScript = config.enableJavaScript
+                enableLocalStorage = config.enableLocalStorage
+                loadMode = config.loadMode
+                serverPort = config.port
+                portConflictMode = config.portConflictMode
+            }
+
+            themeType = app.themeType
+        }
+    }
+
+    LaunchedEffect(importDir) {
+        if (importDir != null) {
+            val dir = java.io.File(importDir)
+            if (dir.exists() && dir.isDirectory) {
+                val importedFiles = dir.listFiles()?.mapNotNull { file ->
+                    if (file.isFile) {
+                        HtmlFile(
+                            name = file.name,
+                            path = file.absolutePath,
+                            type = getFileType(file.name)
+                        )
+                    } else null
+                } ?: emptyList()
+                manualFiles = importedFiles
+
+                if (appName.isBlank()) {
+                    appName = importProjectName ?: importedFiles.firstOrNull {
+                        it.type == HtmlFileType.HTML
+                    }?.name?.substringBeforeLast(".") ?: ""
+                }
+            }
+        }
+    }
+
+    var projectAnalysis by remember { mutableStateOf<HtmlProjectProcessor.ProjectAnalysis?>(null) }
+    var showAnalysisDialog by remember { mutableStateOf(false) }
+
+    LaunchedEffect(manualFiles) {
+        val htmlFile = manualFiles.firstOrNull { it.type == HtmlFileType.HTML || it.name.endsWith(".html", ignoreCase = true) || it.name.endsWith(".htm", ignoreCase = true) }
+        if (htmlFile != null) {
+            projectAnalysis = withContext(Dispatchers.IO) {
+                HtmlProjectProcessor.analyzeProject(
+                    htmlFilePath = htmlFile.path,
+                    cssFilePath = manualFiles.firstOrNull { it.type == HtmlFileType.CSS }?.path,
+                    jsFilePath = manualFiles.firstOrNull { it.type == HtmlFileType.JS }?.path
+                )
+            }
+        } else {
+            projectAnalysis = null
+        }
+    }
+
+    val canCreate = when (selectedTabIndex) {
+        0 -> manualFiles.any { it.type == HtmlFileType.HTML || it.name.endsWith(".html", ignoreCase = true) || it.name.endsWith(".htm", ignoreCase = true) }
+        1 -> zipAnalysis != null && zipAnalysis!!.htmlFiles.isNotEmpty()
+        2 -> folderAnalysis != null && folderAnalysis!!.htmlFiles.isNotEmpty()
+        else -> false
+    }
+
+    val hasIssues = projectAnalysis?.issues?.any { it.isActionableAnalysisIssue() } == true
+
+    val zipPickerLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.GetContent()
+    ) { uri ->
+        uri?.let { zipUri ->
+            zipImporting = true
+            zipError = null
+            zipAnalysis = null
+            scope.launch {
+                try {
+                    val analysis = withContext(Dispatchers.IO) {
+                        ZipProjectImporter.importZip(context, zipUri)
+                    }
+                    zipAnalysis = analysis
+                    zipEntryFile = analysis.entryFile
+                    if (appName.isBlank()) {
+                        appName = analysis.suggestedAppName
+                    }
+                    if (analysis.htmlFiles.isEmpty()) {
+                        zipError = Strings.zipNoHtmlWarning
+                    }
+                } catch (e: ZipProjectImporter.ZipImportException) {
+                    zipError = e.message
+                } catch (e: Exception) {
+                    zipError = e.message ?: "Unknown error"
+                } finally {
+                    zipImporting = false
+                }
+            }
+        }
+    }
+
+    val folderPickerLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.OpenDocumentTree()
+    ) { uri ->
+        uri?.let { treeUri ->
+            folderImporting = true
+            folderError = null
+            folderAnalysis = null
+            scope.launch {
+                try {
+                    val analysis = withContext(Dispatchers.IO) {
+                        importFolderFromSaf(context, treeUri)
+                    }
+                    folderAnalysis = analysis
+                    folderEntryFile = analysis.entryFile
+                    if (appName.isBlank()) {
+                        appName = analysis.suggestedAppName
+                    }
+                    if (analysis.htmlFiles.isEmpty()) {
+                        folderError = Strings.folderNoHtmlWarning
+                    }
+                } catch (e: Exception) {
+                    folderError = e.message ?: "Unknown error"
+                } finally {
+                    folderImporting = false
+                }
+            }
+        }
+    }
+
+    val filePickerLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.GetContent()
+    ) { uri ->
+        uri?.let {
+            val fileName = getFileName(context, it)
+            val tempFile = copyUriToTempFile(context, it, fileName)
+            if (tempFile != null && fileName != null) {
+                val fileType = getFileType(fileName)
+                val newFile = HtmlFile(
+                    name = fileName,
+                    path = tempFile.absolutePath,
+                    type = fileType
+                )
+                manualFiles = manualFiles + newFile
+
+                if (appName.isBlank() && (fileType == HtmlFileType.HTML || fileType == HtmlFileType.OTHER && fileName.endsWith(".html", ignoreCase = true))) {
+                    appName = fileName.substringBeforeLast(".")
+                }
+            }
+        }
+    }
+
+    val entryFile = manualFiles.firstOrNull {
+        it.type == HtmlFileType.HTML || it.name.endsWith(".html", ignoreCase = true) || it.name.endsWith(".htm", ignoreCase = true)
+    }?.name?.takeIf { it.isNotBlank() && it.substringBeforeLast(".").isNotBlank() } ?: "index.html"
+
+    val iconPickerLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.GetContent()
+    ) { uri -> uri?.let { appIcon = it } }
+
+    var baselineSnapshot by remember { mutableStateOf(HtmlEditorStateSnapshot(appName = importProjectName ?: "")) }
+
+    LaunchedEffect(existingApp) {
+        existingApp?.let {
+
+            kotlinx.coroutines.delay(100)
+            baselineSnapshot = HtmlEditorStateSnapshot(
+                appName = appName,
+                manualFiles = manualFiles,
+                appIcon = appIcon,
+                enableJavaScript = enableJavaScript,
+                enableLocalStorage = enableLocalStorage,
+                loadMode = loadMode
+            )
+        }
+    }
+
+    LaunchedEffect(importDir) {
+        if (importDir != null) {
+            kotlinx.coroutines.delay(100)
+            baselineSnapshot = HtmlEditorStateSnapshot(
+                appName = appName,
+                manualFiles = manualFiles,
+                appIcon = appIcon,
+                enableJavaScript = enableJavaScript,
+                enableLocalStorage = enableLocalStorage,
+                loadMode = loadMode
+            )
+        }
+    }
+
+    val hasUnsavedChanges = remember(appName, manualFiles, appIcon, enableJavaScript, enableLocalStorage, loadMode, serverPort, portConflictMode, baselineSnapshot) {
+        appName != baselineSnapshot.appName ||
+        manualFiles != baselineSnapshot.manualFiles ||
+        appIcon != baselineSnapshot.appIcon ||
+        enableJavaScript != baselineSnapshot.enableJavaScript ||
+        enableLocalStorage != baselineSnapshot.enableLocalStorage ||
+        loadMode != baselineSnapshot.loadMode
+    }
+    var showExitConfirmDialog by remember { mutableStateOf(false) }
+
+    var showCodeEditorDialog by remember { mutableStateOf(false) }
+    var codeEditorType by remember { mutableStateOf(HtmlFileType.HTML) }
+    var codeEditorContent by remember { mutableStateOf("") }
+
+    var codeEditorFileName by remember { mutableStateOf<String?>(null) }
+
+    BackHandler(enabled = hasUnsavedChanges) {
+        showExitConfirmDialog = true
+    }
+
+    if (showExitConfirmDialog) {
+        AlertDialog(
+            onDismissRequest = { showExitConfirmDialog = false },
+            icon = { Icon(Icons.Outlined.Warning, contentDescription = null, tint = MaterialTheme.colorScheme.error) },
+            title = { Text(Strings.unsavedChangesTitle) },
+            text = { Text(Strings.unsavedChangesMessage) },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        showExitConfirmDialog = false
+                        onBack()
+                    },
+                    colors = ButtonDefaults.textButtonColors(
+                        contentColor = MaterialTheme.colorScheme.error
+                    )
+                ) {
+                    Text(Strings.discardChanges)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showExitConfirmDialog = false }) {
+                    Text(Strings.keepEditing)
+                }
+            }
+        )
+    }
+
+    if (showCodeEditorDialog) {
+        CodeEditorDialog(
+            fileType = codeEditorType,
+            initialContent = codeEditorContent,
+            onSave = { content ->
+
+                val fileName = codeEditorFileName ?: when (codeEditorType) {
+                    HtmlFileType.HTML -> "index.html"
+                    HtmlFileType.CSS -> "style.css"
+                    HtmlFileType.JS -> "script.js"
+                    else -> "file.txt"
+                }
+
+                scope.launch {
+
+                    val existingIndex = manualFiles.indexOfFirst { it.name == fileName }
+                    val existing = existingIndex.takeIf { it >= 0 }?.let { manualFiles[it] }
+
+                    val file = withContext(Dispatchers.IO) {
+                        val targetFile = if (existing != null) {
+                            File(existing.path)
+                        } else {
+                            val tempDir = File(context.cacheDir, "html_temp").apply { mkdirs() }
+                            File(tempDir, fileName)
+                        }
+                        targetFile.parentFile?.mkdirs()
+                        targetFile.writeText(content)
+                        targetFile
+                    }
+                    val htmlFileObj = HtmlFile(
+                        name = fileName,
+                        path = file.absolutePath,
+                        type = existing?.type ?: codeEditorType
+                    )
+
+                    if (existingIndex >= 0) {
+                        manualFiles = manualFiles.toMutableList().also { it[existingIndex] = htmlFileObj }
+                    } else {
+                        manualFiles = manualFiles + htmlFileObj
+                    }
+                    if (appName.isBlank() && codeEditorType == HtmlFileType.HTML) appName = "index"
+                }
+                showCodeEditorDialog = false
+                codeEditorFileName = null
+            },
+            onDismiss = {
+                showCodeEditorDialog = false
+                codeEditorFileName = null
+            }
+        )
+    }
+
+    WtaCreateFlowScaffold(
+        title = Strings.createHtmlAppTitle,
+        onBack = {
+            if (hasUnsavedChanges) showExitConfirmDialog = true else onBack()
+        },
+        actions = {
+            TextButton(
+                onClick = {
+                    val finalIconUri = appIconPath?.let { Uri.parse("file://$it") } ?: appIcon
+
+                    when (selectedTabIndex) {
+                        0 -> {
+
+                            if (enableOptimize && !isOptimizing) {
+                                isOptimizing = true
+                                scope.launch {
+                                    val result = HtmlProjectOptimizer.optimizeFiles(
+                                        context = context,
+                                        jsFilePath = manualFiles.firstOrNull { it.type == HtmlFileType.JS }?.path,
+                                        cssFilePath = manualFiles.firstOrNull { it.type == HtmlFileType.CSS }?.path
+                                    )
+                                    optimizeResult = result
+                                    isOptimizing = false
+
+                                    val config = HtmlConfig(
+                                        entryFile = entryFile,
+                                        files = manualFiles,
+                                        enableJavaScript = enableJavaScript,
+                                        enableLocalStorage = enableLocalStorage,
+                                        loadMode = loadMode,
+                                        port = serverPort,
+                                        portConflictMode = portConflictMode
+                                    )
+                                    onCreated(
+                                        appName.ifBlank { Strings.createHtmlApp },
+                                        config,
+                                        finalIconUri,
+                                        themeType
+                                    )
+                                }
+                            } else {
+                                val config = HtmlConfig(
+                                    entryFile = entryFile,
+                                    files = manualFiles,
+                                    enableJavaScript = enableJavaScript,
+                                    enableLocalStorage = enableLocalStorage,
+                                    loadMode = loadMode,
+                                    port = serverPort,
+                                    portConflictMode = portConflictMode
+                                )
+                                onCreated(
+                                    appName.ifBlank { Strings.createHtmlApp },
+                                    config,
+                                    finalIconUri,
+                                    themeType
+                                )
+                            }
+                        }
+                        1 -> {
+
+                            zipAnalysis?.let { analysis ->
+                                if (enableOptimize && !isOptimizing) {
+                                    isOptimizing = true
+                                    scope.launch {
+                                        val result = HtmlProjectOptimizer.optimizeDirectory(
+                                            context = context,
+                                            projectDir = analysis.extractDir
+                                        )
+                                        optimizeResult = result
+                                        isOptimizing = false
+
+                                        onZipCreated(
+                                            appName.ifBlank { analysis.suggestedAppName },
+                                            analysis.extractDir,
+                                            zipEntryFile,
+                                            finalIconUri,
+                                            enableJavaScript,
+                                            enableLocalStorage,
+                                            loadMode,
+                                            serverPort,
+                                            portConflictMode
+                                        )
+                                    }
+                                } else {
+                                    onZipCreated(
+                                        appName.ifBlank { analysis.suggestedAppName },
+                                        analysis.extractDir,
+                                        zipEntryFile,
+                                        finalIconUri,
+                                        enableJavaScript,
+                                        enableLocalStorage,
+                                        loadMode,
+                                        serverPort,
+                                        portConflictMode
+                                    )
+                                }
+                            }
+                        }
+                        2 -> {
+
+                            folderAnalysis?.let { analysis ->
+                                if (enableOptimize && !isOptimizing) {
+                                    isOptimizing = true
+                                    scope.launch {
+                                        val result = HtmlProjectOptimizer.optimizeDirectory(
+                                            context = context,
+                                            projectDir = analysis.extractDir
+                                        )
+                                        optimizeResult = result
+                                        isOptimizing = false
+
+                                        onZipCreated(
+                                            appName.ifBlank { analysis.suggestedAppName },
+                                            analysis.extractDir,
+                                            folderEntryFile,
+                                            finalIconUri,
+                                            enableJavaScript,
+                                            enableLocalStorage,
+                                            loadMode,
+                                            serverPort,
+                                            portConflictMode
+                                        )
+                                    }
+                                } else {
+                                    onZipCreated(
+                                        appName.ifBlank { analysis.suggestedAppName },
+                                        analysis.extractDir,
+                                        folderEntryFile,
+                                        finalIconUri,
+                                        enableJavaScript,
+                                        enableLocalStorage,
+                                        loadMode,
+                                        serverPort,
+                                        portConflictMode
+                                    )
+                                }
+                            }
+                        }
+                    }
+                },
+                enabled = canCreate && !isOptimizing
+            ) {
+                if (isOptimizing) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(16.dp),
+                        strokeWidth = 2.dp
+                    )
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text(Strings.optimizing)
+                } else {
+                    Text(Strings.btnCreate)
+                }
+            }
+        }
+    ) {
+        Column(
+            verticalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
+
+            WtaCreateFlowSection(title = Strings.importProject) {
+            EnhancedElevatedCard(modifier = Modifier.fillMaxWidth()) {
+                Column(modifier = Modifier.padding(16.dp)) {
+                    ScrollableTabRow(
+                        selectedTabIndex = selectedTabIndex,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clip(MaterialTheme.shapes.medium),
+                        edgePadding = 0.dp
+                    ) {
+                        Tab(
+                            selected = selectedTabIndex == 0,
+                            onClick = { selectedTabIndex = 0 },
+                            text = {
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Icon(
+                                        Icons.Outlined.TouchApp,
+                                        contentDescription = null,
+                                        modifier = Modifier.size(16.dp)
+                                    )
+                                    Spacer(modifier = Modifier.width(4.dp))
+                                    Text(Strings.manualSelectMode)
+                                }
+                            }
+                        )
+                        Tab(
+                            selected = selectedTabIndex == 1,
+                            onClick = { selectedTabIndex = 1 },
+                            text = {
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Icon(
+                                        Icons.Outlined.FolderZip,
+                                        contentDescription = null,
+                                        modifier = Modifier.size(16.dp)
+                                    )
+                                    Spacer(modifier = Modifier.width(4.dp))
+                                    Text(Strings.zipImportMode)
+                                }
+                            }
+                        )
+                        Tab(
+                            selected = selectedTabIndex == 2,
+                            onClick = { selectedTabIndex = 2 },
+                            text = {
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Icon(
+                                        Icons.Outlined.FolderOpen,
+                                        contentDescription = null,
+                                        modifier = Modifier.size(16.dp)
+                                    )
+                                    Spacer(modifier = Modifier.width(4.dp))
+                                    Text(Strings.folderImportMode)
+                                }
+                            }
+                        )
+                    }
+                }
+            }
+
+            if (selectedTabIndex == 0) {
+
+                EnhancedElevatedCard(modifier = Modifier.fillMaxWidth()) {
+                    Column(modifier = Modifier.padding(16.dp)) {
+                        Text(
+                            text = Strings.selectFiles,
+                            style = MaterialTheme.typography.titleMedium
+                        )
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text(
+                            text = Strings.selectFilesHint,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        Spacer(modifier = Modifier.height(16.dp))
+
+                        manualFiles.forEachIndexed { index, file ->
+                            val (icon, label) = when (file.type) {
+                                HtmlFileType.HTML -> Icons.Outlined.Code to Strings.htmlFile
+                                HtmlFileType.CSS -> Icons.Outlined.Palette to Strings.cssFile
+                                HtmlFileType.JS -> Icons.Outlined.Javascript to Strings.jsFile
+                                HtmlFileType.IMAGE -> Icons.Outlined.Image to "Image"
+                                HtmlFileType.FONT -> Icons.Outlined.FontDownload to "Font"
+                                HtmlFileType.OTHER -> Icons.AutoMirrored.Outlined.InsertDriveFile to file.name.substringAfterLast(".", "File")
+                            }
+                            HtmlFileSlot(
+                                label = label,
+                                icon = icon,
+                                file = file,
+                                required = file.type == HtmlFileType.HTML,
+                                onSelect = { filePickerLauncher.launch("*/*") },
+                                onClear = { manualFiles = manualFiles.toMutableList().also { it.removeAt(index) } },
+                                onEdit = {
+                                    val editFile = File(file.path)
+                                    if (!isFileEditableInCodeEditor(context, editFile)) return@HtmlFileSlot
+                                    codeEditorType = file.type.takeIf { it == HtmlFileType.HTML || it == HtmlFileType.CSS || it == HtmlFileType.JS } ?: HtmlFileType.OTHER
+                                    codeEditorContent = try { editFile.readText() } catch (e: Exception) { "" }
+
+                                    codeEditorFileName = file.name
+                                    showCodeEditorDialog = true
+                                }
+                            )
+                            if (index < manualFiles.lastIndex) {
+                                Spacer(modifier = Modifier.height(12.dp))
+                            }
+                        }
+
+                        Spacer(modifier = Modifier.height(12.dp))
+                        OutlinedButton(
+                            onClick = { filePickerLauncher.launch("*/*") },
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Icon(Icons.Outlined.Add, contentDescription = null, modifier = Modifier.size(18.dp))
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(Strings.htmlAddFiles)
+                        }
+                    }
+                }
+
+                EnhancedElevatedCard(modifier = Modifier.fillMaxWidth()) {
+                    Column(modifier = Modifier.padding(16.dp)) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            Icon(
+                                Icons.Outlined.Terminal,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.size(20.dp)
+                            )
+                            Text(
+                                text = Strings.writeCode,
+                                style = MaterialTheme.typography.titleMedium
+                            )
+                        }
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Text(
+                            text = Strings.writeCodeHint,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        Spacer(modifier = Modifier.height(12.dp))
+
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+
+                            PremiumOutlinedButton(
+                                onClick = {
+                                    codeEditorType = HtmlFileType.HTML
+                                    val existingHtml = manualFiles.firstOrNull { it.type == HtmlFileType.HTML || it.name.endsWith(".html", ignoreCase = true) }
+                                    if (existingHtml != null && !isFileEditableInCodeEditor(context, File(existingHtml.path))) return@PremiumOutlinedButton
+                                    codeEditorContent = if (existingHtml != null) {
+                                        try { File(existingHtml.path).readText() } catch (e: Exception) { "" }
+                                    } else "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n    <meta charset=\"UTF-8\">\n    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n    <title>My App</title>\n</head>\n<body>\n    <h1>Hello World</h1>\n</body>\n</html>"
+                                    codeEditorFileName = existingHtml?.name
+                                    showCodeEditorDialog = true
+                                },
+                                modifier = Modifier.weight(1f)
+                            ) {
+                                Icon(Icons.Outlined.Code, null, Modifier.size(16.dp))
+                                Spacer(Modifier.width(4.dp))
+                                Text("HTML", maxLines = 1)
+                            }
+
+                            PremiumOutlinedButton(
+                                onClick = {
+                                    codeEditorType = HtmlFileType.CSS
+                                    val existingCss = manualFiles.firstOrNull { it.type == HtmlFileType.CSS }
+                                    if (existingCss != null && !isFileEditableInCodeEditor(context, File(existingCss.path))) return@PremiumOutlinedButton
+                                    codeEditorContent = if (existingCss != null) {
+                                        try { File(existingCss.path).readText() } catch (e: Exception) { "" }
+                                    } else "/* Styles */\nbody {\n    margin: 0;\n    padding: 0;\n    font-family: sans-serif;\n}\n"
+                                    codeEditorFileName = existingCss?.name
+                                    showCodeEditorDialog = true
+                                },
+                                modifier = Modifier.weight(1f)
+                            ) {
+                                Icon(Icons.Outlined.Palette, null, Modifier.size(16.dp))
+                                Spacer(Modifier.width(4.dp))
+                                Text("CSS", maxLines = 1)
+                            }
+
+                            PremiumOutlinedButton(
+                                onClick = {
+                                    codeEditorType = HtmlFileType.JS
+                                    val existingJs = manualFiles.firstOrNull { it.type == HtmlFileType.JS }
+                                    if (existingJs != null && !isFileEditableInCodeEditor(context, File(existingJs.path))) return@PremiumOutlinedButton
+                                    codeEditorContent = if (existingJs != null) {
+                                        try { File(existingJs.path).readText() } catch (e: Exception) { "" }
+                                    } else "// JavaScript\ndocument.addEventListener('DOMContentLoaded', () => {\n    console.log('App loaded');\n});\n"
+                                    codeEditorFileName = existingJs?.name
+                                    showCodeEditorDialog = true
+                                },
+                                modifier = Modifier.weight(1f)
+                            ) {
+                                Icon(Icons.Outlined.Javascript, null, Modifier.size(16.dp))
+                                Spacer(Modifier.width(4.dp))
+                                Text("JS", maxLines = 1)
+                            }
+                        }
+                    }
+                }
+            }
+
+            if (selectedTabIndex == 1) {
+                ZipImportSection(
+                    zipAnalysis = zipAnalysis,
+                    zipImporting = zipImporting,
+                    zipError = zipError,
+                    zipEntryFile = zipEntryFile,
+                    onSelectZip = { zipPickerLauncher.launch("application/zip") },
+                    onChangeEntry = { showEntryFileDialog = true },
+                    onShowFileList = { showFileListDialog = true },
+                    onReimport = {
+                        zipAnalysis = null
+                        zipError = null
+                        zipPickerLauncher.launch("application/zip")
+                    }
+                )
+            }
+
+            if (selectedTabIndex == 2) {
+                FolderImportSection(
+                    folderAnalysis = folderAnalysis,
+                    folderImporting = folderImporting,
+                    folderError = folderError,
+                    folderEntryFile = folderEntryFile,
+                    onSelectFolder = { folderPickerLauncher.launch(null) },
+                    onChangeEntry = { showFolderEntryFileDialog = true },
+                    onShowFileList = { showFolderFileListDialog = true },
+                    onReimport = {
+                        folderAnalysis = null
+                        folderError = null
+                        folderPickerLauncher.launch(null)
+                    }
+                )
+            }
+            }
+
+            WtaCreateFlowSection(title = Strings.appConfig) {
+            if (!isEditMode) {
+            EnhancedElevatedCard(modifier = Modifier.fillMaxWidth()) {
+                Column(modifier = Modifier.padding(16.dp)) {
+                    Text(
+                        text = Strings.labelAppInfo,
+                        style = MaterialTheme.typography.titleMedium
+                    )
+                    Spacer(modifier = Modifier.height(12.dp))
+
+                    AppNameTextFieldSimple(
+                        value = appName,
+                        onValueChange = { appName = it }
+                    )
+
+                    Spacer(modifier = Modifier.height(12.dp))
+
+                    IconPickerWithLibrary(
+                        iconUri = appIcon,
+                        iconPath = appIconPath,
+                        onSelectFromGallery = { iconPickerLauncher.launch("image/*") },
+                        onSelectFromLibrary = { path ->
+                            appIconPath = path
+                            appIcon = null
+                        }
+                    )
+                }
+            }
+            }
+
+            EnhancedElevatedCard(modifier = Modifier.fillMaxWidth()) {
+                Column(modifier = Modifier.padding(16.dp)) {
+                    Text(
+                        text = Strings.labelAdvancedConfig,
+                        style = MaterialTheme.typography.titleMedium
+                    )
+                    Spacer(modifier = Modifier.height(12.dp))
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Column(modifier = Modifier.weight(weight = 1f, fill = true)) {
+                            Text(Strings.enableJavaScript)
+                            Text(
+                                text = Strings.enableJsHint,
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                        WtaSwitch(
+                            checked = enableJavaScript,
+                            onCheckedChange = { enableJavaScript = it }
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.height(8.dp))
+                    HorizontalDivider()
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Column(modifier = Modifier.weight(weight = 1f, fill = true)) {
+                            Text(Strings.enableLocalStorage)
+                            Text(
+                                text = Strings.enableLocalStorageHint,
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                        WtaSwitch(
+                            checked = enableLocalStorage,
+                            onCheckedChange = { enableLocalStorage = it }
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.height(8.dp))
+                    HorizontalDivider()
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    val isLocalServer = loadMode == HtmlLoadMode.LOCAL_HTTP
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Column(modifier = Modifier.weight(weight = 1f, fill = true)) {
+                            Text(Strings.localServerToggle)
+                            Text(
+                                text = if (isLocalServer) Strings.localServerOnDesc else Strings.localServerFileDesc,
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                        WtaSwitch(
+                            checked = isLocalServer,
+                            onCheckedChange = { enabled ->
+                                loadMode = if (enabled) HtmlLoadMode.LOCAL_HTTP else HtmlLoadMode.FILE
+                            }
+                        )
+                    }
+
+                    androidx.compose.animation.AnimatedVisibility(
+                        visible = isLocalServer,
+                        enter = CardExpandTransition,
+                        exit = CardCollapseTransition
+                    ) {
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(start = 16.dp, top = 8.dp, bottom = 4.dp),
+                            verticalArrangement = Arrangement.spacedBy(0.dp)
+                        ) {
+                            HorizontalDivider()
+                            Spacer(modifier = Modifier.height(8.dp))
+
+                            Text(
+                                text = Strings.portConfigTitle,
+                                style = MaterialTheme.typography.labelLarge,
+                                color = MaterialTheme.colorScheme.primary
+                            )
+                            Spacer(modifier = Modifier.height(8.dp))
+
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Column(modifier = Modifier.weight(1f)) {
+                                    Text(
+                                        text = Strings.portAutoAssign,
+                                        style = MaterialTheme.typography.bodyMedium
+                                    )
+                                    Text(
+                                        text = Strings.portAutoAssignHint,
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                }
+                                WtaSwitch(
+                                    checked = serverPort == 0,
+                                    onCheckedChange = { auto -> serverPort = if (auto) 0 else 8080 }
+                                )
+                            }
+
+                            androidx.compose.animation.AnimatedVisibility(
+                                visible = serverPort > 0,
+                                enter = CardExpandTransition,
+                                exit = CardCollapseTransition
+                            ) {
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(top = 8.dp),
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Text(
+                                        text = Strings.portDefaultLabel,
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        modifier = Modifier.weight(1f)
+                                    )
+                                    Surface(
+                                        shape = RoundedCornerShape(10.dp),
+                                        color = MaterialTheme.colorScheme.surfaceContainerLow,
+                                        modifier = Modifier.width(100.dp)
+                                    ) {
+                                        BasicTextField(
+                                            value = if (serverPort > 0) serverPort.toString() else "",
+                                            onValueChange = { text ->
+                                                val num = text.toIntOrNull()
+                                                serverPort = if (num != null && num in 1024..65535) num
+                                                else if (text.isEmpty()) 0 else serverPort
+                                            },
+                                            singleLine = true,
+                                            textStyle = MaterialTheme.typography.bodyMedium.copy(
+                                                textAlign = TextAlign.Center
+                                            ),
+                                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp)
+                                        )
+                                    }
+                                }
+                            }
+
+                            Spacer(modifier = Modifier.height(12.dp))
+                            HorizontalDivider()
+                            Spacer(modifier = Modifier.height(8.dp))
+
+                            Text(
+                                text = Strings.portConflictTitle,
+                                style = MaterialTheme.typography.labelLarge,
+                                color = MaterialTheme.colorScheme.primary
+                            )
+                            Spacer(modifier = Modifier.height(4.dp))
+
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Column(modifier = Modifier.weight(1f)) {
+                                    Text(
+                                        text = Strings.portConflictAutoKill,
+                                        style = MaterialTheme.typography.bodyMedium
+                                    )
+                                    Text(
+                                        text = Strings.portConflictAutoKillHint,
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                }
+                                RadioButton(
+                                    selected = portConflictMode == PortConflictMode.AUTO_KILL,
+                                    onClick = { portConflictMode = PortConflictMode.AUTO_KILL }
+                                )
+                            }
+
+                            Spacer(modifier = Modifier.height(4.dp))
+
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Column(modifier = Modifier.weight(1f)) {
+                                    Text(
+                                        text = Strings.portConflictAlert,
+                                        style = MaterialTheme.typography.bodyMedium
+                                    )
+                                    Text(
+                                        text = Strings.portConflictAlertHint,
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                }
+                                RadioButton(
+                                    selected = portConflictMode == PortConflictMode.ALERT,
+                                    onClick = { portConflictMode = PortConflictMode.ALERT }
+                                )
+                            }
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    Spacer(modifier = Modifier.height(8.dp))
+                    HorizontalDivider()
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Column(modifier = Modifier.weight(weight = 1f, fill = true)) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Text(Strings.optimizeCode)
+                                Spacer(modifier = Modifier.width(6.dp))
+                                Text(
+                                    text = if (esbuildAvailable) "esbuild" else "built-in",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = if (esbuildAvailable)
+                                        MaterialTheme.colorScheme.primary
+                                    else
+                                        MaterialTheme.colorScheme.onSurfaceVariant,
+                                    modifier = Modifier
+                                        .background(
+                                            if (esbuildAvailable)
+                                                MaterialTheme.colorScheme.primaryContainer
+                                            else
+                                                MaterialTheme.colorScheme.surfaceVariant,
+                                            MaterialTheme.shapes.extraSmall
+                                        )
+                                        .padding(horizontal = 6.dp, vertical = 2.dp)
+                                )
+                            }
+                            Text(
+                                text = Strings.optimizeCodeHint,
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                            if (!esbuildAvailable) {
+                                Text(
+                                    text = Strings.optimizeJsSkippedNoEsbuild,
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                        }
+                        WtaSwitch(
+                            checked = enableOptimize,
+                            onCheckedChange = { enableOptimize = it }
+                        )
+                    }
+
+                    if (optimizeResult != null) {
+                        Spacer(modifier = Modifier.height(8.dp))
+                        val result = optimizeResult!!
+                        EnhancedElevatedCard(
+                            colors = CardDefaults.cardColors(
+                                containerColor = if (result.success)
+                                    MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f)
+                                else
+                                    MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.5f)
+                            )
+                        ) {
+                            Column(modifier = Modifier.padding(12.dp)) {
+                                if (result.success) {
+                                    Text(
+                                        text = Strings.optimizeComplete,
+                                        style = MaterialTheme.typography.labelMedium,
+                                        color = MaterialTheme.colorScheme.primary,
+                                        fontWeight = FontWeight.Medium
+                                    )
+                                    Spacer(modifier = Modifier.height(4.dp))
+                                    if (result.jsFilesOptimized > 0) {
+                                        Text(
+                                            text = Strings.optimizeResultJs.replace("%d", result.jsFilesOptimized.toString()),
+                                            style = MaterialTheme.typography.bodySmall,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                                        )
+                                    }
+                                    if (result.cssFilesOptimized > 0) {
+                                        Text(
+                                            text = Strings.optimizeResultCss.replace("%d", result.cssFilesOptimized.toString()),
+                                            style = MaterialTheme.typography.bodySmall,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                                        )
+                                    }
+                                    if (result.tsFilesCompiled > 0) {
+                                        Text(
+                                            text = Strings.optimizeResultTs.replace("%d", result.tsFilesCompiled.toString()),
+                                            style = MaterialTheme.typography.bodySmall,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                                        )
+                                    }
+                                    if (result.savedBytes > 0) {
+                                        Text(
+                                            text = Strings.optimizeResultSaved.replace("%s", formatFileSize(result.savedBytes)),
+                                            style = MaterialTheme.typography.bodySmall,
+                                            fontWeight = FontWeight.Medium,
+                                            color = MaterialTheme.colorScheme.primary
+                                        )
+                                    }
+                                } else {
+                                    Text(
+                                        text = Strings.optimizeFailed.replace("%s", result.error ?: ""),
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.error
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            }
+
+            WtaCreateFlowSection(title = Strings.preview) {
+                if (hasIssues && projectAnalysis != null) {
+                    val errorCount = projectAnalysis!!.issues.count {
+                        it.severity == HtmlProjectProcessor.IssueSeverity.ERROR
+                    }
+                    val warningCount = projectAnalysis!!.issues.count {
+                        it.severity == HtmlProjectProcessor.IssueSeverity.WARNING
+                    }
+                    WtaStatusBanner(
+                        title = Strings.projectIssuesDetected,
+                        message = buildString {
+                            if (errorCount > 0) append(Strings.errorsCount.replace("%d", errorCount.toString()))
+                            if (errorCount > 0 && warningCount > 0) append(", ")
+                            if (warningCount > 0) append(Strings.warningsCount.replace("%d", warningCount.toString()))
+                            if (isNotEmpty()) append("\n")
+                            append(Strings.autoFixHint)
+                        },
+                        tone = if (errorCount > 0) WtaStatusTone.Error else WtaStatusTone.Warning,
+                        actionLabel = Strings.viewAnalysisResult,
+                        onAction = { showAnalysisDialog = true },
+                        messageMaxLines = 4
+                    )
+                }
+
+                WtaStatusBanner(
+                    message = when (selectedTabIndex) {
+                            0 -> Strings.htmlAppTip
+                            1 -> Strings.zipTip
+                            2 -> Strings.folderTip
+                            else -> Strings.htmlAppTip
+                    },
+                    tone = WtaStatusTone.Info,
+                    messageMaxLines = 4
+                )
+
+                WtaStatusBanner(
+                    message = Strings.featureTip,
+                    tone = WtaStatusTone.Warning,
+                    messageMaxLines = 4
+                )
+
+            if (selectedTabIndex == 0) {
+                EnhancedElevatedCard(
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = CardDefaults.cardColors(
+                        containerColor = if (com.webtoapp.ui.theme.LocalIsDarkTheme.current) Color.White.copy(alpha = 0.10f) else Color.White.copy(alpha = 0.72f)
+                    )
+                ) {
+                    Row(
+                        modifier = Modifier.padding(16.dp),
+                        verticalAlignment = Alignment.Top
+                    ) {
+                        Icon(
+                            Icons.Outlined.FolderOpen,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        Spacer(modifier = Modifier.width(12.dp))
+                        Column {
+                            Text(
+                                text = Strings.aboutFileReference,
+                                style = MaterialTheme.typography.titleSmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                            Spacer(modifier = Modifier.height(4.dp))
+                            Text(
+                                text = Strings.fileReferenceHint,
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f)
+                            )
+                        }
+                    }
+                }
+            }
+            }
+        }
+    }
+
+    if (showAnalysisDialog && projectAnalysis != null) {
+        ProjectAnalysisDialog(
+            analysis = projectAnalysis!!,
+            onDismiss = { showAnalysisDialog = false }
+        )
+    }
+
+    if (showEntryFileDialog && zipAnalysis != null) {
+        ZipEntryFileDialog(
+            htmlFiles = zipAnalysis!!.htmlFiles.map { it.relativePath },
+            currentEntry = zipEntryFile,
+            onSelect = { selected ->
+                zipEntryFile = selected
+                showEntryFileDialog = false
+            },
+            onDismiss = { showEntryFileDialog = false }
+        )
+    }
+
+    if (showFileListDialog && zipAnalysis != null) {
+        ZipFileListDialog(
+            analysis = zipAnalysis!!,
+            onDismiss = { showFileListDialog = false }
+        )
+    }
+
+    if (showFolderEntryFileDialog && folderAnalysis != null) {
+        ZipEntryFileDialog(
+            htmlFiles = folderAnalysis!!.htmlFiles.map { it.relativePath },
+            currentEntry = folderEntryFile,
+            onSelect = { selected ->
+                folderEntryFile = selected
+                showFolderEntryFileDialog = false
+            },
+            onDismiss = { showFolderEntryFileDialog = false }
+        )
+    }
+
+    if (showFolderFileListDialog && folderAnalysis != null) {
+        ZipFileListDialog(
+            analysis = folderAnalysis!!,
+            onDismiss = { showFolderFileListDialog = false }
+        )
+    }
+}
+
+@Composable
+private fun ProjectAnalysisDialog(
+    analysis: HtmlProjectProcessor.ProjectAnalysis,
+    onDismiss: () -> Unit
+) {
+    val actionableIssues = analysis.issues.filter { it.isActionableAnalysisIssue() }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Box(
+                    modifier = Modifier
+                        .size(32.dp)
+                        .clip(RoundedCornerShape(10.dp))
+                        .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.1f)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        Icons.Outlined.Analytics,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(18.dp)
+                    )
+                }
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(Strings.projectAnalysisResult)
+            }
+        },
+        text = {
+            LazyColumn(
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+
+                if (actionableIssues.isNotEmpty()) {
+                    item {
+                        Text(
+                            text = Strings.detectedIssues,
+                            style = MaterialTheme.typography.titleSmall,
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                    }
+
+                    items(actionableIssues) { issue ->
+                        IssueCard(issue)
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = onDismiss) {
+                Text(Strings.gotIt)
+            }
+        }
+    )
+}
+
+@Composable
+private fun IssueCard(issue: HtmlProjectProcessor.ProjectIssue) {
+    val (icon, contentColor) = when (issue.severity) {
+        HtmlProjectProcessor.IssueSeverity.ERROR -> Pair(
+            Icons.Outlined.Error,
+            MaterialTheme.colorScheme.onSurface
+        )
+        HtmlProjectProcessor.IssueSeverity.WARNING -> Pair(
+            Icons.Outlined.Warning,
+            MaterialTheme.colorScheme.onSurface
+        )
+        HtmlProjectProcessor.IssueSeverity.INFO -> Pair(
+            Icons.Outlined.Info,
+            MaterialTheme.colorScheme.onSurface
+        )
+    }
+
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 2.dp),
+        verticalAlignment = Alignment.Top
+    ) {
+        Icon(
+            icon,
+            contentDescription = null,
+            tint = contentColor,
+            modifier = Modifier.size(16.dp)
+        )
+        Spacer(modifier = Modifier.width(8.dp))
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                text = issue.message,
+                style = MaterialTheme.typography.bodySmall,
+                color = contentColor
+            )
+            issue.file?.let {
+                Spacer(modifier = Modifier.height(2.dp))
+                Text(
+                    text = Strings.fileLabel.format(it),
+                    style = MaterialTheme.typography.labelSmall,
+                    color = contentColor.copy(alpha = 0.7f)
+                )
+            }
+            issue.suggestion?.let {
+                Spacer(modifier = Modifier.height(2.dp))
+                Text(
+                    text = it,
+                    style = MaterialTheme.typography.labelSmall,
+                    color = contentColor.copy(alpha = 0.8f)
+                )
+            }
+        }
+    }
+}
+
+private fun formatFileSize(size: Long): String {
+    return when {
+        size < 1024 -> "$size B"
+        size < 1024 * 1024 -> "${size / 1024} KB"
+        else -> String.format(java.util.Locale.getDefault(), "%.1f MB", size / (1024.0 * 1024.0))
+    }
+}
+
+@Composable
+private fun CodeEditorDialog(
+    fileType: HtmlFileType,
+    initialContent: String,
+    onSave: (String) -> Unit,
+    onDismiss: () -> Unit
+) {
+
+    val language = when (fileType) {
+        HtmlFileType.HTML -> "HTML"
+        HtmlFileType.CSS -> "CSS"
+        HtmlFileType.JS -> "JavaScript"
+        else -> Strings.codeEditorTitle
+    }
+    val placeholder = when (fileType) {
+        HtmlFileType.HTML -> Strings.htmlCodePlaceholder
+        HtmlFileType.CSS -> Strings.cssCodePlaceholder
+        HtmlFileType.JS -> Strings.jsCodePlaceholder
+        else -> ""
+    }
+    com.webtoapp.ui.components.WtaCodeEditorDialog(
+        language = language,
+        initialContent = initialContent,
+        placeholder = placeholder,
+        onSave = onSave,
+        onDismiss = onDismiss
+    )
+}
+
+private fun getFileName(context: android.content.Context, uri: Uri): String? {
+    var result: String? = null
+    if (uri.scheme == "content") {
+        context.contentResolver.query(uri, null, null, null, null)?.use { cursor ->
+            if (cursor.moveToFirst()) {
+                val index = cursor.getColumnIndex(OpenableColumns.DISPLAY_NAME)
+                if (index >= 0) {
+                    result = cursor.getString(index)
+                }
+            }
+        }
+    }
+    if (result == null) {
+        result = uri.path?.substringAfterLast('/')
+    }
+    return result
+}
+
+private fun copyUriToTempFile(
+    context: android.content.Context,
+    uri: Uri,
+    fileName: String?
+): File? {
+    return try {
+        val tempDir = File(context.cacheDir, "html_temp").apply { mkdirs() }
+        val targetFile = File(tempDir, fileName ?: "file_${System.currentTimeMillis()}")
+        context.contentResolver.openInputStream(uri)?.use { input ->
+            targetFile.outputStream().use { output ->
+                input.copyTo(output)
+            }
+        }
+        targetFile
+    } catch (e: Exception) {
+        AppLogger.e("CreateHtmlAppScreen", "Operation failed", e)
+        null
+    }
+}
+
+private fun getFileType(fileName: String): HtmlFileType {
+    val extension = fileName.substringAfterLast('.', "").lowercase()
+    return when (extension) {
+        "html", "htm" -> HtmlFileType.HTML
+        "css" -> HtmlFileType.CSS
+        "js" -> HtmlFileType.JS
+        "png", "jpg", "jpeg", "gif", "webp", "svg", "ico" -> HtmlFileType.IMAGE
+        "ttf", "otf", "woff", "woff2", "eot" -> HtmlFileType.FONT
+        else -> HtmlFileType.OTHER
+    }
+}
+
+// Files up to this size are fine on disk, but rendering them whole in one Compose
+// text field is where the freeze/OOM actually happens, so the editor only opens
+// files under this bound.
+private const val CODE_EDITOR_RENDER_LIMIT_CHARS = 256 * 1024
+
+/**
+ * Guards the in-app code editor. Binary files (images, fonts, …) and oversized text
+ * files would render the whole content into one composable tree and freeze / OOM the
+ * app, so they are refused with a toast before the editor opens. The size guard uses
+ * the render limit — admitting files that the dialog then silently empties would let
+ * a save wipe the file.
+ */
+private fun isFileEditableInCodeEditor(context: android.content.Context, file: File?): Boolean {
+    if (file == null) return true
+    if (file.length() > CODE_EDITOR_RENDER_LIMIT_CHARS) {
+        Toast.makeText(context, Strings.codeEditorFileTooLarge, Toast.LENGTH_SHORT).show()
+        return false
+    }
+    val sample = try {
+        file.inputStream().use { input ->
+            val buffer = ByteArray(4096)
+            val read = input.read(buffer)
+            if (read > 0) buffer.copyOf(read) else ByteArray(0)
+        }
+    } catch (e: Exception) {
+        Toast.makeText(context, Strings.codeEditorBinaryFile, Toast.LENGTH_SHORT).show()
+        return false
+    }
+    val isBinary = sample.any { b ->
+        val v = b.toInt() and 0xFF
+        v < 32 && v != '\n'.code && v != '\r'.code && v != '\t'.code
+    }
+    if (isBinary) {
+        Toast.makeText(context, Strings.codeEditorBinaryFile, Toast.LENGTH_SHORT).show()
+        return false
+    }
+    return true
+}
+
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun ZipImportSection(
+    zipAnalysis: ZipProjectImporter.ZipProjectAnalysis?,
+    zipImporting: Boolean,
+    zipError: String?,
+    zipEntryFile: String,
+    onSelectZip: () -> Unit,
+    onChangeEntry: () -> Unit,
+    onShowFileList: () -> Unit,
+    onReimport: () -> Unit
+) {
+    if (zipImporting) {
+
+        EnhancedElevatedCard(modifier = Modifier.fillMaxWidth()) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(32.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                CircularProgressIndicator()
+                Spacer(modifier = Modifier.height(16.dp))
+                Text(
+                    text = Strings.zipImporting,
+                    style = MaterialTheme.typography.bodyMedium
+                )
+            }
+        }
+    } else if (zipAnalysis != null) {
+
+        EnhancedElevatedCard(modifier = Modifier.fillMaxWidth()) {
+            Column(modifier = Modifier.padding(16.dp)) {
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Box(
+                            modifier = Modifier
+                                .size(32.dp)
+                                .clip(RoundedCornerShape(10.dp))
+                                .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.1f)),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                Icons.Outlined.CheckCircle,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.size(18.dp)
+                            )
+                        }
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = Strings.zipProjectAnalysis,
+                            style = MaterialTheme.typography.titleMedium
+                        )
+                    }
+                    TextButton(onClick = onReimport) {
+                        Icon(
+                            Icons.Outlined.Refresh,
+                            contentDescription = null,
+                            modifier = Modifier.size(16.dp)
+                        )
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text(Strings.zipReimport, style = MaterialTheme.typography.labelMedium)
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(12.dp))
+
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(MaterialTheme.shapes.small)
+                        .background(MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f))
+                        .clickable { onChangeEntry() }
+                        .padding(12.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(
+                        Icons.Outlined.Home,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(20.dp)
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Column(modifier = Modifier.weight(weight = 1f, fill = true)) {
+                        Text(
+                            text = Strings.zipEntryFile,
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        Text(
+                            text = zipEntryFile,
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.primary,
+                            fontWeight = FontWeight.Medium,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                    }
+                    if (zipAnalysis.htmlFiles.size > 1) {
+                        Icon(
+                            Icons.Outlined.SwapHoriz,
+                            contentDescription = Strings.zipChangeEntry,
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.size(20.dp)
+                        )
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(12.dp))
+
+                Text(
+                    text = Strings.zipResourceStats,
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.primary
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+
+                val stats = zipAnalysis.stats
+                FlowRow(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
+                    stats.forEach { stat ->
+                        AssistChip(
+                            onClick = { onShowFileList() },
+                            label = {
+                                Text(
+                                    "${stat.type.icon} ${stat.type.label}: ${stat.count}",
+                                    style = MaterialTheme.typography.labelSmall
+                                )
+                            },
+                            modifier = Modifier.height(28.dp)
+                        )
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Text(
+                        text = Strings.zipTotalFiles.replace("%d", zipAnalysis.totalFileCount.toString()),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Text(
+                        text = Strings.zipTotalSize.replace("%s", zipAnalysis.formattedTotalSize),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(8.dp))
+                TextButton(
+                    onClick = onShowFileList,
+                    modifier = Modifier.align(Alignment.End)
+                ) {
+                    Icon(
+                        Icons.AutoMirrored.Outlined.List,
+                        contentDescription = null,
+                        modifier = Modifier.size(16.dp)
+                    )
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text(Strings.zipFileTreeTitle, style = MaterialTheme.typography.labelMedium)
+                }
+            }
+        }
+
+        if (zipAnalysis.warnings.isNotEmpty()) {
+            EnhancedElevatedCard(
+                modifier = Modifier.fillMaxWidth(),
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.surfaceVariant
+                )
+            ) {
+                Column(modifier = Modifier.padding(16.dp)) {
+                    zipAnalysis.warnings.forEach { warning ->
+                        Row(
+                            verticalAlignment = Alignment.Top,
+                            modifier = Modifier.padding(vertical = 2.dp)
+                        ) {
+                            Icon(
+                                Icons.Outlined.Warning,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.onSurface,
+                                modifier = Modifier.size(16.dp)
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(
+                                text = warning,
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+                        }
+                    }
+                }
+            }
+        }
+    } else {
+
+        EnhancedElevatedCard(modifier = Modifier.fillMaxWidth()) {
+            Column(
+                modifier = Modifier.padding(16.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Text(
+                    text = Strings.selectZipFile,
+                    style = MaterialTheme.typography.titleMedium
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    text = Strings.selectZipHint,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    textAlign = TextAlign.Center
+                )
+                Spacer(modifier = Modifier.height(16.dp))
+
+                PremiumOutlinedButton(
+                    onClick = onSelectZip,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Icon(
+                        Icons.Outlined.FolderZip,
+                        contentDescription = null,
+                        modifier = Modifier.size(20.dp)
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(Strings.selectZipFile)
+                }
+
+                if (zipError != null) {
+                    Spacer(modifier = Modifier.height(12.dp))
+                    EnhancedElevatedCard(
+                        colors = CardDefaults.cardColors(
+                            containerColor = MaterialTheme.colorScheme.errorContainer
+                        )
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(12.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(
+                                Icons.Outlined.Error,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.onErrorContainer,
+                                modifier = Modifier.size(16.dp)
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(
+                                text = zipError,
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onErrorContainer
+                            )
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun ZipEntryFileDialog(
+    htmlFiles: List<String>,
+    currentEntry: String,
+    onSelect: (String) -> Unit,
+    onDismiss: () -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Box(
+                    modifier = Modifier
+                        .size(32.dp)
+                        .clip(RoundedCornerShape(10.dp))
+                        .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.1f)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        Icons.Outlined.Home,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(18.dp)
+                    )
+                }
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(Strings.zipSelectEntryTitle)
+            }
+        },
+        text = {
+            LazyColumn(
+                verticalArrangement = Arrangement.spacedBy(4.dp)
+            ) {
+                items(htmlFiles, key = { it }) { file ->
+                    val isSelected = file == currentEntry
+                    Row(
+                        modifier = Modifier
+                            .animateItem()
+                            .fillMaxWidth()
+                            .clip(MaterialTheme.shapes.small)
+                            .background(
+                                if (isSelected)
+                                    MaterialTheme.colorScheme.primaryContainer
+                                else
+                                    MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
+                            )
+                            .clickable { onSelect(file) }
+                            .padding(12.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            if (isSelected) Icons.Filled.RadioButtonChecked
+                            else Icons.Filled.RadioButtonUnchecked,
+                            contentDescription = null,
+                            tint = if (isSelected)
+                                MaterialTheme.colorScheme.primary
+                            else
+                                MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.size(20.dp)
+                        )
+                        Spacer(modifier = Modifier.width(12.dp))
+                        Text(
+                            text = file,
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = if (isSelected)
+                                MaterialTheme.colorScheme.primary
+                            else
+                                MaterialTheme.colorScheme.onSurface,
+                            fontWeight = if (isSelected) FontWeight.Medium else FontWeight.Normal
+                        )
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = onDismiss) {
+                Text(Strings.gotIt)
+            }
+        }
+    )
+}
+
+@Composable
+private fun ZipFileListDialog(
+    analysis: ZipProjectImporter.ZipProjectAnalysis,
+    onDismiss: () -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Box(
+                    modifier = Modifier
+                        .size(32.dp)
+                        .clip(RoundedCornerShape(10.dp))
+                        .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.1f)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        Icons.Outlined.FolderOpen,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(18.dp)
+                    )
+                }
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(
+                    Strings.zipFileTreeTitle + " (${analysis.totalFileCount})"
+                )
+            }
+        },
+        text = {
+            LazyColumn(
+                verticalArrangement = Arrangement.spacedBy(4.dp)
+            ) {
+
+                analysis.stats.forEach { stat ->
+                    item {
+                        Text(
+                            text = "${stat.type.icon} ${stat.type.label} (${stat.count})",
+                            style = MaterialTheme.typography.titleSmall,
+                            color = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.padding(top = 8.dp, bottom = 4.dp)
+                        )
+                    }
+
+                    val filesOfType = analysis.allFiles.filter { it.resourceType == stat.type }
+                    items(filesOfType, key = { it.relativePath }) { file ->
+                        Row(
+                            modifier = Modifier
+                                .animateItem()
+                                .fillMaxWidth()
+                                .background(
+                                    MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.2f),
+                                    MaterialTheme.shapes.small
+                                )
+                                .padding(horizontal = 12.dp, vertical = 6.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = file.relativePath,
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurface,
+                                modifier = Modifier.weight(weight = 1f, fill = true),
+                                maxLines = 2,
+                                overflow = TextOverflow.Ellipsis
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(
+                                text = file.size.toFileSizeString(),
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = onDismiss) {
+                Text(Strings.gotIt)
+            }
+        }
+    )
+}
+
+private fun Long.toFileSizeString(): String = when {
+    this < 1024 -> "$this B"
+    this < 1024 * 1024 -> "${this / 1024} KB"
+    else -> String.format(java.util.Locale.getDefault(), "%.1f MB", this / (1024.0 * 1024.0))
+}
+
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun FolderImportSection(
+    folderAnalysis: ZipProjectImporter.ZipProjectAnalysis?,
+    folderImporting: Boolean,
+    folderError: String?,
+    folderEntryFile: String,
+    onSelectFolder: () -> Unit,
+    onChangeEntry: () -> Unit,
+    onShowFileList: () -> Unit,
+    onReimport: () -> Unit
+) {
+    if (folderImporting) {
+
+        EnhancedElevatedCard(modifier = Modifier.fillMaxWidth()) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(32.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                CircularProgressIndicator()
+                Spacer(modifier = Modifier.height(16.dp))
+                Text(
+                    text = Strings.folderImporting,
+                    style = MaterialTheme.typography.bodyMedium
+                )
+            }
+        }
+    } else if (folderAnalysis != null) {
+
+        EnhancedElevatedCard(modifier = Modifier.fillMaxWidth()) {
+            Column(modifier = Modifier.padding(16.dp)) {
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Box(
+                            modifier = Modifier
+                                .size(32.dp)
+                                .clip(RoundedCornerShape(10.dp))
+                                .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.1f)),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                Icons.Outlined.CheckCircle,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.size(18.dp)
+                            )
+                        }
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = Strings.zipProjectAnalysis,
+                            style = MaterialTheme.typography.titleMedium
+                        )
+                    }
+                    TextButton(onClick = onReimport) {
+                        Icon(
+                            Icons.Outlined.Refresh,
+                            contentDescription = null,
+                            modifier = Modifier.size(16.dp)
+                        )
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text(Strings.zipReimport, style = MaterialTheme.typography.labelMedium)
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(12.dp))
+
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(MaterialTheme.shapes.small)
+                        .background(MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f))
+                        .clickable { onChangeEntry() }
+                        .padding(12.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(
+                        Icons.Outlined.Home,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(20.dp)
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Column(modifier = Modifier.weight(weight = 1f, fill = true)) {
+                        Text(
+                            text = Strings.zipEntryFile,
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        Text(
+                            text = folderEntryFile,
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.primary,
+                            fontWeight = FontWeight.Medium,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                    }
+                    if (folderAnalysis.htmlFiles.size > 1) {
+                        Icon(
+                            Icons.Outlined.SwapHoriz,
+                            contentDescription = Strings.zipChangeEntry,
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.size(20.dp)
+                        )
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(12.dp))
+
+                Text(
+                    text = Strings.zipResourceStats,
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.primary
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+
+                val stats = folderAnalysis.stats
+                FlowRow(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
+                    stats.forEach { stat ->
+                        AssistChip(
+                            onClick = { onShowFileList() },
+                            label = {
+                                Text(
+                                    "${stat.type.icon} ${stat.type.label}: ${stat.count}",
+                                    style = MaterialTheme.typography.labelSmall
+                                )
+                            },
+                            modifier = Modifier.height(28.dp)
+                        )
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Text(
+                        text = Strings.zipTotalFiles.replace("%d", folderAnalysis.totalFileCount.toString()),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Text(
+                        text = Strings.zipTotalSize.replace("%s", folderAnalysis.formattedTotalSize),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(8.dp))
+                TextButton(
+                    onClick = onShowFileList,
+                    modifier = Modifier.align(Alignment.End)
+                ) {
+                    Icon(
+                        Icons.AutoMirrored.Outlined.List,
+                        contentDescription = null,
+                        modifier = Modifier.size(16.dp)
+                    )
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text(Strings.zipFileTreeTitle, style = MaterialTheme.typography.labelMedium)
+                }
+            }
+        }
+
+        if (folderAnalysis.warnings.isNotEmpty()) {
+            EnhancedElevatedCard(
+                modifier = Modifier.fillMaxWidth(),
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.surfaceVariant
+                )
+            ) {
+                Column(modifier = Modifier.padding(16.dp)) {
+                    folderAnalysis.warnings.forEach { warning ->
+                        Row(
+                            verticalAlignment = Alignment.Top,
+                            modifier = Modifier.padding(vertical = 2.dp)
+                        ) {
+                            Icon(
+                                Icons.Outlined.Warning,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.onSurface,
+                                modifier = Modifier.size(16.dp)
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(
+                                text = warning,
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+                        }
+                    }
+                }
+            }
+        }
+    } else {
+
+        EnhancedElevatedCard(modifier = Modifier.fillMaxWidth()) {
+            Column(
+                modifier = Modifier.padding(16.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Text(
+                    text = Strings.folderSelectFolder,
+                    style = MaterialTheme.typography.titleMedium
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    text = Strings.folderSelectHint,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    textAlign = TextAlign.Center
+                )
+                Spacer(modifier = Modifier.height(16.dp))
+
+                PremiumOutlinedButton(
+                    onClick = onSelectFolder,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Icon(
+                        Icons.Outlined.FolderOpen,
+                        contentDescription = null,
+                        modifier = Modifier.size(20.dp)
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(Strings.folderSelectFolder)
+                }
+
+                if (folderError != null) {
+                    Spacer(modifier = Modifier.height(12.dp))
+                    EnhancedElevatedCard(
+                        colors = CardDefaults.cardColors(
+                            containerColor = MaterialTheme.colorScheme.errorContainer
+                        )
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(12.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(
+                                Icons.Outlined.Error,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.onErrorContainer,
+                                modifier = Modifier.size(16.dp)
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(
+                                text = folderError,
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onErrorContainer
+                            )
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+private val FOLDER_SKIP_PATTERNS = setOf(
+    "__MACOSX", ".DS_Store", "Thumbs.db", ".git", ".svn", ".hg",
+    "node_modules", ".idea", ".vscode"
+)
+
+private fun importFolderFromSaf(
+    context: android.content.Context,
+    treeUri: Uri
+): ZipProjectImporter.ZipProjectAnalysis {
+    val tempDir = File(context.cacheDir, "folder_import_${System.currentTimeMillis()}").apply {
+        if (exists()) deleteRecursively()
+        mkdirs()
+    }
+
+    try {
+
+        val docId = DocumentsContract.getTreeDocumentId(treeUri)
+        val docUri = DocumentsContract.buildDocumentUriUsingTree(treeUri, docId)
+
+        var folderName = "HTML Project"
+        context.contentResolver.query(
+            docUri,
+            arrayOf(DocumentsContract.Document.COLUMN_DISPLAY_NAME),
+            null, null, null
+        )?.use { cursor ->
+            if (cursor.moveToFirst()) {
+                folderName = cursor.getString(0) ?: folderName
+            }
+        }
+
+        copyDocumentTree(context, treeUri, docId, tempDir)
+
+        val projectRoot = unwrapSingleRootDir(tempDir)
+
+        return analyzeFolder(projectRoot, folderName)
+
+    } catch (e: Exception) {
+        tempDir.deleteRecursively()
+        AppLogger.e("FolderImport", "文件夹导入失败", e)
+        throw RuntimeException(Strings.folderImportFailed.replace("%s", e.message ?: "Unknown"), e)
+    }
+}
+
+private fun copyDocumentTree(
+    context: android.content.Context,
+    treeUri: Uri,
+    parentDocId: String,
+    targetDir: File
+) {
+    val childrenUri = DocumentsContract.buildChildDocumentsUriUsingTree(treeUri, parentDocId)
+
+    context.contentResolver.query(
+        childrenUri,
+        arrayOf(
+            DocumentsContract.Document.COLUMN_DOCUMENT_ID,
+            DocumentsContract.Document.COLUMN_DISPLAY_NAME,
+            DocumentsContract.Document.COLUMN_MIME_TYPE,
+            DocumentsContract.Document.COLUMN_SIZE
+        ),
+        null, null, null
+    )?.use { cursor ->
+        val docIdIndex = cursor.getColumnIndex(DocumentsContract.Document.COLUMN_DOCUMENT_ID)
+        val nameIndex = cursor.getColumnIndex(DocumentsContract.Document.COLUMN_DISPLAY_NAME)
+        val mimeIndex = cursor.getColumnIndex(DocumentsContract.Document.COLUMN_MIME_TYPE)
+
+        while (cursor.moveToNext()) {
+            val childDocId = cursor.getString(docIdIndex)
+            val childName = cursor.getString(nameIndex) ?: continue
+            val mimeType = cursor.getString(mimeIndex) ?: ""
+
+            if (FOLDER_SKIP_PATTERNS.any { childName.equals(it, ignoreCase = true) }) {
+                continue
+            }
+
+            if (mimeType == DocumentsContract.Document.MIME_TYPE_DIR) {
+
+                val subDir = File(targetDir, childName).apply { mkdirs() }
+                copyDocumentTree(context, treeUri, childDocId, subDir)
+            } else {
+
+                val targetFile = File(targetDir, childName)
+                val fileUri = DocumentsContract.buildDocumentUriUsingTree(treeUri, childDocId)
+                try {
+                    context.contentResolver.openInputStream(fileUri)?.use { input ->
+                        targetFile.outputStream().use { output ->
+                            input.copyTo(output)
+                        }
+                    }
+                } catch (e: Exception) {
+                    AppLogger.w("FolderImport", "复制文件失败: $childName", e)
+                }
+            }
+        }
+    }
+}
+
+private fun unwrapSingleRootDir(dir: File): File {
+    val children = dir.listFiles() ?: return dir
+    return if (children.size == 1 && children[0].isDirectory) {
+        children[0]
+    } else {
+        dir
+    }
+}
+
+private val HTML_EXT = setOf("html", "htm", "xhtml")
+private val CSS_EXT = setOf("css")
+private val JS_EXT = setOf("js", "mjs", "jsx", "ts", "tsx")
+private val IMG_EXT = setOf("png", "jpg", "jpeg", "gif", "webp", "svg", "ico", "bmp", "avif")
+private val FONT_EXT = setOf("ttf", "otf", "woff", "woff2", "eot")
+private val AUDIO_EXT = setOf("mp3", "wav", "ogg", "aac", "flac", "m4a")
+private val VIDEO_EXT = setOf("mp4", "webm", "mkv", "avi", "mov")
+private val DATA_EXT = setOf("json", "xml", "csv", "txt", "md", "yaml", "yml")
+
+private fun analyzeFolder(
+    projectDir: File,
+    folderName: String
+): ZipProjectImporter.ZipProjectAnalysis {
+    val allFiles = mutableListOf<ZipProjectImporter.ProjectFile>()
+    val warnings = mutableListOf<String>()
+
+    projectDir.walkTopDown()
+        .filter { it.isFile }
+        .filter { file -> !FOLDER_SKIP_PATTERNS.any { file.name.equals(it, ignoreCase = true) } }
+        .forEach { file ->
+            val relativePath = file.relativeTo(projectDir).path
+            val resourceType = classifyFileByExt(file.name)
+            allFiles.add(
+                ZipProjectImporter.ProjectFile(
+                    relativePath = relativePath,
+                    absolutePath = file.absolutePath,
+                    size = file.length(),
+                    resourceType = resourceType
+                )
+            )
+        }
+
+    val htmlFiles = allFiles.filter { it.resourceType == ZipProjectImporter.ResourceType.HTML }
+
+    val entryFile = htmlFiles.find { it.relativePath.equals("index.html", ignoreCase = true) }?.relativePath
+        ?: htmlFiles.find { it.relativePath.equals("index.htm", ignoreCase = true) }?.relativePath
+        ?: htmlFiles.find { it.fileName.equals("index.html", ignoreCase = true) }?.relativePath
+        ?: htmlFiles.find { !it.relativePath.contains('/') }?.relativePath
+        ?: htmlFiles.firstOrNull()?.relativePath
+
+    if (entryFile == null && htmlFiles.isEmpty()) {
+        warnings.add(Strings.folderNoHtmlWarning)
+    }
+
+    if (allFiles.any { it.size > 50 * 1024 * 1024 }) {
+        warnings.add(Strings.largeFileWarning)
+    }
+
+    val stats = ZipProjectImporter.ResourceType.entries
+        .map { type ->
+            val files = allFiles.filter { it.resourceType == type }
+            ZipProjectImporter.ResourceStats(
+                type = type,
+                count = files.size,
+                totalSize = files.sumOf { it.size }
+            )
+        }
+        .filter { it.count > 0 }
+
+    return ZipProjectImporter.ZipProjectAnalysis(
+        extractDir = projectDir.absolutePath,
+        allFiles = allFiles,
+        entryFile = entryFile ?: htmlFiles.firstOrNull()?.relativePath ?: "index.html",
+        htmlFiles = htmlFiles,
+        stats = stats,
+        totalFileCount = allFiles.size,
+        totalSize = allFiles.sumOf { it.size },
+        warnings = warnings,
+        zipFileName = folderName
+    )
+}
+
+private fun classifyFileByExt(fileName: String): ZipProjectImporter.ResourceType {
+    val ext = fileName.substringAfterLast('.', "").lowercase()
+    return when (ext) {
+        in HTML_EXT -> ZipProjectImporter.ResourceType.HTML
+        in CSS_EXT -> ZipProjectImporter.ResourceType.CSS
+        in JS_EXT -> ZipProjectImporter.ResourceType.JS
+        in IMG_EXT -> ZipProjectImporter.ResourceType.IMAGE
+        in FONT_EXT -> ZipProjectImporter.ResourceType.FONT
+        in AUDIO_EXT -> ZipProjectImporter.ResourceType.AUDIO
+        in VIDEO_EXT -> ZipProjectImporter.ResourceType.VIDEO
+        in DATA_EXT -> ZipProjectImporter.ResourceType.DATA
+        else -> ZipProjectImporter.ResourceType.OTHER
+    }
+}

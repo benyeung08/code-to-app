@@ -1,0 +1,1593 @@
+package com.webtoapp.ui.screens
+
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+
+import com.webtoapp.ui.components.PremiumButton
+import com.webtoapp.ui.design.WtaChip
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.*
+import androidx.compose.material.icons.outlined.*
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.input.VisualTransformation
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.platform.LocalUriHandler
+import androidx.compose.ui.unit.dp
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.ui.window.Dialog
+import com.webtoapp.core.ai.AiApiClient
+import com.webtoapp.core.ai.AiConfigManager
+import com.webtoapp.core.i18n.Strings
+import com.webtoapp.data.model.*
+import com.webtoapp.ui.components.*
+import kotlinx.coroutines.launch
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.text.style.TextAlign
+import com.webtoapp.ui.design.WtaAlertDialog
+import com.webtoapp.ui.design.WtaCard
+import com.webtoapp.ui.design.WtaScreen
+import com.webtoapp.ui.design.WtaSection
+import com.webtoapp.ui.design.WtaSpacing
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun AiSettingsScreen(
+    onBack: () -> Unit
+) {
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+    val configManager = remember { AiConfigManager(context) }
+    val apiClient = remember { AiApiClient(context) }
+
+    val apiKeys by configManager.apiKeysFlow.collectAsStateWithLifecycle(initialValue = emptyList())
+    val savedModels by configManager.savedModelsFlow.collectAsStateWithLifecycle(initialValue = emptyList())
+
+    var showAddApiKeyDialog by remember { mutableStateOf(false) }
+    var showAddModelDialog by remember { mutableStateOf(false) }
+    var selectedApiKey by remember { mutableStateOf<ApiKeyConfig?>(null) }
+    var editingApiKey by remember { mutableStateOf<ApiKeyConfig?>(null) }
+    var editingModel by remember { mutableStateOf<SavedModel?>(null) }
+    var deletingApiKey by remember { mutableStateOf<ApiKeyConfig?>(null) }
+    var deletingModel by remember { mutableStateOf<SavedModel?>(null) }
+    val snackbarHostState = remember { SnackbarHostState() }
+
+    var selectedTab by remember { mutableStateOf(0) }
+    val catalogRepo = remember { com.webtoapp.core.ai.ModelsDevRepository.getInstance(context) }
+    val catalogState by catalogRepo.state.collectAsStateWithLifecycle()
+
+    WtaScreen(
+        title = Strings.aiSettings,
+        snackbarHostState = snackbarHostState,
+        onBack = onBack
+    ) {
+        Column(modifier = Modifier.fillMaxSize()) {
+            SecondaryTabRow(selectedTabIndex = selectedTab) {
+                AiSettingsTab(
+                    selected = selectedTab == 0,
+                    onClick = { selectedTab = 0 },
+                    icon = Icons.Outlined.Key,
+                    label = Strings.apiKeys,
+                    count = apiKeys.size
+                )
+                AiSettingsTab(
+                    selected = selectedTab == 1,
+                    onClick = { selectedTab = 1 },
+                    icon = Icons.Outlined.SmartToy,
+                    label = Strings.savedModels,
+                    count = savedModels.size
+                )
+                AiSettingsTab(
+                    selected = selectedTab == 2,
+                    onClick = { selectedTab = 2 },
+                    icon = Icons.Outlined.GridView,
+                    label = Strings.aiModelCatalog,
+                    count = null
+                )
+            }
+            when (selectedTab) {
+                0 -> LazyColumn(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(horizontal = WtaSpacing.ScreenHorizontal),
+                    contentPadding = PaddingValues(vertical = WtaSpacing.ScreenVertical),
+                    verticalArrangement = Arrangement.spacedBy(WtaSpacing.SectionGap)
+                ) {
+                    item {
+                        ApiKeysSection(
+                            apiKeys = apiKeys,
+                            onAddClick = { showAddApiKeyDialog = true },
+                            onEditClick = { editingApiKey = it },
+                            onDeleteClick = { key -> deletingApiKey = key },
+                            onTestClick = { key ->
+                                scope.launch {
+                                    val result = apiClient.testConnection(key)
+                                    result.onSuccess {
+                                        snackbarHostState.showSnackbar(
+                                            message = Strings.aiConnectionOk.format(key.provider.name),
+                                            duration = SnackbarDuration.Short
+                                        )
+                                    }.onFailure { error ->
+                                        snackbarHostState.showSnackbar(
+                                            message = Strings.aiConnectionFail.format(error.message),
+                                            duration = SnackbarDuration.Long
+                                        )
+                                    }
+                                }
+                            }
+                        )
+                    }
+                }
+                1 -> LazyColumn(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(horizontal = WtaSpacing.ScreenHorizontal),
+                    contentPadding = PaddingValues(vertical = WtaSpacing.ScreenVertical),
+                    verticalArrangement = Arrangement.spacedBy(WtaSpacing.SectionGap)
+                ) {
+                    item {
+                        SavedModelsSection(
+                            models = savedModels,
+                            apiKeys = apiKeys,
+                            onAddClick = {
+                                if (apiKeys.isNotEmpty()) {
+                                    selectedApiKey = null
+                                    showAddModelDialog = true
+                                }
+                            },
+                            onEditClick = { editingModel = it },
+                            onDeleteClick = { model -> deletingModel = model },
+                            onSetDefaultClick = { model ->
+                                scope.launch { configManager.setDefaultModel(model.id) }
+                            }
+                        )
+                    }
+                }
+                2 -> ModelCatalogSection(
+                    repo = catalogRepo,
+                    state = catalogState,
+                    apiKeys = apiKeys,
+                    configManager = configManager,
+                    scope = scope,
+                    snackbarHostState = snackbarHostState
+                )
+            }
+        }
+
+    if (showAddApiKeyDialog) {
+        AddApiKeyDialog(
+            onDismiss = { showAddApiKeyDialog = false },
+            onConfirm = { config ->
+                scope.launch {
+                    if (configManager.addApiKey(config)) {
+                        showAddApiKeyDialog = false
+                    } else {
+                        snackbarHostState.showSnackbar(
+                            message = Strings.saveFailed,
+                            duration = SnackbarDuration.Short
+                        )
+                    }
+                }
+            },
+            onTest = { config ->
+                scope.launch { apiClient.testConnection(config) }
+            }
+        )
+    }
+
+    editingApiKey?.let { key ->
+        AddApiKeyDialog(
+            initialConfig = key,
+            onDismiss = { editingApiKey = null },
+            onConfirm = { config ->
+                scope.launch {
+                    if (configManager.updateApiKey(config)) {
+                        editingApiKey = null
+                    } else {
+                        snackbarHostState.showSnackbar(
+                            message = Strings.saveFailed,
+                            duration = SnackbarDuration.Short
+                        )
+                    }
+                }
+            },
+            onTest = { config ->
+                scope.launch { apiClient.testConnection(config) }
+            }
+        )
+    }
+
+    if (showAddModelDialog && apiKeys.isNotEmpty()) {
+        AddModelDialog(
+            apiKeys = apiKeys,
+            initialApiKey = selectedApiKey ?: apiKeys.first(),
+            apiClient = apiClient,
+            onDismiss = { showAddModelDialog = false },
+            onConfirm = { models ->
+                scope.launch {
+                    var allSaved = true
+                    models.forEach { model ->
+                        if (!configManager.saveModel(model)) {
+                            allSaved = false
+                        }
+                    }
+                    if (allSaved) {
+                        showAddModelDialog = false
+                    } else {
+                        snackbarHostState.showSnackbar(
+                            message = Strings.saveFailed,
+                            duration = SnackbarDuration.Short
+                        )
+                    }
+                }
+            }
+        )
+    }
+
+    editingModel?.let { model ->
+        EditModelDialog(
+            model = model,
+            onDismiss = { editingModel = null },
+            onConfirm = { updatedModel ->
+                scope.launch {
+                    if (configManager.updateSavedModel(updatedModel)) {
+                        editingModel = null
+                    } else {
+                        snackbarHostState.showSnackbar(
+                            message = Strings.saveFailed,
+                            duration = SnackbarDuration.Short
+                        )
+                    }
+                }
+            }
+        )
+    }
+
+    deletingApiKey?.let { key ->
+        val linkedModels = savedModels.filter { it.apiKeyId == key.id }
+        WtaAlertDialog(
+            onDismissRequest = { deletingApiKey = null },
+            icon = Icons.Outlined.Delete,
+            iconTint = MaterialTheme.colorScheme.error,
+            title = Strings.deleteConfirmTitle,
+            text = if (linkedModels.isEmpty()) Strings.aiDeleteKeyConfirm
+                else Strings.aiDeleteKeyConfirm + "\n" + Strings.aiDeleteKeyCascade.format(linkedModels.size),
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        scope.launch {
+                            // A saved model without its key is dead weight — cascade.
+                            linkedModels.forEach { configManager.deleteSavedModel(it.id) }
+                            configManager.deleteApiKey(key.id)
+                            deletingApiKey = null
+                        }
+                    }
+                ) {
+                    Text(Strings.btnDelete, color = MaterialTheme.colorScheme.error)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { deletingApiKey = null }) {
+                    Text(Strings.btnCancel)
+                }
+            }
+        )
+    }
+
+    deletingModel?.let { model ->
+        WtaAlertDialog(
+            onDismissRequest = { deletingModel = null },
+            icon = Icons.Outlined.Delete,
+            iconTint = MaterialTheme.colorScheme.error,
+            title = Strings.deleteConfirmTitle,
+            text = Strings.aiDeleteModelConfirm,
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        scope.launch {
+                            configManager.deleteSavedModel(model.id)
+                            deletingModel = null
+                        }
+                    }
+                ) {
+                    Text(Strings.btnDelete, color = MaterialTheme.colorScheme.error)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { deletingModel = null }) {
+                    Text(Strings.btnCancel)
+                }
+            }
+        )
+    }
+    }
+}
+
+@Composable
+private fun AiSettingsTab(
+    selected: Boolean,
+    onClick: () -> Unit,
+    icon: ImageVector,
+    label: String,
+    count: Int?
+) {
+    Tab(
+        selected = selected,
+        onClick = onClick,
+        text = {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(icon, contentDescription = null, modifier = Modifier.size(15.dp))
+                Spacer(modifier = Modifier.width(5.dp))
+                Text(
+                    if (count != null) "$label ($count)" else label,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+            }
+        }
+    )
+}
+
+@Composable
+private fun AiEmptyCard(icon: ImageVector, text: String) {
+    WtaCard(modifier = Modifier.fillMaxWidth()) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(vertical = WtaSpacing.Medium),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(WtaSpacing.Small)
+        ) {
+            Icon(
+                icon,
+                contentDescription = null,
+                modifier = Modifier.size(32.dp),
+                tint = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            Text(
+                text,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                textAlign = TextAlign.Center
+            )
+        }
+    }
+}
+
+// The "[OK] "/"[FAIL] " tags baked into the shared result strings are handy in
+// logs; on screen the color already carries the meaning.
+private fun String.stripResultTag(): String =
+    removePrefix("[OK] ").removePrefix("[FAIL] ")
+
+@Composable
+private fun ApiKeysSection(
+    apiKeys: List<ApiKeyConfig>,
+    onAddClick: () -> Unit,
+    onEditClick: (ApiKeyConfig) -> Unit,
+    onDeleteClick: (ApiKeyConfig) -> Unit,
+    onTestClick: (ApiKeyConfig) -> Unit
+) {
+    WtaSection(
+        title = Strings.apiKeys,
+        trailing = {
+            IconButton(onClick = onAddClick) {
+                Icon(Icons.Default.Add, Strings.add)
+            }
+        }
+    ) {
+        if (apiKeys.isEmpty()) {
+            AiEmptyCard(icon = Icons.Outlined.KeyOff, text = Strings.noApiKeysHint)
+        } else {
+            Column(verticalArrangement = Arrangement.spacedBy(WtaSpacing.Small)) {
+                apiKeys.forEach { key ->
+                    ApiKeyItem(
+                        config = key,
+                        onEdit = { onEditClick(key) },
+                        onDelete = { onDeleteClick(key) },
+                        onTest = { onTestClick(key) }
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun ApiKeyItem(
+    config: ApiKeyConfig,
+    onEdit: () -> Unit,
+    onDelete: () -> Unit,
+    onTest: () -> Unit
+) {
+    var showMenu by remember { mutableStateOf(false) }
+    var isTesting by remember { mutableStateOf(false) }
+    var testOk by remember { mutableStateOf<Boolean?>(null) }
+    var testResult by remember { mutableStateOf<String?>(null) }
+    val scope = rememberCoroutineScope()
+    val context = LocalContext.current
+    val apiClient = remember { AiApiClient(context) }
+
+    WtaCard(
+        onClick = onEdit,
+        modifier = Modifier.fillMaxWidth(),
+        contentPadding = PaddingValues(12.dp)
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Surface(
+                shape = RoundedCornerShape(10.dp),
+                color = MaterialTheme.colorScheme.primaryContainer,
+                modifier = Modifier.size(38.dp)
+            ) {
+                Box(contentAlignment = Alignment.Center) {
+                    Icon(
+                        Icons.Outlined.Key,
+                        contentDescription = null,
+                        modifier = Modifier.size(18.dp),
+                        tint = MaterialTheme.colorScheme.onPrimaryContainer
+                    )
+                }
+            }
+            Spacer(modifier = Modifier.width(10.dp))
+
+            Column(modifier = Modifier.weight(weight = 1f, fill = true)) {
+                Text(
+                    config.displayName,
+                    style = MaterialTheme.typography.bodyMedium,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+                Text(
+                    buildString {
+                        append(config.provider.displayName)
+                        if (config.apiKey.isNotBlank()) append(" · ****${config.apiKey.takeLast(4)}")
+                    },
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+                config.baseUrl?.takeIf { it.isNotBlank() }?.let {
+                    Text(
+                        it,
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                }
+                testResult?.let {
+                    Text(
+                        it.stripResultTag(),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = if (testOk == true) MaterialTheme.colorScheme.primary
+                               else MaterialTheme.colorScheme.error
+                    )
+                }
+            }
+
+            TextButton(
+                onClick = {
+                    scope.launch {
+                        isTesting = true
+                        testOk = null
+                        testResult = null
+                        val result = apiClient.testConnection(config)
+                        testOk = result.isSuccess
+                        testResult = if (result.isSuccess) Strings.connectionSuccess
+                            else Strings.connectionFailed.format(result.exceptionOrNull()?.message ?: "")
+                        isTesting = false
+                    }
+                },
+                enabled = !isTesting
+            ) {
+                if (isTesting) {
+                    CircularProgressIndicator(modifier = Modifier.size(14.dp), strokeWidth = 2.dp)
+                    Spacer(modifier = Modifier.width(6.dp))
+                }
+                Text(Strings.test)
+            }
+
+            Box {
+                IconButton(onClick = { showMenu = true }) {
+                    Icon(Icons.Default.MoreVert, Strings.more)
+                }
+                DropdownMenu(
+                    expanded = showMenu,
+                    onDismissRequest = { showMenu = false }
+                ) {
+                    DropdownMenuItem(
+                        text = { Text(Strings.edit) },
+                        onClick = { showMenu = false; onEdit() },
+                        leadingIcon = { Icon(Icons.Outlined.Edit, null) }
+                    )
+                    DropdownMenuItem(
+                        text = { Text(Strings.btnDelete) },
+                        onClick = { showMenu = false; onDelete() },
+                        leadingIcon = { Icon(Icons.Outlined.Delete, null) }
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun SavedModelsSection(
+    models: List<SavedModel>,
+    apiKeys: List<ApiKeyConfig>,
+    onAddClick: () -> Unit,
+    onEditClick: (SavedModel) -> Unit,
+    onDeleteClick: (SavedModel) -> Unit,
+    onSetDefaultClick: (SavedModel) -> Unit
+) {
+    WtaSection(
+        title = Strings.savedModels,
+        description = Strings.configModelCapabilities,
+        trailing = {
+            IconButton(
+                onClick = onAddClick,
+                enabled = apiKeys.isNotEmpty()
+            ) {
+                Icon(Icons.Default.Add, Strings.add)
+            }
+        }
+    ) {
+        if (models.isEmpty()) {
+            AiEmptyCard(
+                icon = if (apiKeys.isEmpty()) Icons.Outlined.KeyOff else Icons.Outlined.SmartToy,
+                text = if (apiKeys.isEmpty()) Strings.pleaseAddApiKeyFirst else Strings.noSavedModelsHint
+            )
+        } else {
+            val apiKeyMap = apiKeys.associateBy { it.id }
+            Column(verticalArrangement = Arrangement.spacedBy(WtaSpacing.Small)) {
+                models.forEach { model ->
+                    val apiKey = apiKeyMap[model.apiKeyId]
+                    SavedModelItem(
+                        model = model,
+                        apiKey = apiKey,
+                        apiKeyName = apiKey?.displayName,
+                        onEdit = { onEditClick(model) },
+                        onDelete = { onDeleteClick(model) },
+                        onSetDefault = { onSetDefaultClick(model) }
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun SavedModelItem(
+    model: SavedModel,
+    apiKey: ApiKeyConfig? = null,
+    apiKeyName: String? = null,
+    onEdit: () -> Unit,
+    onDelete: () -> Unit,
+    onSetDefault: () -> Unit
+) {
+    var showMenu by remember { mutableStateOf(false) }
+    var isTesting by remember { mutableStateOf(false) }
+    var testOk by remember { mutableStateOf<Boolean?>(null) }
+    var testResult by remember { mutableStateOf<String?>(null) }
+    val scope = rememberCoroutineScope()
+    val context = LocalContext.current
+    val apiClient = remember { AiApiClient(context) }
+
+    val category = model.capabilities.firstOrNull() ?: ModelCapability.TEXT
+    val capIcon = when (category) {
+        ModelCapability.MULTIMODAL -> Icons.Outlined.Visibility
+        ModelCapability.IMAGE_GENERATION -> Icons.Outlined.Image
+        else -> Icons.Outlined.Forum
+    }
+    val capPlateColor = when (category) {
+        ModelCapability.MULTIMODAL -> MaterialTheme.colorScheme.primaryContainer
+        ModelCapability.IMAGE_GENERATION -> MaterialTheme.colorScheme.tertiaryContainer
+        else -> MaterialTheme.colorScheme.secondaryContainer
+    }
+    val capOnPlateColor = when (category) {
+        ModelCapability.MULTIMODAL -> MaterialTheme.colorScheme.onPrimaryContainer
+        ModelCapability.IMAGE_GENERATION -> MaterialTheme.colorScheme.onTertiaryContainer
+        else -> MaterialTheme.colorScheme.onSecondaryContainer
+    }
+
+    WtaCard(
+        onClick = onEdit,
+        modifier = Modifier.fillMaxWidth(),
+        contentPadding = PaddingValues(12.dp)
+    ) {
+        Column {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Surface(
+                    shape = RoundedCornerShape(10.dp),
+                    color = capPlateColor,
+                    modifier = Modifier.size(38.dp)
+                ) {
+                    Box(contentAlignment = Alignment.Center) {
+                        Icon(
+                            capIcon,
+                            contentDescription = null,
+                            modifier = Modifier.size(18.dp),
+                            tint = capOnPlateColor
+                        )
+                    }
+                }
+                Spacer(modifier = Modifier.width(10.dp))
+
+                Column(modifier = Modifier.weight(weight = 1f, fill = true)) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text(
+                            model.alias ?: model.model.name,
+                            style = MaterialTheme.typography.bodyMedium,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                        if (model.isDefault) {
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Surface(
+                                shape = MaterialTheme.shapes.extraSmall,
+                                color = MaterialTheme.colorScheme.primaryContainer
+                            ) {
+                                Text(
+                                    Strings.defaultLabel,
+                                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = MaterialTheme.colorScheme.onPrimaryContainer
+                                )
+                            }
+                        }
+                    }
+
+                    Text(
+                        if (apiKeyName != null)
+                            "$apiKeyName · ${model.model.id}"
+                        else
+                            "${model.model.provider.displayName} / ${model.model.id}",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    testResult?.let {
+                        Text(
+                            it.stripResultTag(),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = if (testOk == true) MaterialTheme.colorScheme.primary
+                                    else MaterialTheme.colorScheme.error
+                        )
+                    }
+                }
+
+                TextButton(
+                    onClick = {
+                        scope.launch {
+                            isTesting = true
+                            testOk = null
+                            testResult = null
+                            if (apiKey == null) {
+                                testOk = false
+                                testResult = Strings.agentMissingApiKey
+                            } else {
+                                val result = apiClient.testModel(apiKey, model.model)
+                                testOk = result.isSuccess
+                                testResult = if (result.isSuccess) Strings.connectionSuccess
+                                    else Strings.connectionFailed.format(result.exceptionOrNull()?.message ?: "")
+                            }
+                            isTesting = false
+                        }
+                    },
+                    enabled = !isTesting
+                ) {
+                    if (isTesting) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(14.dp),
+                            strokeWidth = 2.dp
+                        )
+                        Spacer(modifier = Modifier.width(6.dp))
+                    }
+                    Text(Strings.test)
+                }
+
+                Box {
+                    IconButton(onClick = { showMenu = true }) {
+                        Icon(Icons.Default.MoreVert, Strings.more)
+                    }
+                    DropdownMenu(
+                        expanded = showMenu,
+                        onDismissRequest = { showMenu = false }
+                    ) {
+                        DropdownMenuItem(
+                            text = { Text(Strings.edit) },
+                            onClick = { showMenu = false; onEdit() },
+                            leadingIcon = { Icon(Icons.Outlined.Edit, null) }
+                        )
+                        if (!model.isDefault) {
+                            DropdownMenuItem(
+                                text = { Text(Strings.setAsDefault) },
+                                onClick = { showMenu = false; onSetDefault() },
+                                leadingIcon = { Icon(Icons.Outlined.Star, null) }
+                            )
+                        }
+                        DropdownMenuItem(
+                            text = { Text(Strings.btnDelete) },
+                            onClick = { showMenu = false; onDelete() },
+                            leadingIcon = { Icon(Icons.Outlined.Delete, null) }
+                        )
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(8.dp))
+            Surface(
+                shape = MaterialTheme.shapes.extraSmall,
+                color = when (category) {
+                    ModelCapability.MULTIMODAL -> MaterialTheme.colorScheme.primaryContainer
+                    ModelCapability.IMAGE_GENERATION -> MaterialTheme.colorScheme.tertiaryContainer
+                    else -> MaterialTheme.colorScheme.secondaryContainer
+                }
+            ) {
+                Text(
+                    category.displayName,
+                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSecondaryContainer
+                )
+            }
+
+            val supportedFeatures = model.getSupportedFeatures()
+            if (supportedFeatures.isNotEmpty()) {
+                Spacer(modifier = Modifier.height(4.dp))
+                Text(
+                    "${Strings.availableFor}: ${supportedFeatures.joinToString(Strings.chineseSeparator) { it.displayName }}",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis
+                )
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun AddApiKeyDialog(
+    initialConfig: ApiKeyConfig? = null,
+    onDismiss: () -> Unit,
+    onConfirm: (ApiKeyConfig) -> Unit,
+    onTest: (ApiKeyConfig) -> Unit
+) {
+    var selectedProvider by remember { mutableStateOf(initialConfig?.provider ?: AiProvider.GOOGLE) }
+    var apiKey by remember { mutableStateOf(initialConfig?.apiKey ?: "") }
+    var customBaseUrl by remember { mutableStateOf(initialConfig?.baseUrl ?: "") }
+    var customModelsEndpoint by remember { mutableStateOf(initialConfig?.customModelsEndpoint ?: "") }
+    var customChatEndpoint by remember { mutableStateOf(initialConfig?.customChatEndpoint ?: "") }
+    var selectedApiFormat by remember { mutableStateOf(initialConfig?.apiFormat ?: ApiFormat.OPENAI_COMPATIBLE) }
+    // Default chat endpoint for CUSTOM endpoints follows the selected wire format and
+    // mirrors ApiKeyConfig.getEffectiveChatEndpoint()'s CUSTOM branch.
+    val customDefaultChatEndpoint = when (selectedApiFormat) {
+        ApiFormat.ANTHROPIC -> "/v1/messages"
+        ApiFormat.OPENAI_RESPONSES -> "/v1/responses"
+        else -> "/v1/chat/completions"
+    }
+    var alias by remember { mutableStateOf(initialConfig?.alias ?: "") }
+    var showApiKey by remember { mutableStateOf(false) }
+    var testResult by remember { mutableStateOf<String?>(null) }
+    var isTesting by remember { mutableStateOf(false) }
+    var showAdvancedOptions by remember { mutableStateOf(initialConfig?.customModelsEndpoint != null || initialConfig?.customChatEndpoint != null) }
+    val scope = rememberCoroutineScope()
+    val context = LocalContext.current
+    val apiClient = remember { AiApiClient(context) }
+    val uriHandler = LocalUriHandler.current
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(if (initialConfig != null) Strings.editApiKey else Strings.addApiKey) },
+        text = {
+            Column(
+                modifier = Modifier.verticalScroll(rememberScrollState()),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+
+                var expanded by remember { mutableStateOf(false) }
+                ExposedDropdownMenuBox(
+                    expanded = expanded,
+                    onExpandedChange = { expanded = it }
+                ) {
+                    OutlinedTextField(
+                        value = selectedProvider.displayName,
+                        onValueChange = {},
+                        readOnly = true,
+                        label = { Text(Strings.provider) },
+                        trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded) },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .menuAnchor()
+                    )
+                    ExposedDropdownMenu(
+                        expanded = expanded,
+                        onDismissRequest = { expanded = false }
+                    ) {
+                        val groupedProviders = AiProvider.entries.groupBy { it.category }
+                        val categoryOrder = listOf(
+                            ProviderCategory.RECOMMENDED,
+                            ProviderCategory.INTERNATIONAL,
+                            ProviderCategory.AGGREGATOR,
+                            ProviderCategory.CHINESE,
+                            ProviderCategory.SELF_HOSTED,
+                            ProviderCategory.CUSTOM
+                        )
+                        categoryOrder.forEach { category ->
+                            val providers = groupedProviders[category] ?: return@forEach
+
+                            DropdownMenuItem(
+                                text = {
+                                    Text(
+                                        category.displayName,
+                                        style = MaterialTheme.typography.labelSmall,
+                                        color = MaterialTheme.colorScheme.primary
+                                    )
+                                },
+                                onClick = {},
+                                enabled = false
+                            )
+                            providers.forEach { provider ->
+                                DropdownMenuItem(
+                                    text = {
+                                        Text(
+                                            "  ${provider.displayName}",
+                                            style = MaterialTheme.typography.bodyMedium
+                                        )
+                                    },
+                                    onClick = {
+                                        selectedProvider = provider
+                                        expanded = false
+                                    }
+                                )
+                            }
+                        }
+                    }
+                }
+
+                if (selectedProvider.apiKeyUrl.isNotBlank()) {
+                    Surface(
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = MaterialTheme.shapes.small,
+                        color = if (com.webtoapp.ui.theme.LocalIsDarkTheme.current) Color.White.copy(alpha = 0.10f) else Color.White.copy(alpha = 0.72f)
+                    ) {
+                        Column(
+                            modifier = Modifier.padding(12.dp),
+                            verticalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            TextButton(
+                                onClick = { uriHandler.openUri(selectedProvider.apiKeyUrl) },
+                                modifier = Modifier.fillMaxWidth(),
+                                contentPadding = PaddingValues(horizontal = 0.dp, vertical = 4.dp)
+                            ) {
+                                Icon(
+                                    Icons.Outlined.OpenInNew,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(16.dp)
+                                )
+                                Spacer(modifier = Modifier.width(4.dp))
+                                Text(Strings.getApiKey, style = MaterialTheme.typography.labelMedium)
+                            }
+                        }
+                    }
+                }
+
+                OutlinedTextField(
+                    value = apiKey,
+                    onValueChange = { apiKey = it },
+                    label = { Text(if (selectedProvider.requiresApiKey) "API Key" else "API Key (${Strings.optionalLabel})") },
+                    singleLine = true,
+                    visualTransformation = if (showApiKey) VisualTransformation.None
+                                          else PasswordVisualTransformation(),
+                    trailingIcon = {
+                        IconButton(onClick = { showApiKey = !showApiKey }) {
+                            Icon(
+                                if (showApiKey) Icons.Outlined.VisibilityOff
+                                else Icons.Outlined.Visibility,
+                                null
+                            )
+                        }
+                    },
+                    modifier = Modifier.fillMaxWidth()
+                )
+
+                OutlinedTextField(
+                    value = alias,
+                    onValueChange = { alias = it },
+                    label = { Text(Strings.aliasOptional) },
+                    placeholder = { Text(Strings.apiKeyAliasPlaceholder) },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth()
+                )
+
+                if (selectedProvider.allowCustomBaseUrl) {
+                    OutlinedTextField(
+                        value = customBaseUrl,
+                        onValueChange = { customBaseUrl = it },
+                        label = { Text("Base URL") },
+                        placeholder = { Text("https://api.example.com") },
+                        singleLine = true,
+                        supportingText = { Text(Strings.customBaseUrlHint) },
+                        modifier = Modifier.fillMaxWidth()
+                    )
+
+                    var formatExpanded by remember { mutableStateOf(false) }
+                    ExposedDropdownMenuBox(
+                        expanded = formatExpanded,
+                        onExpandedChange = { formatExpanded = it }
+                    ) {
+                        OutlinedTextField(
+                            value = selectedApiFormat.displayName,
+                            onValueChange = {},
+                            readOnly = true,
+                            label = { Text(Strings.apiFormat) },
+                            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(formatExpanded) },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .menuAnchor()
+                        )
+                        ExposedDropdownMenu(
+                            expanded = formatExpanded,
+                            onDismissRequest = { formatExpanded = false }
+                        ) {
+                            // CUSTOM endpoints support the three wire formats; the Gemini
+                            // format is internal to the GOOGLE provider entry.
+                            listOf(ApiFormat.OPENAI_COMPATIBLE, ApiFormat.ANTHROPIC, ApiFormat.OPENAI_RESPONSES)
+                                .forEach { format ->
+                                    DropdownMenuItem(
+                                        text = { Text(format.displayName) },
+                                        onClick = {
+                                            selectedApiFormat = format
+                                            formatExpanded = false
+                                        }
+                                    )
+                                }
+                        }
+                    }
+
+                    TextButton(
+                        onClick = { showAdvancedOptions = !showAdvancedOptions },
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Icon(
+                            if (showAdvancedOptions) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
+                            contentDescription = null,
+                            modifier = Modifier.size(18.dp)
+                        )
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text(Strings.advancedOptions)
+                    }
+
+                    AnimatedVisibility(visible = showAdvancedOptions) {
+                        Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                            OutlinedTextField(
+                                value = customModelsEndpoint,
+                                onValueChange = { customModelsEndpoint = it },
+                                label = { Text(Strings.modelsEndpoint) },
+                                placeholder = { Text("/v1/models") },
+                                singleLine = true,
+                                supportingText = { Text(Strings.modelsEndpointHint) },
+                                modifier = Modifier.fillMaxWidth()
+                            )
+
+                            OutlinedTextField(
+                                value = customChatEndpoint,
+                                onValueChange = { customChatEndpoint = it },
+                                label = { Text(Strings.chatEndpoint) },
+                                placeholder = { Text(customDefaultChatEndpoint) },
+                                singleLine = true,
+                                supportingText = { Text(Strings.chatEndpointDefaultHint(customDefaultChatEndpoint)) },
+                                modifier = Modifier.fillMaxWidth()
+                            )
+                        }
+                    }
+                }
+
+                testResult?.let {
+                    Text(
+                        it.stripResultTag(),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = if (it.startsWith("[OK]")) MaterialTheme.colorScheme.primary
+                               else MaterialTheme.colorScheme.error
+                    )
+                }
+            }
+        },
+        confirmButton = {
+            Row {
+
+                TextButton(
+                    onClick = {
+                        val config = ApiKeyConfig(
+                            id = initialConfig?.id ?: java.util.UUID.randomUUID().toString(),
+                            provider = selectedProvider,
+                            apiKey = apiKey,
+                            baseUrl = if (customBaseUrl.isNotBlank()) customBaseUrl else null,
+                            customModelsEndpoint = if (customModelsEndpoint.isNotBlank()) customModelsEndpoint else null,
+                            customChatEndpoint = if (customChatEndpoint.isNotBlank()) customChatEndpoint else null,
+                            apiFormat = selectedApiFormat,
+                            alias = if (alias.isNotBlank()) alias else null
+                        )
+                        scope.launch {
+                            isTesting = true
+                            testResult = Strings.testing
+                            val result = apiClient.testConnection(config)
+                            testResult = if (result.isSuccess) Strings.connectionSuccess else Strings.connectionFailed.format(result.exceptionOrNull()?.message ?: "")
+                            isTesting = false
+                        }
+                    },
+                    enabled = (apiKey.isNotBlank() || !selectedProvider.requiresApiKey) && !isTesting
+                ) {
+                    if (isTesting) {
+                        CircularProgressIndicator(modifier = Modifier.size(16.dp), strokeWidth = 2.dp)
+                    } else {
+                        Text(Strings.test)
+                    }
+                }
+
+                Spacer(modifier = Modifier.width(8.dp))
+
+                PremiumButton(
+                    onClick = {
+                        val config = ApiKeyConfig(
+                            id = initialConfig?.id ?: java.util.UUID.randomUUID().toString(),
+                            provider = selectedProvider,
+                            apiKey = apiKey,
+                            baseUrl = if (customBaseUrl.isNotBlank()) customBaseUrl else null,
+                            customModelsEndpoint = if (customModelsEndpoint.isNotBlank()) customModelsEndpoint else null,
+                            customChatEndpoint = if (customChatEndpoint.isNotBlank()) customChatEndpoint else null,
+                            apiFormat = selectedApiFormat,
+                            alias = if (alias.isNotBlank()) alias else null
+                        )
+                        onConfirm(config)
+                    },
+                    enabled = apiKey.isNotBlank() || !selectedProvider.requiresApiKey
+                ) {
+                    Text(Strings.btnSave)
+                }
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text(Strings.btnCancel)
+            }
+        }
+    )
+}
+
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
+@Composable
+private fun AddModelDialog(
+    apiKeys: List<ApiKeyConfig>,
+    initialApiKey: ApiKeyConfig,
+    apiClient: AiApiClient,
+    onDismiss: () -> Unit,
+    onConfirm: (List<SavedModel>) -> Unit
+) {
+    val scope = rememberCoroutineScope()
+    var selectedApiKey by remember { mutableStateOf(initialApiKey) }
+    var models by remember { mutableStateOf<List<AiModel>>(emptyList()) }
+    var isLoading by remember { mutableStateOf(true) }
+    var selectedModels by remember { mutableStateOf<Set<AiModel>>(emptySet()) }
+    var customModelId by remember { mutableStateOf("") }
+    var alias by remember { mutableStateOf("") }
+    var selectedCategory by remember { mutableStateOf(ModelCapability.TEXT) }
+    var errorMessage by remember { mutableStateOf<String?>(null) }
+    var isBatchMode by remember { mutableStateOf(false) }
+    var searchQuery by remember { mutableStateOf("") }
+
+    val filteredAndSortedModels = remember(models, searchQuery) {
+        val filtered = if (searchQuery.isBlank()) {
+            models
+        } else {
+            val query = searchQuery.lowercase()
+            models.filter {
+                it.name.lowercase().contains(query) ||
+                it.id.lowercase().contains(query)
+            }
+        }
+        filtered.sortedBy { it.name }
+    }
+
+    LaunchedEffect(selectedApiKey) {
+        isLoading = true
+        selectedModels = emptySet()
+        val result = apiClient.fetchModels(selectedApiKey)
+        if (result.isSuccess) {
+            models = result.getOrNull() ?: emptyList()
+            errorMessage = null
+        } else {
+            models = emptyList()
+            errorMessage = result.exceptionOrNull()?.message
+        }
+        isLoading = false
+    }
+
+    Dialog(onDismissRequest = onDismiss) {
+        Surface(
+            shape = MaterialTheme.shapes.extraLarge,
+            color = MaterialTheme.colorScheme.surface,
+            tonalElevation = 6.dp
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(24.dp)
+            ) {
+                Text(Strings.addModel, style = MaterialTheme.typography.headlineSmall)
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                var apiKeyExpanded by remember { mutableStateOf(false) }
+                ExposedDropdownMenuBox(
+                    expanded = apiKeyExpanded,
+                    onExpandedChange = { apiKeyExpanded = it }
+                ) {
+                    OutlinedTextField(
+                        value = selectedApiKey.displayName,
+                        onValueChange = {},
+                        readOnly = true,
+                        label = { Text(Strings.selectApiKey) },
+                        trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(apiKeyExpanded) },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .menuAnchor()
+                    )
+                    ExposedDropdownMenu(
+                        expanded = apiKeyExpanded,
+                        onDismissRequest = { apiKeyExpanded = false }
+                    ) {
+                        apiKeys.forEach { key ->
+                            DropdownMenuItem(
+                                text = {
+                                    Column {
+                                        Text(key.displayName)
+                                        Text(
+                                            "****${key.apiKey.takeLast(4)}",
+                                            style = MaterialTheme.typography.bodySmall,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                                        )
+                                    }
+                                },
+                                onClick = {
+                                    selectedApiKey = key
+                                    apiKeyExpanded = false
+                                }
+                            )
+                        }
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(12.dp))
+
+                if (isLoading) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(200.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        CircularProgressIndicator()
+                    }
+                } else if (errorMessage != null) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(100.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            errorMessage ?: "",
+                            color = MaterialTheme.colorScheme.error,
+                            style = MaterialTheme.typography.bodyMedium
+                        )
+                    }
+                } else {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(400.dp)
+                            .verticalScroll(rememberScrollState()),
+                        verticalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+
+                        if (models.isNotEmpty()) {
+
+                            OutlinedTextField(
+                                value = searchQuery,
+                                onValueChange = { searchQuery = it },
+                                placeholder = { Text(Strings.searchModels) },
+                                leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
+                                trailingIcon = {
+                                    if (searchQuery.isNotEmpty()) {
+                                        IconButton(onClick = { searchQuery = "" }) {
+                                            Icon(Icons.Default.Clear, contentDescription = Strings.clear)
+                                        }
+                                    }
+                                },
+                                singleLine = true,
+                                modifier = Modifier.fillMaxWidth(),
+                                colors = OutlinedTextFieldDefaults.colors(
+                                    unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f),
+                                    focusedContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
+                                )
+                            )
+
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text(
+                                    "${Strings.selectModel} (${filteredAndSortedModels.size}/${models.size})",
+                                    style = MaterialTheme.typography.labelMedium
+                                )
+                                Row(
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+
+                                    WtaChip(
+                                        selected = isBatchMode,
+                                        onClick = {
+                                            isBatchMode = !isBatchMode
+                                            if (!isBatchMode) selectedModels = emptySet()
+                                        },
+                                        label = Strings.batchSelectModels,
+                                        showSelectedCheck = false
+                                    )
+                                }
+                            }
+
+                            if (isBatchMode && selectedModels.isNotEmpty()) {
+                                Text(
+                                    Strings.selectedModelsCount.format(selectedModels.size),
+                                    style = MaterialTheme.typography.labelMedium,
+                                    color = MaterialTheme.colorScheme.primary
+                                )
+                            }
+
+                            if (filteredAndSortedModels.isEmpty() && searchQuery.isNotEmpty()) {
+                                Text(
+                                    Strings.noSearchResults,
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    modifier = Modifier.padding(vertical = 16.dp)
+                                )
+                            }
+
+                            filteredAndSortedModels.forEach { model ->
+                                val isSelected = if (isBatchMode) model in selectedModels else selectedModels.size == 1 && model in selectedModels
+                                Surface(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .clickable {
+                                            if (isBatchMode) {
+                                                selectedModels = if (model in selectedModels) {
+                                                    selectedModels - model
+                                                } else {
+                                                    selectedModels + model
+                                                }
+                                            } else {
+                                                selectedModels = setOf(model)
+                                                customModelId = ""
+                                            }
+                                        },
+                                    shape = MaterialTheme.shapes.small,
+                                    color = if (isSelected)
+                                        MaterialTheme.colorScheme.primaryContainer
+                                    else if (com.webtoapp.ui.theme.LocalIsDarkTheme.current) Color.White.copy(alpha = 0.10f) else Color.White.copy(alpha = 0.72f)
+                                ) {
+                                    Row(
+                                        modifier = Modifier.padding(12.dp),
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+
+                                        if (isBatchMode) {
+                                            Checkbox(
+                                                checked = model in selectedModels,
+                                                onCheckedChange = { checked ->
+                                                    selectedModels = if (checked) {
+                                                        selectedModels + model
+                                                    } else {
+                                                        selectedModels - model
+                                                    }
+                                                },
+                                                modifier = Modifier.size(24.dp)
+                                            )
+                                            Spacer(modifier = Modifier.width(8.dp))
+                                        }
+
+                                        Column(modifier = Modifier.weight(weight = 1f, fill = true)) {
+                                            Text(model.name, style = MaterialTheme.typography.bodyMedium)
+                                            Text(
+                                                model.id,
+                                                style = MaterialTheme.typography.bodySmall,
+                                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                                            )
+                                            val category = model.capabilities.firstOrNull() ?: ModelCapability.TEXT
+                                            Surface(
+                                                modifier = Modifier.padding(top = 4.dp),
+                                                shape = MaterialTheme.shapes.extraSmall,
+                                                color = when (category) {
+                                                    ModelCapability.MULTIMODAL -> MaterialTheme.colorScheme.primaryContainer
+                                                    ModelCapability.IMAGE_GENERATION -> MaterialTheme.colorScheme.tertiaryContainer
+                                                    else -> MaterialTheme.colorScheme.secondaryContainer
+                                                }
+                                            ) {
+                                                Text(
+                                                    category.displayName,
+                                                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
+                                                    style = MaterialTheme.typography.labelSmall
+                                                )
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+
+                        if (!isBatchMode) {
+                            HorizontalDivider()
+                            Text(Strings.orManualInputModelId, style = MaterialTheme.typography.labelMedium)
+                            OutlinedTextField(
+                                value = customModelId,
+                                onValueChange = {
+                                    customModelId = it
+                                    if (it.isNotBlank()) selectedModels = emptySet()
+                                },
+                                label = { Text(Strings.modelId) },
+                                placeholder = { Text(Strings.modelIdPlaceholder) },
+                                singleLine = true,
+                                modifier = Modifier.fillMaxWidth()
+                            )
+
+                            OutlinedTextField(
+                                value = alias,
+                                onValueChange = { alias = it },
+                                label = { Text(Strings.aliasOptional) },
+                                singleLine = true,
+                                modifier = Modifier.fillMaxWidth()
+                            )
+
+                            Text(Strings.modelCategory, style = MaterialTheme.typography.labelMedium)
+
+                            FlowRow(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(WtaSpacing.Small),
+                                verticalArrangement = Arrangement.spacedBy(WtaSpacing.Small)
+                            ) {
+                                ModelCapability.entries.forEach { capability ->
+                                    WtaChip(
+                                        selected = selectedCategory == capability,
+                                        onClick = { selectedCategory = capability },
+                                        label = capability.displayName,
+                                        showSelectedCheck = false
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.End
+                ) {
+                    TextButton(onClick = onDismiss) {
+                        Text(Strings.btnCancel)
+                    }
+                    Spacer(modifier = Modifier.width(8.dp))
+                    PremiumButton(
+                        onClick = {
+                            val modelsToSave = if (isBatchMode && selectedModels.isNotEmpty()) {
+
+                                selectedModels.map { model ->
+                                    val category = model.capabilities.firstOrNull() ?: ModelCapability.TEXT
+                                    val defaultMappings = mapOf(category to AiFeature.entries.filter { feature ->
+                                        feature.defaultCapabilities.contains(category)
+                                    }.toSet())
+                                    SavedModel(
+                                        model = model,
+                                        apiKeyId = selectedApiKey.id,
+                                        alias = null,
+                                        capabilities = listOf(category),
+                                        featureMappings = defaultMappings
+                                    )
+                                }
+                            } else {
+
+                                val model = selectedModels.firstOrNull() ?: AiModel(
+                                    id = customModelId,
+                                    name = customModelId,
+                                    provider = selectedApiKey.provider,
+                                    isCustom = true
+                                )
+
+                                val defaultMappings = mapOf(selectedCategory to AiFeature.entries.filter { feature ->
+                                    feature.defaultCapabilities.contains(selectedCategory)
+                                }.toSet())
+
+                                listOf(SavedModel(
+                                    model = model,
+                                    apiKeyId = selectedApiKey.id,
+                                    alias = alias.ifBlank { null },
+                                    capabilities = listOf(selectedCategory),
+                                    featureMappings = defaultMappings
+                                ))
+                            }
+
+                            onConfirm(modelsToSave)
+                        },
+                        enabled = (isBatchMode && selectedModels.isNotEmpty()) ||
+                                  (!isBatchMode && (selectedModels.isNotEmpty() || customModelId.isNotBlank()))
+                    ) {
+                        Text(if (isBatchMode && selectedModels.size > 1)
+                            Strings.addSelectedModels
+                        else
+                            Strings.btnSave)
+                    }
+                }
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalLayoutApi::class, ExperimentalMaterial3Api::class)
+@Composable
+private fun EditModelDialog(
+    model: SavedModel,
+    onDismiss: () -> Unit,
+    onConfirm: (SavedModel) -> Unit
+) {
+    var alias by remember { mutableStateOf(model.alias ?: "") }
+    var selectedCategory by remember {
+        mutableStateOf(model.capabilities.firstOrNull() ?: ModelCapability.TEXT)
+    }
+    var contextLengthText by remember {
+        mutableStateOf(model.userContextLength?.toString() ?: "")
+    }
+
+    Dialog(onDismissRequest = onDismiss) {
+        Surface(
+            shape = MaterialTheme.shapes.extraLarge,
+            color = MaterialTheme.colorScheme.surface,
+            tonalElevation = 6.dp
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(24.dp)
+            ) {
+                Text(Strings.editModel, style = MaterialTheme.typography.headlineSmall)
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                Text(
+                    "${model.model.provider.displayName} / ${model.model.id}",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .weight(weight = 1f, fill = false)
+                        .verticalScroll(rememberScrollState()),
+                    verticalArrangement = Arrangement.spacedBy(16.dp)
+                ) {
+                    OutlinedTextField(
+                        value = alias,
+                        onValueChange = { alias = it },
+                        label = { Text(Strings.alias) },
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+
+                    OutlinedTextField(
+                        value = contextLengthText,
+                        onValueChange = { input ->
+                            contextLengthText = input.filter { it.isDigit() }.take(7)
+                        },
+                        label = { Text(Strings.agentContextCapacity) },
+                        placeholder = { Text(model.model.contextLength.toString()) },
+                        supportingText = {
+                            Text(
+                                Strings.agentContextCapacityHint.format(model.model.contextLength),
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        },
+                        singleLine = true,
+                        keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(
+                            keyboardType = androidx.compose.ui.text.input.KeyboardType.Number
+                        ),
+                        modifier = Modifier.fillMaxWidth()
+                    )
+
+                    Text(Strings.modelCategory, style = MaterialTheme.typography.labelMedium)
+
+                    FlowRow(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(WtaSpacing.Small),
+                        verticalArrangement = Arrangement.spacedBy(WtaSpacing.Small)
+                    ) {
+                        ModelCapability.entries.forEach { capability ->
+                            WtaChip(
+                                selected = selectedCategory == capability,
+                                onClick = { selectedCategory = capability },
+                                label = capability.displayName,
+                                showSelectedCheck = false
+                            )
+                        }
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.End
+                ) {
+                    TextButton(onClick = onDismiss) {
+                        Text(Strings.btnCancel)
+                    }
+                    Spacer(modifier = Modifier.width(8.dp))
+                    PremiumButton(
+                        onClick = {
+                            val defaultMappings = mapOf(selectedCategory to AiFeature.entries.filter { feature ->
+                                feature.defaultCapabilities.contains(selectedCategory)
+                            }.toSet())
+                            onConfirm(model.copy(
+                                alias = alias.ifBlank { null },
+                                capabilities = listOf(selectedCategory),
+                                featureMappings = defaultMappings,
+                                userContextLength = contextLengthText.ifBlank { null }?.toIntOrNull()
+                            ))
+                        }
+                    ) {
+                        Text(Strings.btnSave)
+                    }
+                }
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun FlowRow(
+    modifier: Modifier = Modifier,
+    horizontalArrangement: Arrangement.Horizontal = Arrangement.Start,
+    verticalArrangement: Arrangement.Vertical = Arrangement.Top,
+    content: @Composable () -> Unit
+) {
+    androidx.compose.foundation.layout.FlowRow(
+        modifier = modifier,
+        horizontalArrangement = horizontalArrangement,
+        verticalArrangement = verticalArrangement
+    ) {
+        content()
+    }
+}

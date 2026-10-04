@@ -1,0 +1,443 @@
+<div align="center">
+
+<img src="../../app/src/main/res/mipmap-xxxhdpi/ic_launcher.png" width="96" alt="WebToApp 图标" />
+
+# WebToApp
+
+### 在手机上把 Web 项目打包成可安装的 Android APK。
+
+**一个运行在设备端的 APK 工作台,远不只是套个 WebView —— 它能在手机上 fork+exec 完整的服务端运行时,内置硬核反审查网络栈,能在设备内签名上架 Google Play 的 AAB,还能跑 MV3 浏览器扩展,全程不需要电脑或远程构建服务器。**
+
+[English](../../README.md) · **简体中文**
+
+<p align="center">
+  <a href="https://github.com/shiaho777/web-to-app/stargazers">
+    <img src="https://img.shields.io/github/stars/shiaho777/web-to-app?style=for-the-badge" alt="Stars">
+  </a>
+  <a href="https://github.com/shiaho777/web-to-app/network/members">
+    <img src="https://img.shields.io/github/forks/shiaho777/web-to-app?style=for-the-badge" alt="Forks">
+  </a>
+  <a href="https://github.com/shiaho777/web-to-app/releases/latest">
+    <img src="https://img.shields.io/github/v/release/shiaho777/web-to-app" alt="最新版本">
+  </a>
+  <a href="../../LICENSE">
+    <img src="https://img.shields.io/badge/License-Unlicense-blue?style=for-the-badge" alt="License: Unlicense">
+  </a>
+  <a href="https://github.com/shiaho777/web-to-app/releases">
+    <img src="https://img.shields.io/badge/Android-6.0%2B-3DDC84?style=for-the-badge&logo=android&logoColor=white" alt="Android 6.0+">
+  </a>
+  <a href="https://github.com/shiaho777/web-to-app/actions/workflows/android-ci.yml">
+    <img src="https://github.com/shiaho777/web-to-app/actions/workflows/android-ci.yml/badge.svg" alt="Android CI">
+  </a>
+  <a href="https://shiaho777.github.io/web-to-app/zh/">
+    <img src="https://img.shields.io/badge/docs-online-blue?style=for-the-badge" alt="文档站点">
+  </a>
+</p>
+
+<p align="center">
+  <a href="https://trendshift.io/repositories/22597?utm_source=trendshift-badge&utm_medium=badge&utm_campaign=badge-trendshift-22597" target="_blank" rel="noopener noreferrer">
+    <img src="https://trendshift.io/api/badge/trendshift/repositories/22597/weekly?language=Kotlin" alt="shiaho777%2Fweb-to-app | Trendshift" width="250" height="55">
+  </a>
+</p>
+
+</div>
+
+<p align="center">
+  <a href="https://www.swiftproxy.net/?ref=shiaho">
+    <img src="../assets/sponsors/swiftproxy-logo-full.png" alt="Swiftproxy" width="220" />
+  </a><br/>
+  <a href="https://www.swiftproxy.net/?ref=shiaho"><b>由 Swiftproxy 赞助</b></a> —— 高质量纯净住宅IP提供商
+</p>
+
+<p align="center">
+  <a href="#应用截图">应用截图</a> ·
+  <a href="#webtoapp-有什么不同">有什么不同</a> ·
+  <a href="#能力速览">能力速览</a> ·
+  <a href="#能打包什么">能打包什么</a> ·
+  <a href="#快速上手">快速上手</a> ·
+  <a href="#完整能力地图">完整能力地图</a> ·
+  <a href="#agent">Agent</a> ·
+  <a href="#模块市场">模块市场</a> ·
+  <a href="#文档站点">文档站点</a> ·
+  <a href="#架构说明">架构说明</a> ·
+  <a href="#从源码构建">构建</a>
+</p>
+
+---
+
+## 应用截图
+
+<table>
+  <tr>
+    <td align="center" width="25%"><img src="../assets/screenshots/01-home-empty.png" width="200" alt="「我的应用」主页"><br><sub><b>主页</b> —— 应用项目一览</sub></td>
+    <td align="center" width="25%"><img src="../assets/screenshots/02-app-types.png" width="200" alt="12 种应用类型创建面板"><br><sub><b>创建</b> —— 12 种应用类型任选</sub></td>
+    <td align="center" width="25%"><img src="../assets/screenshots/03-create-web.png" width="200" alt="Web 应用编辑器"><br><sub><b>Web 应用</b> —— 名称、URL、站点分析</sub></td>
+    <td align="center" width="25%"><img src="../assets/screenshots/04-import-html.png" width="200" alt="HTML 项目导入"><br><sub><b>HTML 应用</b> —— 文件、ZIP 或写代码</sub></td>
+  </tr>
+  <tr>
+    <td align="center" width="25%"><img src="../assets/screenshots/05-editor-basic.png" width="200" alt="编辑器基本信息卡"><br><sub><b>编辑器</b> —— 图标、名称与核心开关</sub></td>
+    <td align="center" width="25%"><img src="../assets/screenshots/06-editor-toggles.png" width="200" alt="编辑器功能开关"><br><sub><b>编辑器</b> —— 启动屏、音乐、翻译等</sub></td>
+    <td align="center" width="25%"><img src="../assets/screenshots/07-editor-advanced.png" width="200" alt="编辑器高级与导出设置"><br><sub><b>编辑器</b> —— 高级与导出设置</sub></td>
+    <td align="center" width="25%"><img src="../assets/screenshots/08-app-actions.png" width="200" alt="单应用操作菜单"><br><sub><b>操作菜单</b> —— 构建、分享、导出等</sub></td>
+  </tr>
+  <tr>
+    <td align="center" width="25%"><img src="../assets/screenshots/09-toolbox.png" width="200" alt="主工具箱菜单"><br><sub><b>工具箱</b> —— Agent、模块、端口、引擎</sub></td>
+    <td align="center" width="25%"><img src="../assets/screenshots/10-preview.png" width="200" alt="带浏览器工具栏的应用预览"><br><sub><b>预览</b> —— 与导出产物同一运行时</sub></td>
+    <td align="center" width="25%"><img src="../assets/screenshots/11-build-options.png" width="200" alt="构建 APK 对话框选项"><br><sub><b>构建</b> —— 引擎与加固选项</sub></td>
+    <td align="center" width="25%"><img src="../assets/screenshots/12-build-result.png" width="200" alt="构建摘要与 APK 体积分析"><br><sub><b>产物</b> —— 签名 APK、体积分析</sub></td>
+  </tr>
+  <tr>
+    <td align="center" width="25%"><img src="../assets/screenshots/13-generated-app.png" width="200" alt="生成应用运行效果"><br><sub><b>成品</b> —— 生成应用安装运行</sub></td>
+    <td align="center" width="25%"><img src="../assets/screenshots/14-about.png" width="200" alt="关于页"><br><sub><b>关于</b> —— 版本与社区链接</sub></td>
+    <td align="center" width="25%"><img src="../assets/screenshots/15-agent.png" width="200" alt="Agent 界面与建议卡片"><br><sub><b>Agent</b> —— 描述需求,AI 来构建</sub></td>
+    <td align="center" width="25%"><img src="../assets/screenshots/16-languages.png" width="200" alt="语言选择对话框"><br><sub><b>多语言</b> —— 10 种界面语言,含 RTL</sub></td>
+  </tr>
+</table>
+
+---
+
+## WebToApp 有什么不同
+
+绝大多数「网站转 App」工具到「套一个 WebView」就结束了。WebToApp 更像一个放在手机里的 APK 工作台,而真正难的地方,正是它和那些工具的分界线:
+
+- **在设备上跑真实的服务端运行时。** Node.js、PHP、Python、Go、WordPress 以原生二进制的形式直接从 app 存储 fork+exec —— 像 Termux 那样,但被打进一个可安装的 APK。URL 套壳工具根本做不到。
+- **内置硬核、反审查的网络栈。** DNS-over-HTTPS、TLS 指纹伪装(Chrome / Firefox / Safari 的 JA3 模板,经本地 MITM 桥接)、双引擎 ECH(加密 SNI)、每应用代理、以及针对受限 SPA 的 CORS 绕过。
+- **整个构建自包含。** 二进制 AXML/ARSC 修补、权限裁剪、V1/V2/V3 签名、可直接上架 Google Play 的 AAB 导出,全部在 app 内通过 `apksig` 完成 —— 不排远程队列、不需要电脑。
+- **发布后仍可扩展。** 通过 JS/CSS 模块、Tampermonkey 风格油猴脚本,或 MV3 Chrome 扩展(可在应用内实时搜索 Chrome 网上应用店并安装)给应用补能力,不必重新发布宿主。
+- **宿主 UI 原生支持 10 种语言。** 中文、English、العربية(RTL)、Português、Español、Français、Deutsch、Русский、日本語、한국어 —— 设置里随时切换;新增界面文案按 10 语维护。
+
+---
+
+## 能力速览
+
+一眼看清里面有什么。每项都对应下方完整能力地图。
+
+| 方向 | 亮点 |
+| --- | --- |
+| **构建目标** | Web · HTML · 前端 · WordPress · Node.js · PHP · Python · Go · 图片 · 视频 · 图库 · 多网站 |
+| **浏览器引擎** | 默认系统 WebView;可选 GeckoView(Firefox)运行时 |
+| **网络与反审查** | DoH(7 个服务商)、TLS 指纹伪装 + MITM 桥、ECH、静态/PAC/SOCKS5 代理、CORS 绕过 |
+| **隐私与加固** | 50+ 维浏览器指纹伪装、资源加密(AES-256-GCM)、反调试、激活码门控 |
+| **本地运行时** | 原生 Node.js 18.20、PHP 8.4 + Composer 2.10、Python 3.14、官方 Go 1.26、WordPress 7.x over SQLite |
+| **扩展能力** | 内置模块、`GM_*` 油猴脚本、MV3 Chrome 扩展、Chrome 网上应用店实时搜索 |
+| **APK/AAB 产物** | 设备端 V1/V2/V3 签名、Google Play AAB 导出(自动改写 targetSdk)、密钥库管理 |
+| **Agent** | 通过最多 57 个工具全面操控应用:生成、构建、导出、端口/引擎/运行时管理、应用克隆、广告拦截、配置模板等;429/5xx 自动重试 |
+| **宿主语言** | **10 种界面语言** —— 中文 · English · العربية · Português · Español · Français · Deutsch · Русский · 日本語 · 한국어(阿语 RTL) |
+
+---
+
+## 能打包什么
+
+| 输入 | 输出 | 适合场景 |
+| --- | --- | --- |
+| 网站 URL | 基于 WebView 的 APK | 官网、工具、后台、文档、内部系统 |
+| HTML / 静态前端 | 走 localhost 的 APK | React、Vue、Vite、静态构建、离线 Web 应用 |
+| Node.js / PHP / Python / Go | 带设备端本地服务的 APK | 小型服务端应用、管理工具、演示、原型 |
+| WordPress | 本地 PHP + SQLite 承载的 APK | 便携站点、主题/插件演示、本地内容包 |
+| 图片 / 视频 / 图库 | 媒体型 APK | 相册、课程材料、作品集、离线浏览 |
+| 多个网站 | 标签/卡片/信息流/抽屉布局 APK | 导航合集、门户、应用集合 |
+| 已安装 APK | 重命名克隆或桌面快捷方式伪装 | 图标/名称/包名实验、APK 重打包研究 |
+
+---
+
+## 快速上手
+
+从全新安装到第一个签名 APK,大约一分钟:
+
+1. **安装打包器** —— 从 [GitHub Releases](https://github.com/shiaho777/web-to-app/releases) 下载 APK,装到 Android 6.0(API 23)或更新的设备上。
+2. **创建应用** —— 在「我的应用」点 **创建**,从 12 种应用类型里选一个(网页 · 多站点 · HTML · 离线包 · 前端 · PHP · WordPress · Node.js · Python · Go · 媒体 · 画廊)。
+3. **填基本信息** —— 应用名、目标 URL(或项目文件)和可选图标,然后 **Save**。编辑器里其余卡片都是可选配置。
+4. **预览** —— 点应用卡片,运行在与导出产物相同的运行时代码里。
+5. **构建** —— 点 **⋮ → Build APK**,选引擎和选项,得到一个可直接安装/分享的签名 APK。要上 Google Play?改用 **⋮ → Google Play** —— 它会自动构建 APK、转换成 Play 可用的签名 AAB(自动改写 `targetSdk`),并在设备端生成 Play 元数据。
+
+带逐类型说明和底层原理的完整教程见[快速上手指南](https://shiaho777.github.io/web-to-app/zh/guide/getting-started)。
+
+---
+
+## 完整能力地图
+
+WebToApp 的开关非常多。下面按使用场景分组,并用可折叠区段保持页面顶部清爽可读。
+
+<details>
+<summary><b>🌐 浏览器引擎与网络</b></summary>
+
+- **双引擎** —— 默认系统 WebView,可选 GeckoView(Firefox)运行时(首次使用时下载)。
+- **内核风味伪装** —— 对外表现为 Chrome、Edge、Samsung Internet、Firefox 或 Safari 风格,但真实引擎不变。
+- **桌面模式**、自定义 User-Agent,以及 document-start / end / idle 三种时机的 JS/CSS 注入。
+- **弹窗处理** —— 当前窗口、外部浏览器、弹窗窗口或直接拦截。
+- **代理** —— 静态 HTTP/HTTPS/SOCKS5、PAC、身份验证、绕过规则和本地 HTTP-to-SOCKS 桥。
+- **DNS-over-HTTPS** —— Cloudflare、Google、AdGuard、NextDNS、CleanBrowsing、Quad9、Mullvad,以及自定义 endpoint;支持 strict / automatic 模式。
+- **ECH(Encrypted Client Hello)** —— 在**两种引擎**上加密 TLS 握手中的 SNI:GeckoView 经 TRR + 自身 ECH 配置;系统 WebView 经本地 MITM 桥的 Chromium 上行链路(首次使用自动下载组件,导出的 APK 内置)。开关启用时自动联动 DoH;与 SOCKS 上游代理互斥。
+- **TLS 指纹伪装** —— 模拟 Chrome 131 / Firefox 133 / Safari 18 的 JA3 指纹(或自定义密码套件),经本地 TLS-MITM 桥接,让发出的 ClientHello 与真实浏览器一致。
+- **CORS 绕过** —— 默认开启,让受限静态 SPA 能调用原本被 CORS 拦截的外部 API;同源请求不会被误拦,仅需 CORS/内网桥接时可用轻量 `PrivateNetworkNativeBridgeAdapter`,不必挂完整 Native Bridge。
+- **回退链** —— 主目标不可达时自动回退到镜像 URL。
+- **PWA** 离线缓存策略、自定义错误页、每应用 hosts 覆写和支付协议处理。
+- **兼容开关** —— blob 下载拦截、滚动记忆、图片修复、剪贴板 / 方向 / 通知 polyfill、内网桥接和 Native Bridge 能力门控。
+- **下载位置** —— 系统 Downloads、应用私有目录,或用户用 SAF 自选文件夹,整条打包透传链已接通。
+
+</details>
+
+<details>
+<summary><b>🛡️ 隐私、指纹防御与加固</b></summary>
+
+- **跨 50+ 维的浏览器指纹伪装** —— User-Agent、WebGL、Canvas、AudioContext、ClientRects、时区、语言、内存、媒体设备、WebRTC、字体、电池、权限、性能、存储、通知、CSS media、iframe 传播和错误栈清理。
+- **hosts 规则广告拦截** + cosmetic MutationObserver 过滤,**内置 20 个社区过滤源**(EasyList、uBlock Origin、AdGuard、AdAway + 8 个语言列表),支持逐源启用/停用/删除,自定义导入的过滤源带名称、以卡片管理并可按应用勾选,以及打包进 APK 的自定义订阅规则。
+- **资源加密**(PBKDF2 + AES-256-GCM)覆盖打包进去的配置、HTML、媒体和 BGM;可设置自定义加密密码,比默认的包名/证书派生密钥更能抵御逆向提取。
+- **运行时加固**(开启加密后可用)—— 反调试、反 Frida、DEX 篡改检测;威胁响应可选只记录、静默退出或随机崩溃。
+- **WebView/内容隔离**覆盖存储、WebRTC、Canvas、Audio、WebGL、字体、请求头和 IP 暴露面。
+- **激活码门控** —— 本地验证,或接入你自己的 HTTPS 接口并用 EC P-256 验签。接口契约见 [remote activation 文档](remote-activation.md)。
+
+</details>
+
+<details>
+<summary><b>📦 设备端服务器运行时(fork + exec)</b></summary>
+
+- **Node.js**(18.20.x)跑在独立 `:nodejs` OS 进程中,底层由原生 `node_launcher` 加载 `libnode.so`;支持自定义原生 `.node` 扩展。
+- **PHP 8.4** 取自 `pmmp/PHP-Binaries`,首次使用时下载,支持 Composer 2.10.x 和自定义原生扩展(`zend_extension`、`.so`)。
+- **Python 3.14** —— Flask、Django、FastAPI/uvicorn、Tornado、内置 HTTP server;pip 依赖解析到 `.pypackages`,支持自定义原生扩展;二进制名按版本生成,后续升级不必硬编码路径。
+- **Go 1.26** —— 官方 Linux arm64 工具链(`.tar.gz` 来自 `dl.google.com`,国内走 USTC 镜像),设备端 `go build` / `go mod` / `go run`、`vendor/` 离线构建、静态文件服务和原生 `go_exec_loader` 包装层;DNS 与 CA 信任走与 PHP 相同的本机 JVM 桥接。
+- **WordPress 7.x** 跑在本地 PHP 之上,用 `sqlite-database-integration` 接 SQLite,支持主题和插件导入。
+- **Linux Environment** 页面管理 Node、PHP、Python 的工具链和依赖。
+- **Port Manager** 通过广播 receiver 协调不同生成应用之间的运行时端口。
+- **本地 DNS 桥接代理**(运行在 Android JVM 的 HTTP CONNECT)在 musl/打包二进制无法访问系统 DNS 时,为运行时提供可用的 DNS 解析和出站 HTTP。
+
+</details>
+
+<details>
+<summary><b>🧩 扩展与自动化</b></summary>
+
+- **内置模块** —— 视频下载(YouTube / B 站 / 抖音 / 小红书提取器)、带 YouTube 净化(跳过广告、最高画质、后台播放、SponsorBlock)的视频增强、网页分析、页内查找、暗色模式、隐私工具、内容增强、元素拦截和 YouTube 启动器。
+- **油猴脚本** —— Greasemonkey/Tampermonkey 风格的 `.user.js`,配套 `GM_*` 桥接(存储、请求、样式、菜单命令)和按授权开放的 Promise 风格 `GM.*` API。
+- **MV3 Chrome 扩展运行时**,支持 manifest 内容脚本在 isolated 或 main world 注入,并提供覆盖 runtime、storage、tabs、scripting 和 declarative network request 解析的 `chrome.*` polyfill。
+- **应用内 Chrome 网上应用店搜索** —— 按关键词浏览并安装浏览器扩展(也可粘贴商店链接 / 扩展 ID),离线时回退到手动导入。
+- **分享码**(`WTA1:` gzip + Base64)和 ZXing 二维码传播。
+- **Agent** —— 工具调用型助手,内置最多 57 个工具覆盖应用全部功能:创建/编辑/构建/导出应用、管理端口与浏览器引擎、安装/清理运行时、广告拦截 hosts 规则、通用配置模板、使用统计、应用克隆、批量导入、Play 合规检查、模块开发。计划模式等待用户确认;对 429/5xx 自动退避重试。
+
+</details>
+
+<details>
+<summary><b>📱 应用体验</b></summary>
+
+- **启动屏** —— 图片或视频,支持跳过、视频裁剪区间和固定方向。
+- **背景音乐** —— 播放列表 + LRC 同步歌词、歌词动画、自定义字体/颜色/描边/阴影和在线音乐搜索。
+- **工具栏、状态栏(亮色/暗色)、导航栏、悬浮窗模式和长按菜单样式。** 浏览器工具栏是一个主开关(默认关闭),可逐项控制标题/URL/后退/前进/刷新按钮,并带原生 **页内查找** 底栏(工具栏查找按钮)和 **控制台** 面板,便于在设备上调试。状态栏颜色可跟随主题、自定义色、全透明,或 **PAGE_TOP**(采样页面顶部像素,让系统栏跟内容同色)。
+- **下载位置模式** —— 系统 Downloads、应用私有目录,或用户用 SAF 自选文件夹。
+- **公告模板**,可在启动、定时或无网络时触发。
+- **宿主应用语言** —— 整个打包器界面可在 10 种语言间切换(中文 / English / العربية / Português / Español / Français / Deutsch / Русский / 日本語 / 한국어);阿拉伯语完整 RTL。
+- **页内翻译覆盖层** —— 20 种目标语言,支持 Google、MyMemory、LibreTranslate、Lingva 引擎,并在引擎间自动故障转移(给*生成应用内容*做页内翻译,与宿主 UI 语言是两套能力)。
+- **打印桥接** —— 拦截 `window.print()` 和 blob/data-URL 的 PDF,交给 Android 打印框架 / 导出 PDF(onPageStarted 会再注入一次,避免晚导航丢 hook)。
+- **媒体会话桥接** —— 把网页媒体接入系统媒体通知和锁屏控制,支持蓝牙耳机和 Android Auto。
+- **通知** —— Web Notification polyfill、定时与持久化通知(含进度更新)、URL 轮询前台服务、深链、开机自启、定时启动和后台运行服务。
+- **每个 APK 的使用统计**、Vico 图表和 URL 健康监测。
+
+</details>
+
+<details>
+<summary><b>🔧 APK / AAB 导出与签名</b></summary>
+
+- **自定义包名**、`versionName`、`versionCode`、图标、名称、架构目标和导出格式。
+- **按生成 APK 的实际勾选注入权限**,并从模板 manifest 中裁剪未使用权限。
+- **一键 AAB 导出** —— 按需自动构建 APK,转换成可直接上架的签名 AAB(自动把 `targetSdk` 改写到 Play 要求的级别,目前为 36,并在本地生成 protobuf 元数据);支持中途取消。除服务端运行时应用类型和开启资源加密的构建外全部可用 —— 见[哪些应用可以上架](https://shiaho777.github.io/web-to-app/zh/guide/more-features/google-play)。
+- **密钥库管理** —— 创建、导入、导出、删除和证书指纹查看;支持 PKCS12/PFX/JKS/BKS 导入,包括 Android Studio upload key 那种 store 密码和 key 密码不同的情况。
+- **签名方案** —— V1、V2、V3 独立控制,可对旧证书兼容性自动回退;自定义 V1 签名文件名,对应 `META-INF/<name>.SF` / `.RSA`。
+- **性能选项** —— 图片压缩、WebP 转换、代码压缩、懒加载、DNS 预取、preload 提示。
+- **完整项目备份/恢复和应用数据备份/恢复。**
+
+</details>
+
+<details>
+<summary><b>🗂 文件管理与项目工具</b></summary>
+
+- **文件管理** —— 一个界面统一查看、分享、安装、打开和清空构建产物(APK 构建、AAB 导出、应用克隆、构建日志)和用户文件目录,并提供只读的构建日志查看器。
+- **网站爬虫**用于生成离线包 —— HTML、CSS、JS、图片、字体、`url()`、`srcset`、`@import`、路径重写、同域限制、深度限制和体积限制;并行流式 worker 池,进度回调回到主线程。
+- **多网站应用** —— 标签、卡片、信息流、抽屉布局,每站点独立图标/主题色/提取选择器/刷新间隔和共享 JS/CSS。
+- **图库应用** —— 媒体分类、网格/列表/时间线视图、随机/单循、排序、缩略图条、浮层、视频自动下一个和播放记忆。
+- **应用修改器** —— 桌面快捷方式伪装,或真正的二进制克隆、manifest/资源修补和重签名。
+
+</details>
+
+<details>
+<summary><b>🔬 专项工具与研究功能</b></summary>
+
+- **设备伪装**属于技术演示能力,必须在用户知情同意下使用。
+
+</details>
+
+---
+
+## Agent
+
+WebToApp 内置了一个 AI Agent(从 **⋮ → Agent** 打开),可以通过自然语言对话操控整个应用。你只需描述想做什么,Agent 就会通过工具调用循环在设备端执行,后端模型由你在 AI 设置中配置的任意受支持接口提供——Chat Completions、Anthropic Messages、OpenAI Responses 三种 API 格式,以及 Google Gemini 与 Ollama / LM Studio / VLLM 本地模型。
+
+**工作原理:**
+
+1. 你发送消息(也可附带图片作为视觉上下文)。
+2. LLM 推理后发出 `tool_calls`。
+3. Agent 在设备端执行每个工具 —— 只读工具直接运行;写入工具会先弹出权限确认对话框。
+4. 结果回传给 LLM,LLM 继续执行直到任务完成或向你提出澄清问题。
+
+**最多 57 个内置工具,按功能域分组(3 个图像工具仅在配置了图像模型时加载):**
+
+| 功能域 | 示例 |
+| --- | --- |
+| 文件 | 读取、写入、编辑、删除、列出、glob、grep 项目文件 |
+| 应用 | 列出、查看、创建、更新应用配置 |
+| 应用生命周期 | 构建 APK/AAB、导出、分享、创建快捷方式、复制、删除、移动分类 |
+| 端口与引擎 | 扫描/终止端口,查看/切换/删除浏览器引擎(WebView、GeckoView) |
+| 运行时 | Node.js、PHP、Python、Go、WordPress、Linux 环境的状态查看、安装和缓存清理 |
+| 广告拦截 | 规则数量统计,导入/删除/启用/停用 hosts 订阅 |
+| 统计与健康 | 使用统计、URL 健康检查 |
+| 应用修改器 | 列出已安装应用、克隆/换壳、批量导入、导出模板 |
+| 构建环境与合规 | 初始化 Linux 构建环境、安装组件、Google Play 合规检查 |
+| 模块 | 列出、创建、更新扩展模块 |
+| 交互 | 向用户提问(多选)、计划模式(提议→批准→执行)、待办跟踪 |
+
+---
+
+## 插件市场
+
+WebToApp 有一个由 GitHub 驱动的插件市场,用来分发社区贡献的 HTML/CSS/JS 插件。目录本质上就是这个仓库里的文件,所以贡献流程就是普通 PR。
+
+```
+modules/
+├── registry.json        # App 读取的目录
+├── submissions.json     # CI 生成的 PR / 贡献者元数据
+├── README.md            # 贡献者指南
+└── <插件文件夹>/         # 每个插件(plugin.json + main.js + …)
+```
+
+App 会同时拉取 `registry.json` 和 `submissions.json`,只展示两边都存在的插件,保证应用内市场和已经合并的 PR 对齐。submissions 文件还会记录每个插件的全部贡献者,因此应用内会以叠加头像的形式展示所有参与过该插件的人,并按贡献插件数排出贡献者榜单。目录文件和插件图标会优先走全球镜像加速,raw.githubusercontent.com 和 jsDelivr 作为自动回退,因此商店在全球(含中国大陆)都能快速加载。
+
+- 用户打开 **插件** 页面,点击右上角商店图标即可安装。
+- 贡献者在 `modules/` 下添加文件夹,更新 `registry.json`,然后提交 PR。
+- 客户端默认缓存 1 小时,插件合并后不需要发新版 App。
+
+这里保留的是模块市场的高层说明;真正的投稿规则、字段 schema、审核 Checklist 和 CI 校验细节统一写在 [`modules/README.md`](../../modules/README.md)。
+
+社区市场只承载 JS/CSS 扩展模块。**浏览器扩展(MV3)**不再是社区目录 —— **浏览器扩展** Tab 直接实时搜索 Chrome 网上应用店:输入关键词、浏览结果、通过现有的 CRX 下载链路按需安装。如果实时搜索不可达,也可以粘贴商店链接或 32 位扩展 ID 直接安装。实时搜索需要能访问 Google 的网络。
+
+## 文档站点
+
+官方文档站点发布在 **[shiaho777.github.io/web-to-app](https://shiaho777.github.io/web-to-app/)**,中英双语:
+
+| 板块 | 地址 | 内容 |
+| --- | --- | --- |
+| 使用指南 | [/zh/guide/introduction](https://shiaho777.github.io/web-to-app/zh/guide/introduction) | 快速上手、主界面、应用类型、单应用操作与通用配置、FAQ |
+| 开发者文档 | [/zh/developer/](https://shiaho777.github.io/web-to-app/zh/developer/) | 架构、导出管线、shell 同步、配置漂移、i18n、常见改动配方 |
+| 扩展开发 | [/zh/extensions/](https://shiaho777.github.io/web-to-app/zh/extensions/) | JS/CSS 模块、油猴脚本、Chrome MV3、API 参考、发布流程 |
+| English | [/](https://shiaho777.github.io/web-to-app/) | 上述全部页面的英文原版 |
+
+## 架构说明
+
+| 路径 | 作用 |
+| --- | --- |
+| `app/` | 完整构建器宿主:编辑器 UI、导出管线、运行时、预览 |
+| `shell/` | 运行时模板 —— 代码从 `app/` 同步,构建出 `webview_shell.apk` |
+| `clone-host/` | 宿主侧 APK 克隆 / 身份重塑支持库 |
+| `modules/` | 模块市场目录(`registry.json` + 各模块文件夹) |
+| `docs/` | VitePress 文档站源码(中英双语) |
+| `scripts/` | 构建辅助与 CI 门禁(配置漂移、shell 字符串、样例包) |
+| `sample-bundles/` | 按需下载的重量级样例依赖包 |
+
+- 仓库有**三个 Gradle 模块**:`app`(完整构建器和宿主)、`shell`(嵌入生成 APK 的运行时宿主)、`clone-host`(应用克隆的宿主代码 —— 编译提取 `classes.jar`,经 d8 转 DEX,作为 asset 供 `AppCloner` 使用)。
+- 运行时代码以 `app` 为唯一事实来源,再同步到 `shell`,所以共享 WebView/运行时行为只维护一份(`core/shell`、`core/webview`、`core/engine`、`core/extension`、`ui/shell` 等)。
+- APK 构建器在二进制 AXML/ARSC 层修补模板 APK,注入配置与资源,裁剪权限,并用 `apksig` 签名。另有独立的加密构建路径(`EncryptedApkBuilder`)提供资源加密、加壳和完整性校验。
+- 生成 APK(经 shell 模板)特意把 `targetSdk` 钉在 28 —— 这是让它们能从 app 存储 `fork`、`exec` 原生运行时(Node.js、PHP、Python、Go、WordPress)的关键,网址转 APK 类工具做不到这点。宿主应用自身以 36 为目标(杀毒引擎会把低 targetSdk 构建误判为旧木马);该级别的 SELinux W^X 会拦截宿主侧基于 exec 的运行时预览,它们会以明确提示优雅降级 —— Node.js 预览(JNI)和所有导出的应用均不受影响。**这不影响上架 Google Play**:导出的 AAB 会把 `targetSdk` 改写到 Play 要求的级别(当前 36),因此除五类服务端运行时应用和开启资源加密的构建外,所有应用类型都能正常上架;只有服务端运行时类型被限定为 APK 分发,因为 Play 要求的目标级别会破坏它们的 fork+exec 运行时。纯 WebView 应用类型(Web/HTML/Frontend/Gallery/Media/MultiWeb)还可在 APK 导出面板选择提高独立 APK 的 `targetSdk`(34/35/36)。
+- 服务端运行时和可选 GeckoView 原生库(`.so` + `omni.ja`)不会打进基础 APK,而是在首次使用时下载;GeckoView 的 API 类来自 gradle 依赖,而体积大的原生制品按需拉取。
+- 配置中心是 `WebApp`(`data/model/WebApp.kt`)及其各 `*Config` 类 —— 所有功能配置的单一事实来源,经一条完整的打包透传链带进生成的 APK。
+
+## 技术栈
+
+- Kotlin、Jetpack Compose、Material 3
+- Koin 依赖注入
+- Room 2.7.2 + KSP 数据持久化
+- OkHttp 4.12.0 + `okhttp-dnsoverhttps`
+- `com.android.tools.build:apksig` 8.3.0 用于 APK 签名
+- BouncyCastle 1.78.1 用于加密与签名
+- `protobuf-javalite` 3.25.5 用于 AAB 元数据
+- Firebase Cloud Messaging(需自行配置 Firebase)用于推送通知
+- GeckoView 作为可选浏览器引擎(原生库在首次使用时下载)
+- Coil 负责图片、视频、GIF 加载
+- Haze 用于毛玻璃 / 玻璃拟态 UI
+- Gson 用于 JSON 序列化(shell 配置链路)
+- AndroidX Security Crypto + DataStore 存储密钥
+- Vico Compose-M3 绘制图表
+- ZXing 用于二维码分享
+- Apache Commons Compress + xz 用于项目导入和网站爬虫
+- JNI 原生 C++ 目标:`node_launcher` 和 `go_exec_loader`
+- Robolectric 单元测试
+
+完整依赖见 [app/build.gradle.kts](../../app/build.gradle.kts)。
+
+## 从源码构建
+
+要求:Android Studio Hedgehog 或更新版本,JDK 17。Gradle wrapper 已锁定 Gradle 9.4.1。
+
+```bash
+git clone https://github.com/shiaho777/web-to-app.git
+cd web-to-app
+./gradlew assembleDebug
+```
+
+项目有两个分发 flavor,共享全部代码与构建规则:
+
+| Flavor | `applicationId` | 用途 |
+| --- | --- | --- |
+| `standard` | `com.webtoapp` | GitHub / 侧载发布 |
+| `gplay` | `shiaho.webtoapp` | Google Play(`com.webtoapp` 已被他方注册) |
+
+```bash
+./gradlew assembleStandardRelease   # 签名 release APK
+./gradlew bundleGplayRelease        # 可上架 Play 的签名 AAB
+```
+
+Release 构建请通过 `local.properties` 和 `app/build.gradle.kts` 配置签名。
+
+## 参与贡献
+
+| 路径 | 内容 | 指南 |
+| --- | --- | --- |
+| `modules/` | 给应用内市场提交一个社区模块 | [modules/README.md](../../modules/README.md) |
+| Issues | 报告 Bug 或申请功能 | [GitHub Issues](https://github.com/shiaho777/web-to-app/issues) |
+| 代码 | 修 Bug 或在 Android 客户端做新功能 | [CONTRIBUTING.md](../CONTRIBUTING.md) |
+| `AGENTS.md` | 面向 AI 编码助手与深度贡献者的权威指南(架构连线、shell 同步、导出流水线、配置漂移、打包约束) | [AGENTS.md](../../AGENTS.md) |
+
+## 联系方式
+
+开发者:**shiaho**。
+
+| 平台 | 链接 |
+| --- | --- |
+| GitHub | [github.com/shiaho777/web-to-app](https://github.com/shiaho777/web-to-app) |
+| Telegram | [t.me/webtoapp777](https://t.me/webtoapp777) |
+| X (Twitter) | [@shiaho777](https://x.com/shiaho777) |
+| Bilibili | [b23.tv/8mGDo2N](https://b23.tv/8mGDo2N) |
+| QQ 群 | 1041130206 |
+
+## 许可证
+
+[The Unlicense](../../LICENSE)。
+
+设备伪装等高级功能仅用于技术演示,必须在用户知情同意下使用。
+
+## 鸣谢
+
+[daoxe.com](https://daoxe.com) — 自用中转站。
+
+<p align="center">
+  <a href="https://www.swiftproxy.net/?ref=shiaho">
+    <img src="../assets/sponsors/swiftproxy-banner-zh.png" width="640" alt="Swiftproxy —— 全球高质量纯净住宅IP,动态流量不过期,支持HTTP(S)/SOCKS5,九折优惠码:PROXY90" />
+  </a>
+</p>
+
+<p align="center">
+  <a href="https://www.swiftproxy.net/?ref=shiaho"><b>由 Swiftproxy 赞助</b></a> —— Swiftproxy 提供 9000万+ 纯净住宅 IP,覆盖全球 220+ 个国家和地区,支持 HTTP(S)/SOCKS5、动态轮换、Sticky Session 及精准地域定位。适用于 Web App、自动化、网页抓取及全球网络访问等场景,提供稳定可靠的代理服务。支持免费测试,使用优惠码 <code>PROXY90</code> 可享 9 折优惠。
+</p>
+
+---
+
+<div align="center">
+
+**开源 · 为 Android 高阶用户打造 · Star 一下支持项目**
+
+</div>

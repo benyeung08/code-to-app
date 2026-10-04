@@ -1,0 +1,12 @@
+{
+  "id": "builtin-dark-mode",
+  "name": "Dark Mode",
+  "version": "1.0.0",
+  "description": "Smart inversion dark mode for any page. Toggle from the toolbar or the panel.",
+  "author": "WebToApp",
+  "icon": "dark_mode",
+  "matches": ["*"],
+  "runAt": "document_start",
+  "permissions": ["STORAGE", "BADGE"],
+  "toolbar": true
+}

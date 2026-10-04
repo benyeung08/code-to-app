@@ -1,0 +1,195 @@
+package com.webtoapp.core.autostart
+
+import android.content.BroadcastReceiver
+import android.content.Context
+import android.content.Intent
+import com.webtoapp.core.logging.AppLogger
+import com.webtoapp.util.WakeLockCompat
+import com.webtoapp.WebToAppApplication
+
+class BootReceiver : BroadcastReceiver() {
+
+    companion object {
+        private const val TAG = "BootReceiver"
+        private const val WAKELOCK_TAG = "WebToApp:BootReceiver"
+        private const val WAKELOCK_TIMEOUT_MS = 60_000L
+    }
+
+    override fun onReceive(context: Context, intent: Intent) {
+        when (intent.action) {
+            Intent.ACTION_BOOT_COMPLETED,
+            "android.intent.action.QUICKBOOT_POWERON",
+            "com.htc.intent.action.QUICKBOOT_POWERON" -> {
+                handleBootCompleted(context)
+            }
+            Intent.ACTION_MY_PACKAGE_REPLACED -> {
+                handlePackageReplaced(context)
+            }
+            Intent.ACTION_TIME_CHANGED,
+            Intent.ACTION_TIMEZONE_CHANGED -> {
+                handleTimeChanged(context, intent.action ?: "")
+            }
+        }
+    }
+
+    private fun handleBootCompleted(context: Context) {
+        AppLogger.d(TAG, "收到开机完成广播")
+
+        val pendingResult = goAsync()
+
+        val autoStartManager = AutoStartManager(context)
+        val bootDelay = autoStartManager.getBootDelay()
+
+        // Null when WAKE_LOCK is missing/revoked — work proceeds unlocked (#1034).
+        val wakeLock = WakeLockCompat.acquire(context, WAKELOCK_TAG, WAKELOCK_TIMEOUT_MS)
+
+        try {
+
+            val isShellMode = try {
+                WebToAppApplication.shellMode.isShellMode()
+            } catch (e: Exception) {
+                false
+            }
+
+            if (isShellMode) {
+                val config = try {
+                    WebToAppApplication.shellMode.getConfig()
+                } catch (e: Exception) {
+                    null
+                }
+                if (config?.autoStartConfig?.bootStartEnabled == true) {
+                    AppLogger.d(TAG, "Shell 模式：延迟 ${bootDelay}ms 后启动开机自启动应用")
+                    AutoStartLauncher.launch(
+                        context = context,
+                        source = "BootReceiver/Shell",
+                        delayMs = bootDelay
+                    )
+                }
+            } else {
+                val bootStartAppId = autoStartManager.getBootStartAppId()
+                if (bootStartAppId > 0) {
+                    AppLogger.d(TAG, "主应用模式：延迟 ${bootDelay}ms 后启动应用 $bootStartAppId")
+                    AutoStartLauncher.launch(
+                        context = context,
+                        source = "BootReceiver/Main",
+                        appId = bootStartAppId,
+                        delayMs = bootDelay
+                    )
+                }
+            }
+
+            autoStartManager.rescheduleAlarmIfNeeded()
+
+            try {
+                restoreNotificationChannels(context)
+            } catch (e: Exception) {
+                AppLogger.w(TAG, "恢复通知通道失败", e)
+            }
+        } catch (e: Exception) {
+            AppLogger.e(TAG, "开机自启动处理异常", e)
+        } finally {
+            WakeLockCompat.release(wakeLock)
+            try {
+                pendingResult.finish()
+            } catch (_: Exception) {}
+        }
+    }
+
+    private fun handlePackageReplaced(context: Context) {
+        AppLogger.d(TAG, "收到应用更新广播，恢复闹钟调度")
+        try {
+            val autoStartManager = AutoStartManager(context)
+            autoStartManager.rescheduleAlarmIfNeeded()
+        } catch (e: Exception) {
+            AppLogger.e(TAG, "应用更新后恢复闹钟失败", e)
+        }
+        try {
+            restoreNotificationChannels(context)
+        } catch (e: Exception) {
+            AppLogger.w(TAG, "应用更新后恢复通知通道失败", e)
+        }
+    }
+
+    private fun handleTimeChanged(context: Context, action: String) {
+        AppLogger.d(TAG, "收到时间变更广播: $action")
+
+        try {
+            val autoStartManager = AutoStartManager(context)
+            autoStartManager.rescheduleAlarmIfNeeded()
+        } catch (e: Exception) {
+            AppLogger.e(TAG, "时间变更后重新调度闹钟失败", e)
+        }
+    }
+
+    private fun restoreNotificationChannels(context: Context) {
+        try {
+            val isShellMode = try {
+                WebToAppApplication.shellMode.isShellMode()
+            } catch (_: Exception) {
+                false
+            }
+            if (!isShellMode) {
+                com.webtoapp.core.notification.NotificationFcmManager.restoreIfNeeded(context)
+                com.webtoapp.core.notification.NotificationWebSocketService.restoreIfNeeded(context)
+                com.webtoapp.core.notification.NotificationPollingService.restoreIfNeeded(context)
+                return
+            }
+            val config = try {
+                WebToAppApplication.shellMode.getConfig()
+            } catch (_: Exception) {
+                null
+            } ?: return
+            if (!config.notificationEnabled) return
+            val nc = config.notificationConfig ?: return
+            when (nc.type) {
+                "polling" -> {
+                    if (nc.pollUrl.isNotBlank()) {
+                        com.webtoapp.core.notification.NotificationPollingService.start(
+                            context = context,
+                            appName = config.appName,
+                            pollUrl = nc.pollUrl,
+                            pollIntervalMinutes = nc.pollIntervalMinutes,
+                            pollMethod = nc.pollMethod,
+                            pollHeaders = nc.pollHeaders,
+                            clickUrl = nc.clickUrl
+                        )
+                    }
+                }
+                "websocket" -> {
+                    if (nc.wsUrl.isNotBlank()) {
+                        com.webtoapp.core.notification.NotificationWebSocketService.start(
+                            context = context,
+                            appName = config.appName,
+                            wsUrl = nc.wsUrl,
+                            wsHeaders = nc.wsHeaders,
+                            registerUrl = nc.registerUrl,
+                            registerHeaders = nc.registerHeaders,
+                            authToken = nc.authToken,
+                            clickUrl = nc.clickUrl
+                        )
+                    }
+                }
+                "fcm" -> {
+                    com.webtoapp.core.notification.NotificationFcmManager.start(
+                        context = context,
+                        config = com.webtoapp.core.notification.NotificationFcmManager.FcmConfig(
+                            projectId = nc.fcmProjectId,
+                            applicationId = nc.fcmApplicationId,
+                            apiKey = nc.fcmApiKey,
+                            senderId = nc.fcmSenderId,
+                            registerUrl = nc.registerUrl,
+                            registerHeaders = nc.registerHeaders,
+                            authToken = nc.authToken,
+                            clickUrl = nc.clickUrl,
+                            appName = config.appName,
+                            googleServicesJson = nc.fcmGoogleServicesJson
+                        )
+                    )
+                }
+            }
+        } catch (e: Exception) {
+            AppLogger.e(TAG, "restoreNotificationChannels failed", e)
+        }
+    }
+
+}

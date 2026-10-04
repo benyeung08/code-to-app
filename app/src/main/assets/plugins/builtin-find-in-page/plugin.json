@@ -1,0 +1,16 @@
+{
+  "id": "builtin-find-in-page",
+  "name": "Find in Page",
+  "version": "1.0.0",
+  "description": "Search the current page with native highlighting and match navigation.",
+  "author": "WebToApp",
+  "icon": "search",
+  "matches": [
+    "*"
+  ],
+  "runAt": "document_idle",
+  "permissions": [
+    "NOTIFY"
+  ],
+  "toolbar": true
+}

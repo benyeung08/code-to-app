@@ -1,0 +1,19 @@
+{
+  "id": "builtin-media-downloader",
+  "name": "Media Downloader",
+  "version": "1.0.0",
+  "description": "Detect and download videos, images and audio on popular sites.",
+  "author": "WebToApp",
+  "icon": "download",
+  "matches": [
+    "*"
+  ],
+  "runAt": "document_idle",
+  "permissions": [
+    "STORAGE",
+    "NOTIFY",
+    "BADGE",
+    "FETCH"
+  ],
+  "toolbar": true
+}

@@ -1,0 +1,265 @@
+package com.webtoapp.core.webview
+
+import android.webkit.WebView
+import com.webtoapp.core.logging.AppLogger
+
+object PwaOfflineSupport {
+
+    private const val TAG = "PwaOfflineSupport"
+
+    enum class CacheStrategy {
+
+        CACHE_FIRST,
+
+        NETWORK_FIRST,
+
+        STALE_WHILE_REVALIDATE
+    }
+
+    data class OfflineConfig(
+        val enabled: Boolean = false,
+        val strategy: CacheStrategy = CacheStrategy.NETWORK_FIRST,
+        val maxCacheSizeMb: Int = 50,
+        val maxAgeHours: Int = 24 * 7,
+        val cacheableExtensions: List<String> = DEFAULT_CACHEABLE_EXTENSIONS,
+        val excludePatterns: List<String> = emptyList()
+    )
+
+    private val DEFAULT_CACHEABLE_EXTENSIONS = listOf(
+        "html", "htm", "css", "js", "json",
+        "png", "jpg", "jpeg", "gif", "webp", "svg", "ico",
+        "woff", "woff2", "ttf", "eot",
+        "mp3", "mp4", "webm"
+    )
+
+    /** Same-origin path the generated service worker script is served from. */
+    private const val SW_SCRIPT_PATH = "/__wta_offline_sw__.js"
+
+    /** Service worker script body currently served at [SW_SCRIPT_PATH]. */
+    @Volatile
+    private var currentSwScript: String? = null
+
+    @Volatile
+    private var serviceWorkerControllerInstalled = false
+
+    fun generateSwScriptBody(config: OfflineConfig): String {
+        val strategyName = when (config.strategy) {
+            CacheStrategy.CACHE_FIRST -> "cache-first"
+            CacheStrategy.NETWORK_FIRST -> "network-first"
+            CacheStrategy.STALE_WHILE_REVALIDATE -> "stale-while-revalidate"
+        }
+
+        val extensionsArray = config.cacheableExtensions.joinToString(",") { "'$it'" }
+        val excludeArray = config.excludePatterns.joinToString(",") { "'$it'" }
+        val maxAgeMs = config.maxAgeHours.toLong() * 3600 * 1000
+        val maxCacheBytes = config.maxCacheSizeMb.toLong() * 1024 * 1024
+
+        return """
+const CACHE_NAME = 'wta-offline-v1';
+const STRATEGY = '${strategyName}';
+const MAX_AGE_MS = ${maxAgeMs};
+const MAX_CACHE_BYTES = ${maxCacheBytes};
+const CACHEABLE_EXTENSIONS = [${extensionsArray}];
+const EXCLUDE_PATTERNS = [${excludeArray}];
+
+function isCacheable(url) {
+    try {
+        const u = new URL(url);
+        if (u.protocol !== 'https:' && u.protocol !== 'http:') return false;
+        for (const pattern of EXCLUDE_PATTERNS) {
+            if (url.includes(pattern)) return false;
+        }
+        const ext = u.pathname.split('.').pop().toLowerCase().split('?')[0];
+        if (CACHEABLE_EXTENSIONS.includes(ext)) return true;
+        return false;
+    } catch (e) { return false; }
+}
+
+async function trimCache() {
+    try {
+        const cache = await caches.open(CACHE_NAME);
+        const keys = await cache.keys();
+        let totalSize = 0;
+        const entries = [];
+        for (const req of keys) {
+            const resp = await cache.match(req);
+            if (resp) {
+                const blob = await resp.clone().blob();
+                const ts = resp.headers.get('x-wta-cached-at');
+                entries.push({ req, size: blob.size, ts: ts ? parseInt(ts) : 0 });
+                totalSize += blob.size;
+            }
+        }
+        // Remove expired entries
+        const now = Date.now();
+        for (const e of entries) {
+            if (e.ts > 0 && (now - e.ts) > MAX_AGE_MS) {
+                await cache.delete(e.req);
+                totalSize -= e.size;
+            }
+        }
+        // If still over size limit, remove oldest first
+        if (totalSize > MAX_CACHE_BYTES) {
+            entries.sort((a, b) => a.ts - b.ts);
+            for (const e of entries) {
+                if (totalSize <= MAX_CACHE_BYTES) break;
+                await cache.delete(e.req);
+                totalSize -= e.size;
+            }
+        }
+    } catch (e) { /* ignore trim errors */ }
+}
+
+async function addToCache(request, response) {
+    try {
+        const cache = await caches.open(CACHE_NAME);
+        const headers = new Headers(response.headers);
+        headers.set('x-wta-cached-at', String(Date.now()));
+        const cachedResponse = new Response(await response.clone().blob(), {
+            status: response.status,
+            statusText: response.statusText,
+            headers: headers
+        });
+        await cache.put(request, cachedResponse);
+    } catch (e) { /* ignore cache write errors */ }
+}
+
+async function cacheFirst(request) {
+    const cached = await caches.match(request);
+    if (cached) return cached;
+    try {
+        const response = await fetch(request);
+        if (response.ok && isCacheable(request.url)) {
+            addToCache(request, response);
+        }
+        return response;
+    } catch (e) {
+        return new Response('Offline', { status: 503, statusText: 'Offline' });
+    }
+}
+
+async function networkFirst(request) {
+    try {
+        const response = await fetch(request);
+        if (response.ok && isCacheable(request.url)) {
+            addToCache(request, response);
+        }
+        return response;
+    } catch (e) {
+        const cached = await caches.match(request);
+        if (cached) return cached;
+        return new Response('Offline', { status: 503, statusText: 'Offline' });
+    }
+}
+
+async function staleWhileRevalidate(request) {
+    const cached = await caches.match(request);
+    const fetchPromise = fetch(request).then(response => {
+        if (response.ok && isCacheable(request.url)) {
+            addToCache(request, response);
+        }
+        return response;
+    }).catch(() => null);
+
+    if (cached) {
+        fetchPromise; // fire and forget background update
+        return cached;
+    }
+    const response = await fetchPromise;
+    if (response) return response;
+    return new Response('Offline', { status: 503, statusText: 'Offline' });
+}
+
+self.addEventListener('install', event => {
+    self.skipWaiting();
+});
+
+self.addEventListener('activate', event => {
+    event.waitUntil(
+        caches.keys().then(names =>
+            Promise.all(names.filter(n => n !== CACHE_NAME).map(n => caches.delete(n)))
+        ).then(() => self.clients.claim())
+    );
+    // Trim cache periodically
+    trimCache();
+});
+
+self.addEventListener('fetch', event => {
+    const request = event.request;
+    if (request.method !== 'GET') return;
+    if (!isCacheable(request.url) && !request.url.endsWith('/')) return;
+
+    let handler;
+    switch (STRATEGY) {
+        case 'cache-first': handler = cacheFirst; break;
+        case 'stale-while-revalidate': handler = staleWhileRevalidate; break;
+        default: handler = networkFirst;
+    }
+    event.respondWith(handler(request));
+});
+        """.trimIndent()
+    }
+
+    /** Page-side script that registers the service worker from the same-origin path. */
+    private fun generateRegistrationScript(): String = """
+        (function() {
+            if (window.__WTA_SW_INJECTED__) return;
+            window.__WTA_SW_INJECTED__ = true;
+            if (!('serviceWorker' in navigator)) return;
+            navigator.serviceWorker.getRegistrations().then(function(regs) {
+                var existing = regs.find(function(r) {
+                    return r.active && r.active.scriptURL.indexOf('$SW_SCRIPT_PATH') !== -1;
+                });
+                if (existing) return;
+                navigator.serviceWorker.register('$SW_SCRIPT_PATH', { scope: '/' })
+                    .then(function() { console.log('[WTA] Service Worker registered'); })
+                    .catch(function(err) {
+                        console.warn('[WTA] Service Worker registration failed:', err.message);
+                    });
+            });
+        })();
+    """.trimIndent()
+
+    /**
+     * Serves the generated service worker script at [SW_SCRIPT_PATH]. WebView refuses
+     * blob: service-worker script URLs, so the script must be served from a same-origin
+     * URL; the ServiceWorkerController intercepts that request and returns the script.
+     */
+    private fun installServiceWorkerController() {
+        if (serviceWorkerControllerInstalled) return
+        serviceWorkerControllerInstalled = true
+        try {
+            androidx.webkit.ServiceWorkerControllerCompat.getInstance().setServiceWorkerClient(
+                object : androidx.webkit.ServiceWorkerClientCompat() {
+                    override fun shouldInterceptRequest(
+                        request: android.webkit.WebResourceRequest
+                    ): android.webkit.WebResourceResponse? {
+                        if (request.url?.path == SW_SCRIPT_PATH) {
+                            val script = currentSwScript ?: return null
+                            return android.webkit.WebResourceResponse(
+                                "application/javascript",
+                                "UTF-8",
+                                java.io.ByteArrayInputStream(script.toByteArray(Charsets.UTF_8))
+                            )
+                        }
+                        return null
+                    }
+                }
+            )
+        } catch (e: Exception) {
+            AppLogger.w(TAG, "Failed to install ServiceWorkerController", e)
+        }
+    }
+
+    fun injectServiceWorker(webView: WebView, config: OfflineConfig) {
+        if (!config.enabled) return
+
+        installServiceWorkerController()
+        currentSwScript = generateSwScriptBody(config)
+        webView.evaluateJavascript(generateRegistrationScript()) { result ->
+            AppLogger.d(TAG, "Service Worker registration script result: $result")
+        }
+        AppLogger.i(TAG, "PWA offline support injected (strategy: ${config.strategy})")
+    }
+
+}

@@ -1,0 +1,360 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
+    <uses-permission android:name="android.permission.CHANGE_WIFI_STATE" />
+    <uses-permission android:name="android.permission.CHANGE_NETWORK_STATE" />
+    <!-- Android 16 opt-in / Android 17 enforced on some ROMs regardless of targetSdk;
+         without it LAN hosts fail with ERR_LOCAL_NETWORK_PERMISSION_MISSING. Harmless on
+         older releases (unknown permissions are ignored). -->
+    <uses-permission android:name="android.permission.ACCESS_LOCAL_NETWORK" />
+
+    
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"
+        android:maxSdkVersion="32" />
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"
+        android:maxSdkVersion="29"
+        tools:ignore="ScopedStorage" />
+    <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
+    <uses-permission android:name="android.permission.READ_MEDIA_VIDEO" />
+    <uses-permission android:name="android.permission.READ_MEDIA_AUDIO" />
+
+    
+    <uses-permission android:name="android.permission.DOWNLOAD_WITHOUT_NOTIFICATION" />
+
+    
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+
+    
+    <uses-permission android:name="android.permission.CAMERA" />
+    <uses-feature android:name="android.hardware.camera" android:required="false" />
+    <uses-feature android:name="android.hardware.camera.autofocus" android:required="false" />
+
+    
+    <uses-permission android:name="android.permission.RECORD_AUDIO" />
+    <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />
+
+    
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_BACKGROUND_LOCATION" />
+
+    
+    <uses-permission android:name="android.permission.BLUETOOTH"
+        android:maxSdkVersion="30" />
+    <uses-permission android:name="android.permission.BLUETOOTH_ADMIN"
+        android:maxSdkVersion="30" />
+    <uses-permission android:name="android.permission.BLUETOOTH_SCAN" />
+    <uses-permission android:name="android.permission.BLUETOOTH_CONNECT" />
+    <uses-permission android:name="android.permission.BLUETOOTH_ADVERTISE" />
+
+    
+    <uses-permission android:name="android.permission.NFC" />
+
+    
+    <uses-permission android:name="android.permission.NEARBY_WIFI_DEVICES" />
+
+    
+    <uses-permission android:name="android.permission.BODY_SENSORS" />
+    <uses-permission android:name="android.permission.BODY_SENSORS_BACKGROUND" />
+    <uses-permission android:name="android.permission.ACTIVITY_RECOGNITION" />
+    <uses-permission android:name="android.permission.HIGH_SAMPLING_RATE_SENSORS" />
+
+    
+    <uses-permission android:name="android.permission.READ_PHONE_STATE" />
+    <uses-permission android:name="android.permission.CALL_PHONE" />
+
+    
+    <uses-permission android:name="android.permission.USE_BIOMETRIC" />
+    <uses-permission android:name="android.permission.USE_FINGERPRINT" />
+
+    
+    <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
+
+    
+    <!--
+        Keep this list to the FGS types actually used by the services below
+        (specialUse + mediaPlayback). ApkBuilder rebuilds the generated app's
+        manifest permissions from config and injects extra FOREGROUND_SERVICE_*
+        types itself, so a catch-all list here only produces false-positive
+        Play Console foreground-service declarations via the embedded template.
+    -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" />
+
+    
+    <uses-permission android:name="android.permission.WAKE_LOCK" />
+
+    
+    <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" />
+
+    
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+
+    
+    <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />
+    <uses-permission android:name="android.permission.USE_EXACT_ALARM" />
+
+    
+    <uses-feature android:name="android.hardware.bluetooth" android:required="false" />
+    <uses-feature android:name="android.hardware.bluetooth_le" android:required="false" />
+    <uses-feature android:name="android.hardware.nfc" android:required="false" />
+    <uses-feature android:name="android.hardware.wifi" android:required="false" />
+    <uses-feature android:name="android.hardware.location" android:required="false" />
+    <uses-feature android:name="android.hardware.location.gps" android:required="false" />
+    <uses-feature android:name="android.hardware.camera.flash" android:required="false" />
+    <uses-feature android:name="android.hardware.telephony" android:required="false" />
+    <uses-feature android:name="android.hardware.microphone" android:required="false" />
+    <uses-feature android:name="android.hardware.usb.host" android:required="false" />
+    <uses-feature android:name="android.hardware.fingerprint" android:required="false" />
+
+    
+    <queries>
+        <intent>
+            <action android:name="android.intent.action.VIEW" />
+            <data android:scheme="tel" />
+        </intent>
+        <intent>
+            <action android:name="android.intent.action.VIEW" />
+            <data android:scheme="mailto" />
+        </intent>
+        <intent>
+            <action android:name="android.intent.action.VIEW" />
+            <data android:scheme="sms" />
+        </intent>
+        <intent>
+            <action android:name="android.intent.action.VIEW" />
+            <data android:scheme="geo" />
+        </intent>
+        <intent>
+            <action android:name="android.intent.action.VIEW" />
+            <category android:name="android.intent.category.BROWSABLE" />
+            <data android:scheme="http" />
+        </intent>
+        <intent>
+            <action android:name="android.intent.action.VIEW" />
+            <category android:name="android.intent.category.BROWSABLE" />
+            <data android:scheme="https" />
+        </intent>
+        <intent>
+            <action android:name="android.media.action.IMAGE_CAPTURE" />
+        </intent>
+        <intent>
+            <action android:name="android.media.action.VIDEO_CAPTURE" />
+        </intent>
+        
+        <intent>
+            <action android:name="com.webtoapp.action.PORT_QUERY" />
+        </intent>
+        <intent>
+            <action android:name="com.webtoapp.action.PORT_RELEASE" />
+        </intent>
+    </queries>
+
+    <!--
+    ==========================================================================
+    android:enableOnBackInvokedCallback="true"
+    Android 13+ predictive back 兼容开关。详见宿主 manifest 同名注释。
+    打开后所有 OnBackPressedCallback 自动收到 OEM 侧边手势 / 三角键的返回
+    事件，子 APK 在 webapp 内滑边返回会回退网页历史，而不是退到桌面。
+    ==========================================================================
+    -->
+    <application
+        android:name=".WebToAppApplication"
+        android:allowBackup="false"
+        android:icon="@mipmap/ic_launcher"
+        android:label="@string/app_name"
+        android:networkSecurityConfig="@xml/network_security_config"
+        android:roundIcon="@mipmap/ic_launcher_round"
+        android:supportsRtl="true"
+        android:theme="@style/Theme.WebToApp"
+        android:usesCleartextTraffic="true"
+        android:enableOnBackInvokedCallback="true"
+        android:pageSizeCompat="enabled"
+        tools:targetApi="31">
+
+        
+        <meta-data
+            android:name="com.webtoapp.WTA_APP_MARKER"
+            android:value="true" />
+
+        <!-- Inert resource reservation. ApkBuilder removes this entry when SAEP is
+             off, or renames it to the platform key after validating the raw resource. -->
+        <meta-data
+            android:name="com.webtoapp.SAEP_POLICY_TEMPLATE"
+            android:resource="@raw/agent_saep_policy" />
+
+        
+        <property
+            android:name="android.app.property.PAGE_SIZE_COMPATIBILITY"
+            android:value="16" />
+
+        
+        <activity
+            android:name=".ui.shell.ShellActivity"
+            android:configChanges="orientation|screenSize|keyboardHidden|screenLayout|smallestScreenSize|uiMode"
+            android:exported="true"
+            android:hardwareAccelerated="true"
+            android:launchMode="singleTask"
+            android:windowSoftInputMode="adjustResize"
+            android:theme="@style/Theme.WebToApp.Shell">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+
+        
+        <service
+            android:name=".core.background.BackgroundRunService"
+            android:enabled="true"
+            android:exported="false"
+            android:foregroundServiceType="specialUse">
+            <property
+                android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
+                android:value="background_run" />
+        </service>
+
+        <!--
+            WebMediaPlaybackService - WebView 内媒体播放的后台保活前台服务。
+            音频本身仍在 WebView 内播放；该服务提供 mediaPlayback 前台服务 + 唤醒锁 +
+            媒体通知生命周期（播放中启动 / 暂停分离 / 停止移除）。
+        -->
+        <service
+            android:name=".core.webview.WebMediaPlaybackService"
+            android:enabled="true"
+            android:exported="false"
+            android:foregroundServiceType="mediaPlayback"
+            android:stopWithTask="false" />
+
+        
+        <service
+            android:name=".core.notification.NotificationPollingService"
+            android:enabled="true"
+            android:exported="false"
+            android:foregroundServiceType="specialUse">
+            <property
+                android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
+                android:value="notification_polling" />
+        </service>
+
+        
+        <service
+            android:name=".core.notification.NotificationWebSocketService"
+            android:enabled="true"
+            android:exported="false"
+            android:foregroundServiceType="specialUse">
+            <property
+                android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
+                android:value="notification_websocket" />
+        </service>
+        
+        <service
+            android:name=".core.notification.NotificationFcmService"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="com.google.firebase.MESSAGING_EVENT" />
+            </intent-filter>
+        </service>
+
+
+        
+        <service
+            android:name=".core.floatingwindow.FloatingWindowService"
+            android:enabled="true"
+            android:exported="false"
+            android:foregroundServiceType="specialUse">
+            <property
+                android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
+                android:value="floating_window" />
+        </service>
+
+        <!--
+            NodeService - 子 APK 里跑用户 Node.js 项目的独立子进程。
+            为什么独立进程详见 app/src/main/AndroidManifest.xml 同名条目的注释。
+            子 APK 上保持完全相同的配置，否则 Node 子 APK 就退化回主进程嵌入式
+            模式（V8 无法重启）的旧行为。
+        -->
+        <service
+            android:name=".core.nodejs.NodeService"
+            android:enabled="true"
+            android:exported="false"
+            android:process=":nodejs"
+            android:stopWithTask="true" />
+
+        
+        <receiver
+            android:name=".core.autostart.BootReceiver"
+            android:enabled="true"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+                <action android:name="android.intent.action.QUICKBOOT_POWERON" />
+                <action android:name="com.htc.intent.action.QUICKBOOT_POWERON" />
+                <action android:name="android.intent.action.MY_PACKAGE_REPLACED" />
+                <action android:name="android.intent.action.TIME_SET" />
+                <action android:name="android.intent.action.TIMEZONE_CHANGED" />
+            </intent-filter>
+        </receiver>
+
+        
+        <receiver
+            android:name=".core.autostart.ScheduledStartReceiver"
+            android:enabled="true"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="com.webtoapp.ACTION_SCHEDULED_START" />
+            </intent-filter>
+        </receiver>
+
+        
+        <receiver
+            android:name=".core.port.PortQueryReceiver"
+            android:enabled="true"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="com.webtoapp.action.PORT_QUERY" />
+            </intent-filter>
+        </receiver>
+
+        <receiver
+            android:name=".core.port.PortReleaseReceiver"
+            android:enabled="true"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="com.webtoapp.action.PORT_RELEASE" />
+            </intent-filter>
+        </receiver>
+
+        <!--
+            BridgeAlarmReceiver - 通知调度（页内 Web Notification.scheduleNotification）。
+            NativeBridge.scheduleBridgeAlarm 通过显式 PendingIntent 广播触发；缺少此声明时
+            生成的 APK 中定时通知会被系统静默丢弃。与宿主清单保持同名同 action。
+        -->
+        <receiver
+            android:name=".core.notification.BridgeAlarmReceiver"
+            android:enabled="true"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="com.webtoapp.bridge.SCHEDULED_NOTIFICATION" />
+            </intent-filter>
+        </receiver>
+
+        
+        <provider
+            android:name="androidx.core.content.FileProvider"
+            android:authorities="${applicationId}.fileprovider"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/file_paths" />
+        </provider>
+    </application>
+
+</manifest>

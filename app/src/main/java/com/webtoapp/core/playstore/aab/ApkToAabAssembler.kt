@@ -1,0 +1,332 @@
+package com.webtoapp.core.playstore.aab
+
+import com.webtoapp.core.logging.AppLogger
+import com.webtoapp.core.playstore.aab.arsc.ArscReader
+import com.webtoapp.core.playstore.aab.arsc.ArscToProtoTable
+import com.webtoapp.core.playstore.aab.axml.AxmlToProtoXml
+import com.webtoapp.core.playstore.aab.axml.ProtoManifestRewriter
+import java.io.ByteArrayOutputStream
+import java.io.File
+import java.io.FileOutputStream
+import java.util.zip.Deflater
+import java.util.zip.ZipEntry
+import java.util.zip.ZipFile
+import java.util.zip.ZipOutputStream
+
+class ApkToAabAssembler {
+
+    companion object {
+        private const val TAG = "ApkToAabAssembler"
+
+        /**
+         * Binary AXML starts with the chunk header magic `03 00` (type RES_XML_TYPE = 0x0003,
+         * little-endian). Plain-text XML — notably the AGP resource-shrinker's `tools:keep` /
+         * `tools:discard` marker, which is left uncompiled under `res/` — starts with `<?xml`
+         * (`3c 3f 78 6d`). Returns true for the latter so the caller can skip it instead of
+         * handing it to the binary AXML parser. See issue #272.
+         */
+        internal fun isPlaintextXml(data: ByteArray): Boolean {
+            if (data.size < 2) return false
+            // 0x3c = '<'. Binary AXML's first byte is 0x03, so this cleanly separates the two.
+            return data[0] == 0x3c.toByte()
+        }
+    }
+
+    fun assemble(
+        sourceApk: File,
+        outputAab: File,
+        targetSdkOverride: Int? = null
+    ): AssembleStats {
+        require(sourceApk.exists()) { "Source APK not found: ${sourceApk.absolutePath}" }
+        outputAab.parentFile?.mkdirs()
+
+        var manifestEntries = 0
+        var resourceXmlConverted = 0
+        var resourceXmlSkipped = 0
+        var resourceXmlPlainTextSkipped = 0
+        var resourceVerbatim = 0
+        var dexCount = 0
+        var assetCount = 0
+        var nativeLibCount = 0
+        var rootCount = 0
+
+        val abis = mutableSetOf<String>()
+        val assetDirs = mutableSetOf<String>()
+        val missingResources = mutableSetOf<String>()
+
+        ZipFile(sourceApk).use { zip ->
+            ZipOutputStream(FileOutputStream(outputAab)).use { out ->
+
+                out.setLevel(Deflater.BEST_COMPRESSION)
+
+                val manifestEntry = zip.getEntry("AndroidManifest.xml")
+                    ?: throw IllegalArgumentException("APK missing AndroidManifest.xml")
+                val manifestBytes = zip.getInputStream(manifestEntry).readBytes()
+                val protoManifestRaw = AxmlToProtoXml.convert(manifestBytes)
+
+                val protoManifest = if (targetSdkOverride != null) {
+                    val before = ProtoManifestRewriter.extractTargetSdkVersion(protoManifestRaw)
+                    val rewritten = ProtoManifestRewriter.rewriteTargetSdk(
+                        protoManifestRaw,
+                        targetSdkOverride
+                    )
+                    AppLogger.d(
+                        TAG,
+                        "Rewrote manifest targetSdkVersion: " +
+                            "before=${before ?: "<absent>"}, after=$targetSdkOverride"
+                    )
+                    rewritten
+                } else {
+                    protoManifestRaw
+                }
+                writeEntry(out, "base/manifest/AndroidManifest.xml", protoManifest.toByteArray())
+                manifestEntries++
+
+                val arscEntry = zip.getEntry("resources.arsc")
+                    ?: throw IllegalArgumentException("APK missing resources.arsc")
+                val arscBytes = zip.getInputStream(arscEntry).readBytes()
+                val table = ArscReader(arscBytes).read()
+
+                // Pre-scan res/*.xml for plaintext (uncompiled) XML that we skip below (issue
+                // #272), so we can also drop their references from the resource table. Otherwise
+                // the AAB's resource table references non-existing files and Google Play rejects
+                // it (bundletool build-apks). See issue #293.
+                val plaintextResFiles = mutableSetOf<String>()
+                for (scanEntry in zip.entries()) {
+                    val scanName = scanEntry.name
+                    if (!scanEntry.isDirectory && scanName.startsWith("res/") && scanName.endsWith(".xml")) {
+                        val head = ByteArray(2)
+                        val read = zip.getInputStream(scanEntry).use { it.read(head) }
+                        if (read > 0 && isPlaintextXml(head)) {
+                            plaintextResFiles.add(scanName)
+                        }
+                    }
+                }
+                if (plaintextResFiles.isNotEmpty()) {
+                    AppLogger.d(TAG, "Excluding plaintext res XML from resource table: $plaintextResFiles")
+                }
+
+                val protoTable = ArscToProtoTable.convert(table, plaintextResFiles)
+                writeEntry(out, "base/resources.pb", protoTable.toByteArray())
+
+                val referencedResources = table.collectReferencedResourceFiles()
+                AppLogger.d(TAG, "Resource table references ${referencedResources.size} res/ paths")
+
+                // Validate resource integrity before processing: ensure all referenced resources
+                // (except plaintext XML) exist in the source APK. This prevents bundletool from
+                // rejecting the AAB with "resource table references non-existing files" errors.
+                for (resourcePath in referencedResources) {
+                    if (resourcePath in plaintextResFiles) continue
+                    if (!hasEntry(zip, resourcePath)) {
+                        missingResources.add(resourcePath)
+                        AppLogger.w(
+                            TAG,
+                            "Missing resource referenced in resources.arsc: $resourcePath."
+                                + " This may be a tools:keep marker file that should be excluded."
+                        )
+                    }
+                }
+
+                val entries = zip.entries().toList().sortedBy { it.name }
+                for (entry in entries) {
+                    if (entry.isDirectory) continue
+                    val name = entry.name
+
+                    if (name == "AndroidManifest.xml" || name == "resources.arsc") continue
+
+                    if (name.startsWith("META-INF/")) {
+                        val isSignature = name == "META-INF/MANIFEST.MF" ||
+                            name.endsWith(".SF") ||
+                            name.endsWith(".RSA") ||
+                            name.endsWith(".DSA") ||
+                            name.endsWith(".EC")
+                        if (isSignature) continue
+
+                    }
+
+                    if (name == "stamp-cert-sha256") continue
+
+                    when {
+                        name.startsWith("res/") && name.endsWith(".xml") -> {
+
+                            val xmlBytes = zip.getInputStream(entry).readBytes()
+
+                            // Some res/*.xml entries are plain-text source XML, not compiled
+                            // binary AXML. The canonical case is the resource-shrinker's
+                            // tools:keep / tools:discard marker document emitted by AGP (often
+                            // alongside Firebase), which AGP deliberately leaves uncompiled in
+                            // release APKs. Such files are build-time metadata with no runtime
+                            // semantics and are not needed by Google Play, so we drop them
+                            // instead of feeding them to the binary AXML parser (which would
+                            // throw "Not an AXML file"). See issue #272.
+                            if (isPlaintextXml(xmlBytes)) {
+                                AppLogger.d(TAG, "Skipping plaintext res XML: $name")
+                                resourceXmlPlainTextSkipped++
+                                continue
+                            }
+
+                            if (name !in referencedResources) {
+                                AppLogger.d(TAG, "Skipping orphan res XML: $name")
+                                continue
+                            }
+
+                            try {
+                                val proto = AxmlToProtoXml.convert(xmlBytes)
+                                writeEntry(out, "base/$name", proto.toByteArray())
+                                resourceXmlConverted++
+                            } catch (e: Exception) {
+
+                                AppLogger.e(TAG, "Failed to convert $name to proto XML", e)
+                                resourceXmlSkipped++
+                                throw IllegalStateException(
+                                    "Cannot convert $name: ${e.message}", e
+                                )
+                            }
+                        }
+
+                        name.startsWith("res/") -> {
+
+                            if (name !in referencedResources) {
+                                AppLogger.d(TAG, "Skipping orphan res file: $name")
+                                continue
+                            }
+
+                            copyEntryVerbatim(zip, entry, out, "base/$name")
+                            resourceVerbatim++
+                        }
+
+                        name.startsWith("lib/") -> {
+
+                            val abi = name.removePrefix("lib/").substringBefore('/')
+                            if (abi.isNotEmpty()) abis.add(abi)
+                            copyEntryVerbatim(zip, entry, out, "base/$name")
+                            nativeLibCount++
+                        }
+
+                        name.startsWith("assets/") -> {
+                            val rel = name.removePrefix("assets/")
+                            val dir = if (rel.contains('/')) {
+                                rel.substringBeforeLast('/')
+                            } else ""
+
+                            assetDirs.add(if (dir.isEmpty()) "assets" else "assets/$dir")
+                            copyEntryVerbatim(zip, entry, out, "base/$name")
+                            assetCount++
+                        }
+
+                        name.matches(Regex("classes\\d*\\.dex")) -> {
+
+                            copyEntryVerbatim(zip, entry, out, "base/dex/$name")
+                            dexCount++
+                        }
+
+                        else -> {
+
+                            copyEntryVerbatim(zip, entry, out, "base/root/$name")
+                            rootCount++
+                        }
+                    }
+                }
+
+                val nativeProto = AabFilesProtoFactory.buildNativeLibraries(abis)
+                if (nativeProto.directoryCount > 0) {
+                    writeEntry(out, "base/native.pb", nativeProto.toByteArray())
+                }
+                val assetsProto = AabFilesProtoFactory.buildAssets(assetDirs)
+                if (assetsProto.directoryCount > 0) {
+                    writeEntry(out, "base/assets.pb", assetsProto.toByteArray())
+                }
+
+                val bundleConfig = AabBundleConfigFactory.build()
+                writeEntry(out, "BundleConfig.pb", bundleConfig.toByteArray())
+            }
+        }
+
+        val stats = AssembleStats(
+            outputBytes = outputAab.length(),
+            manifestConverted = manifestEntries,
+            resourceXmlConverted = resourceXmlConverted,
+            resourceXmlSkipped = resourceXmlSkipped,
+            resourceXmlPlainTextSkipped = resourceXmlPlainTextSkipped,
+            resourceVerbatimCopied = resourceVerbatim,
+            assetCount = assetCount,
+            nativeLibCount = nativeLibCount,
+            dexCount = dexCount,
+            rootCount = rootCount,
+            abis = abis.toList().sorted(),
+            assetDirCount = assetDirs.size
+        )
+        AppLogger.d(TAG, "Assembled AAB: $stats")
+        
+        if (missingResources.isNotEmpty()) {
+            AppLogger.w(
+                TAG,
+                "WARNING: ${missingResources.size} missing resource(s) detected in AAB."
+                    + " This may cause Google Play Console to reject the bundle."
+                    + " Missing files: ${missingResources.joinToString(", ")}"  
+            )
+        }
+        
+        return stats
+    }
+
+    private fun writeEntry(out: ZipOutputStream, name: String, data: ByteArray) {
+
+        val entry = ZipEntry(name)
+        out.putNextEntry(entry)
+        out.write(data)
+        out.closeEntry()
+    }
+
+    private fun copyEntryVerbatim(
+        sourceZip: ZipFile,
+        sourceEntry: ZipEntry,
+        out: ZipOutputStream,
+        targetName: String
+    ) {
+
+        val entry = ZipEntry(targetName)
+        out.putNextEntry(entry)
+        sourceZip.getInputStream(sourceEntry).use { input ->
+            input.copyTo(out)
+        }
+        out.closeEntry()
+    }
+
+    /** Check if the ZIP contains an entry with the given name. */
+    private fun hasEntry(zip: ZipFile, name: String): Boolean {
+        return zip.getEntry(name) != null ||
+            zip.getEntry("res/$name") != null ||
+            zip.getEntry("base/$name") != null
+    }
+
+    data class AssembleStats(
+        val outputBytes: Long,
+        val manifestConverted: Int,
+        val resourceXmlConverted: Int,
+        val resourceXmlSkipped: Int,
+        val resourceXmlPlainTextSkipped: Int = 0,
+        val resourceVerbatimCopied: Int,
+        val assetCount: Int,
+        val nativeLibCount: Int,
+        val dexCount: Int,
+        val rootCount: Int,
+        val abis: List<String>,
+        val assetDirCount: Int
+    ) {
+        override fun toString(): String = buildString {
+            append("AAB(")
+            append("size=${outputBytes}B")
+            append(", manifest=$manifestConverted")
+            append(", resXml=$resourceXmlConverted")
+            if (resourceXmlSkipped > 0) append(", resXmlFail=$resourceXmlSkipped")
+            if (resourceXmlPlainTextSkipped > 0) append(", resXmlText=$resourceXmlPlainTextSkipped")
+            append(", resBin=$resourceVerbatimCopied")
+            append(", assets=$assetCount")
+            append(", nativeLibs=$nativeLibCount(${abis.joinToString(",")})")
+            append(", dex=$dexCount")
+            append(", root=$rootCount")
+            append(")")
+        }
+    }
+}

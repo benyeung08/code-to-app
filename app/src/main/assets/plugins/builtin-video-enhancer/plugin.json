@@ -1,0 +1,19 @@
+{
+  "id": "builtin-video-enhancer",
+  "name": "Video Enhancer",
+  "version": "1.0.0",
+  "description": "Playback speed, PiP, loop, seek — plus YouTube cleanup.",
+  "author": "WebToApp",
+  "icon": "movie",
+  "matches": [
+    "*"
+  ],
+  "runAt": "document_idle",
+  "permissions": [
+    "STORAGE",
+    "NOTIFY",
+    "BADGE",
+    "FETCH"
+  ],
+  "toolbar": true
+}

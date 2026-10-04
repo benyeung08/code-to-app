@@ -1,0 +1,608 @@
+package com.webtoapp.ui.components
+
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.filled.KeyboardArrowDown
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.*
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.rotate
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.unit.dp
+import coil.compose.AsyncImage
+import coil.request.ImageRequest
+import com.webtoapp.core.i18n.Strings
+import com.webtoapp.ui.theme.ifDescriptionsShown
+import com.webtoapp.data.model.FloatingBorderStyle
+import com.webtoapp.data.model.FloatingWindowAspectRatioMode
+import com.webtoapp.data.model.FloatingWindowConfig
+import com.webtoapp.ui.animation.CardCollapseTransition
+import com.webtoapp.ui.animation.CardExpandTransition
+import com.webtoapp.ui.design.WtaDivider
+import com.webtoapp.ui.design.WtaChip
+import com.webtoapp.ui.design.WtaFeatureCard
+import com.webtoapp.ui.design.WtaFeatureCardHeader
+import com.webtoapp.ui.design.WtaRadius
+import com.webtoapp.ui.design.WtaSpacing
+import com.webtoapp.ui.design.WtaSwitch
+import com.webtoapp.util.IconStorage
+import java.io.File
+import kotlin.math.roundToInt
+
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
+@Composable
+fun FloatingWindowConfigCard(
+    config: FloatingWindowConfig,
+    onConfigChange: (FloatingWindowConfig) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    var showAdvanced by remember { mutableStateOf(false) }
+    val context = LocalContext.current
+    val primary = MaterialTheme.colorScheme.primary
+    val aspectRatioMode = if (!config.lockAspectRatio && config.aspectRatioMode == FloatingWindowAspectRatioMode.SCREEN) {
+        FloatingWindowAspectRatioMode.FREE
+    } else {
+        config.aspectRatioMode
+    }
+    val iconPickerLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.GetContent()
+    ) { uri ->
+        uri ?: return@rememberLauncherForActivityResult
+        val oldPath = config.minimizedIconPath
+        IconStorage.saveIconFromUri(context, uri)?.let { path ->
+            if (oldPath != path) {
+                IconStorage.deleteIcon(oldPath)
+            }
+            onConfigChange(config.copy(minimizedIconPath = path))
+        }
+    }
+
+    val arrowRotation by animateFloatAsState(
+        targetValue = if (showAdvanced) 180f else 0f,
+        animationSpec = com.webtoapp.ui.design.WtaMotion.settleSpring(),
+        label = "arrowRotation"
+    )
+
+    WtaFeatureCard(modifier = modifier) {
+        WtaFeatureCardHeader(
+            icon = Icons.Outlined.PictureInPicture,
+            title = Strings.floatingWindowTitle,
+            enabled = config.enabled,
+            trailing = {
+                WtaSwitch(
+                    checked = config.enabled,
+                    onCheckedChange = { onConfigChange(config.copy(enabled = it)) }
+                )
+            }
+        )
+
+        AnimatedVisibility(
+            visible = config.enabled,
+            enter = CardExpandTransition,
+            exit = CardCollapseTransition
+        ) {
+            Column(modifier = Modifier.padding(top = WtaSpacing.Large)) {
+                WtaDivider()
+                Spacer(modifier = Modifier.height(WtaSpacing.Large))
+
+                SectionHeader(
+                    icon = Icons.Outlined.Straighten,
+                    title = Strings.fwSectionSize
+                )
+
+                    SliderWithLabel(
+                        label = Strings.fwWidthLabel,
+                        value = config.widthPercent,
+                        valueRange = 30f..100f,
+                        steps = 13,
+                        onValueChange = { newWidth ->
+                            onConfigChange(config.copy(
+                                widthPercent = newWidth,
+                                windowSizePercent = newWidth
+                            ))
+                        }
+                    )
+
+                    AnimatedVisibility(
+                        visible = aspectRatioMode == FloatingWindowAspectRatioMode.FREE,
+                        enter = CardExpandTransition,
+                        exit = CardCollapseTransition
+                    ) {
+                        SliderWithLabel(
+                            label = Strings.fwHeightLabel,
+                            value = config.heightPercent,
+                            valueRange = 30f..100f,
+                            steps = 13,
+                            onValueChange = { newHeight ->
+                                onConfigChange(config.copy(heightPercent = newHeight))
+                            }
+                        )
+                    }
+
+                    Spacer(Modifier.height(4.dp))
+                    Text(
+                        text = Strings.fwAspectRatio,
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.padding(bottom = WtaSpacing.Tiny)
+                    )
+                    FlowRow(
+                        horizontalArrangement = Arrangement.spacedBy(WtaSpacing.Small),
+                        verticalArrangement = Arrangement.spacedBy(WtaSpacing.Small)
+                    ) {
+                        data class AspectOption(
+                            val mode: FloatingWindowAspectRatioMode,
+                            val label: String
+                        )
+                        val aspectOptions = listOf(
+                            AspectOption(FloatingWindowAspectRatioMode.SCREEN, Strings.fwAspectScreen),
+                            AspectOption(FloatingWindowAspectRatioMode.FREE, Strings.fwAspectFree),
+                            AspectOption(FloatingWindowAspectRatioMode.RATIO_16_9, "16:9"),
+                            AspectOption(FloatingWindowAspectRatioMode.RATIO_9_16, "9:16"),
+                            AspectOption(FloatingWindowAspectRatioMode.RATIO_4_3, "4:3"),
+                            AspectOption(FloatingWindowAspectRatioMode.SQUARE, "1:1"),
+                            AspectOption(FloatingWindowAspectRatioMode.CUSTOM, Strings.fwAspectCustom)
+                        )
+                        aspectOptions.forEach { option ->
+                            WtaChip(
+                                selected = aspectRatioMode == option.mode,
+                                onClick = {
+                                    onConfigChange(config.copy(
+                                        aspectRatioMode = option.mode,
+                                        lockAspectRatio = option.mode != FloatingWindowAspectRatioMode.FREE
+                                    ))
+                                },
+                                label = option.label
+                            )
+                        }
+                    }
+
+                    AnimatedVisibility(
+                        visible = aspectRatioMode == FloatingWindowAspectRatioMode.CUSTOM,
+                        enter = CardExpandTransition,
+                        exit = CardCollapseTransition
+                    ) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(12.dp)
+                        ) {
+                            Box(modifier = Modifier.weight(1f)) {
+                                SliderWithLabel(
+                                    label = Strings.fwAspectWidth,
+                                    value = config.customAspectRatioWidth.coerceIn(1, 32),
+                                    valueRange = 1f..32f,
+                                    steps = 30,
+                                    suffix = "",
+                                    onValueChange = {
+                                        onConfigChange(config.copy(customAspectRatioWidth = it.coerceIn(1, 32)))
+                                    }
+                                )
+                            }
+                            Box(modifier = Modifier.weight(1f)) {
+                                SliderWithLabel(
+                                    label = Strings.fwAspectHeight,
+                                    value = config.customAspectRatioHeight.coerceIn(1, 32),
+                                    valueRange = 1f..32f,
+                                    steps = 30,
+                                    suffix = "",
+                                    onValueChange = {
+                                        onConfigChange(config.copy(customAspectRatioHeight = it.coerceIn(1, 32)))
+                                    }
+                                )
+                            }
+                        }
+                    }
+
+                    Spacer(Modifier.height(16.dp))
+                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+                    Spacer(Modifier.height(16.dp))
+
+                    SectionHeader(
+                        icon = Icons.Outlined.Palette,
+                        title = Strings.fwSectionAppearance
+                    )
+
+                    SliderWithLabel(
+                        label = Strings.floatingWindowOpacity,
+                        value = config.opacity,
+                        valueRange = 30f..100f,
+                        steps = 6,
+                        onValueChange = { onConfigChange(config.copy(opacity = it)) }
+                    )
+
+                    SliderWithLabel(
+                        label = Strings.fwCornerRadius,
+                        value = config.cornerRadius,
+                        valueRange = 0f..32f,
+                        steps = 7,
+                        suffix = "dp",
+                        onValueChange = { onConfigChange(config.copy(cornerRadius = it)) }
+                    )
+
+                    Spacer(Modifier.height(4.dp))
+                    Text(
+                        text = Strings.fwBorderStyle,
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.padding(bottom = WtaSpacing.Tiny)
+                    )
+                    FlowRow(
+                        horizontalArrangement = Arrangement.spacedBy(WtaSpacing.Small),
+                        verticalArrangement = Arrangement.spacedBy(WtaSpacing.Small)
+                    ) {
+                        data class BorderOption(
+                            val style: FloatingBorderStyle,
+                            val icon: ImageVector,
+                            val label: String
+                        )
+                        val borderOptions = listOf(
+                            BorderOption(FloatingBorderStyle.NONE, Icons.Outlined.DoNotDisturb, Strings.fwBorderNone),
+                            BorderOption(FloatingBorderStyle.SUBTLE, Icons.Outlined.CropSquare, Strings.fwBorderSubtle),
+                            BorderOption(FloatingBorderStyle.GLOW, Icons.Outlined.AutoAwesome, Strings.fwBorderGlow),
+                            BorderOption(FloatingBorderStyle.ACCENT, Icons.Outlined.Palette, Strings.fwBorderAccent)
+                        )
+                        borderOptions.forEach { option ->
+                            val isSelected = config.borderStyle == option.style
+                            WtaChip(
+                                selected = isSelected,
+                                onClick = { onConfigChange(config.copy(borderStyle = option.style)) },
+                                label = option.label,
+                                leadingIcon = option.icon,
+                                showSelectedCheck = false
+                            )
+                        }
+                    }
+
+                    Spacer(Modifier.height(12.dp))
+                    FloatingWindowMinimizedIconPicker(
+                        iconPath = config.minimizedIconPath,
+                        onSelect = { iconPickerLauncher.launch("image/*") },
+                        onClear = {
+                            IconStorage.deleteIcon(config.minimizedIconPath)
+                            onConfigChange(config.copy(minimizedIconPath = null))
+                        }
+                    )
+
+                    Spacer(Modifier.height(12.dp))
+                    SliderWithLabel(
+                        label = Strings.fwMinimizedIconSize,
+                        value = config.minimizedIconSizePercent.coerceIn(50, 100),
+                        valueRange = 50f..100f,
+                        steps = 4,
+                        onValueChange = {
+                            onConfigChange(config.copy(minimizedIconSizePercent = it.coerceIn(50, 100)))
+                        }
+                    )
+
+                    ToggleRow(
+                        title = Strings.fwMinimizedIconEdgeDocking,
+                        subtitle = Strings.fwMinimizedIconEdgeDockingDesc.ifDescriptionsShown(),
+                        checked = config.minimizedIconEdgeDocking,
+                        onCheckedChange = { onConfigChange(config.copy(minimizedIconEdgeDocking = it)) }
+                    )
+
+                    Spacer(Modifier.height(16.dp))
+                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+                    Spacer(Modifier.height(16.dp))
+
+                    SectionHeader(
+                        icon = Icons.Outlined.Tune,
+                        title = Strings.fwSectionBehavior
+                    )
+
+                    ToggleRow(
+                        title = Strings.floatingWindowShowTitleBar,
+                        subtitle = Strings.floatingWindowShowTitleBarDesc.ifDescriptionsShown(),
+                        checked = config.showTitleBar,
+                        onCheckedChange = { onConfigChange(config.copy(showTitleBar = it)) }
+                    )
+
+                    AnimatedVisibility(
+                        visible = config.showTitleBar,
+                        enter = CardExpandTransition,
+                        exit = CardCollapseTransition
+                    ) {
+                        ToggleRow(
+                            title = Strings.fwAutoHideTitleBar,
+                            subtitle = Strings.fwAutoHideTitleBarDesc.ifDescriptionsShown(),
+                            checked = config.autoHideTitleBar,
+                            onCheckedChange = { onConfigChange(config.copy(autoHideTitleBar = it)) },
+                            modifier = Modifier.padding(start = 16.dp)
+                        )
+                    }
+
+                    ToggleRow(
+                        title = Strings.fwEdgeSnapping,
+                        subtitle = Strings.fwEdgeSnappingDesc.ifDescriptionsShown(),
+                        checked = config.edgeSnapping,
+                        onCheckedChange = { onConfigChange(config.copy(edgeSnapping = it)) }
+                    )
+
+                    ToggleRow(
+                        title = Strings.fwResizeHandle,
+                        subtitle = Strings.fwResizeHandleDesc.ifDescriptionsShown(),
+                        checked = config.showResizeHandle,
+                        onCheckedChange = { onConfigChange(config.copy(showResizeHandle = it)) }
+                    )
+
+                    Spacer(Modifier.height(8.dp))
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clip(RoundedCornerShape(WtaRadius.IconPlate))
+                            .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
+                            .clickable { showAdvanced = !showAdvanced }
+                    ) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 14.dp, vertical = 10.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = if (showAdvanced) Strings.hideAdvanced else Strings.showAdvanced,
+                                style = MaterialTheme.typography.labelMedium,
+                                color = primary
+                            )
+                            Icon(
+                                Icons.Filled.KeyboardArrowDown,
+                                contentDescription = null,
+                                tint = primary,
+                                modifier = Modifier
+                                    .size(20.dp)
+                                    .rotate(arrowRotation)
+                            )
+                        }
+                    }
+
+                    AnimatedVisibility(
+                        visible = showAdvanced,
+                        enter = CardExpandTransition,
+                        exit = CardCollapseTransition
+                    ) {
+                        Column(
+                            modifier = Modifier.padding(top = 12.dp),
+                            verticalArrangement = Arrangement.spacedBy(4.dp)
+                        ) {
+
+                            ToggleRow(
+                                title = Strings.floatingWindowStartMinimized,
+                                subtitle = Strings.floatingWindowStartMinimizedDesc.ifDescriptionsShown(),
+                                checked = config.startMinimized,
+                                onCheckedChange = { onConfigChange(config.copy(startMinimized = it)) }
+                            )
+
+                            ToggleRow(
+                                title = Strings.floatingWindowRememberPosition,
+                                subtitle = Strings.floatingWindowRememberPositionDesc.ifDescriptionsShown(),
+                                checked = config.rememberPosition,
+                                onCheckedChange = { onConfigChange(config.copy(rememberPosition = it)) }
+                            )
+
+                            ToggleRow(
+                                title = Strings.fwLockPosition,
+                                subtitle = Strings.fwLockPositionDesc.ifDescriptionsShown(),
+                                checked = config.lockPosition,
+                                onCheckedChange = { onConfigChange(config.copy(lockPosition = it)) }
+                            )
+                        }
+                    }
+            }
+        }
+    }
+}
+
+@Composable
+private fun FloatingWindowMinimizedIconPicker(
+    iconPath: String?,
+    onSelect: () -> Unit,
+    onClear: () -> Unit
+) {
+    val context = LocalContext.current
+    val hasIcon = !iconPath.isNullOrBlank() && File(iconPath).exists()
+
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Box(
+            modifier = Modifier
+                .size(56.dp)
+                .clip(RoundedCornerShape(WtaRadius.Card))
+                .background(MaterialTheme.colorScheme.surfaceVariant)
+                .clickable { onSelect() }
+        ) {
+            if (hasIcon) {
+                AsyncImage(
+                    model = ImageRequest.Builder(context)
+                        .data(File(iconPath!!))
+                        .crossfade(true)
+                        .build(),
+                    contentDescription = Strings.fwMinimizedIcon,
+                    modifier = Modifier.fillMaxSize(),
+                    contentScale = ContentScale.Crop
+                )
+            } else {
+                Box(
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        Icons.Outlined.Language,
+                        contentDescription = Strings.fwDefaultMinimizedIcon,
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.size(26.dp)
+                    )
+                }
+            }
+        }
+
+        Spacer(Modifier.width(12.dp))
+
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                text = Strings.fwMinimizedIcon,
+                style = MaterialTheme.typography.bodyMedium
+            )
+            Spacer(Modifier.height(1.dp))
+            Text(
+                text = if (hasIcon) Strings.fwCustomMinimizedIcon else Strings.fwDefaultMinimizedIcon,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            Spacer(Modifier.height(8.dp))
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                FilledTonalButton(
+                    onClick = onSelect,
+                    contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp),
+                    modifier = Modifier.height(32.dp)
+                ) {
+                    Icon(
+                        Icons.Outlined.AddPhotoAlternate,
+                        contentDescription = null,
+                        modifier = Modifier.size(16.dp)
+                    )
+                    Spacer(Modifier.width(6.dp))
+                    Text(Strings.fwSelectMinimizedIcon, style = MaterialTheme.typography.labelMedium)
+                }
+                AnimatedVisibility(
+                    visible = hasIcon,
+                    enter = CardExpandTransition,
+                    exit = CardCollapseTransition
+                ) {
+                    TextButton(
+                        onClick = onClear,
+                        contentPadding = PaddingValues(horizontal = 10.dp, vertical = 4.dp),
+                        modifier = Modifier.height(32.dp)
+                    ) {
+                        Icon(
+                            Icons.Outlined.DeleteOutline,
+                            contentDescription = null,
+                            modifier = Modifier.size(16.dp)
+                        )
+                        Spacer(Modifier.width(6.dp))
+                        Text(Strings.fwClearMinimizedIcon, style = MaterialTheme.typography.labelMedium)
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun SliderWithLabel(
+    label: String,
+    value: Int,
+    valueRange: ClosedFloatingPointRange<Float>,
+    steps: Int,
+    onValueChange: (Int) -> Unit,
+    suffix: String = "%"
+) {
+    val primary = MaterialTheme.colorScheme.primary
+
+    Column(modifier = Modifier.padding(bottom = 4.dp)) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                label,
+                style = MaterialTheme.typography.bodyMedium
+            )
+            Box(
+                modifier = Modifier
+                    .clip(RoundedCornerShape(WtaRadius.Chip))
+                    .background(primary.copy(alpha = 0.1f))
+            ) {
+                Text(
+                    "${value}${suffix}",
+                    style = MaterialTheme.typography.labelMedium,
+                    color = primary,
+                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 3.dp)
+                )
+            }
+        }
+        Slider(
+            value = value.toFloat(),
+            onValueChange = { onValueChange(it.roundToInt()) },
+            valueRange = valueRange,
+            steps = steps,
+            modifier = Modifier.fillMaxWidth()
+        )
+    }
+}
+
+@Composable
+private fun ToggleRow(
+    title: String,
+    subtitle: String?,
+    checked: Boolean,
+    onCheckedChange: (Boolean) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Row(
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(vertical = 6.dp),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Column(modifier = Modifier.weight(1f).padding(end = 12.dp)) {
+            Text(
+                title,
+                style = MaterialTheme.typography.bodyMedium
+            )
+            if (!subtitle.isNullOrBlank()) {
+                Spacer(Modifier.height(1.dp))
+                Text(
+                    subtitle,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+        }
+        WtaSwitch(
+            checked = checked,
+            onCheckedChange = onCheckedChange
+        )
+    }
+}
+
+@Composable
+private fun SectionHeader(
+    icon: ImageVector,
+    title: String
+) {
+    val primary = MaterialTheme.colorScheme.primary
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = Modifier.padding(bottom = 8.dp)
+    ) {
+        Icon(
+            icon,
+            contentDescription = null,
+            tint = primary,
+            modifier = Modifier.size(16.dp)
+        )
+        Spacer(Modifier.width(6.dp))
+        Text(
+            text = title,
+            style = MaterialTheme.typography.labelMedium,
+            color = primary
+        )
+    }
+}

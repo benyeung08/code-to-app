@@ -1,0 +1,593 @@
+package com.webtoapp.ui.components
+
+import androidx.compose.animation.*
+import androidx.compose.animation.core.*
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.*
+import androidx.compose.material.icons.outlined.*
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.scale
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import com.webtoapp.core.activation.ActivationResult
+import com.webtoapp.core.activation.ActivationCodeType
+import com.webtoapp.core.activation.ActivationStatus
+import com.webtoapp.core.i18n.Strings
+import com.webtoapp.util.threadLocalCompat
+import java.text.SimpleDateFormat
+import java.util.*
+
+@Composable
+fun EnhancedActivationDialog(
+    onDismiss: () -> Unit,
+    onActivate: suspend (String) -> ActivationResult,
+    activationStatus: ActivationStatus? = null,
+    customTitle: String = "",
+    customSubtitle: String = "",
+    customInputLabel: String = "",
+    customButtonText: String = ""
+) {
+    var code by remember { mutableStateOf("") }
+    var error by remember { mutableStateOf<String?>(null) }
+    var isLoading by remember { mutableStateOf(false) }
+    var activationResult by remember { mutableStateOf<ActivationResult?>(null) }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        shape = RoundedCornerShape(24.dp),
+        title = null,
+        text = {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .verticalScroll(rememberScrollState()),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+
+                ActivationDialogHeader(
+                    title = customTitle.ifBlank { Strings.activateApp },
+                    subtitle = customSubtitle.ifBlank { Strings.enterActivationCodeToContinue },
+                    isLoading = isLoading,
+                    result = activationResult
+                )
+
+                activationStatus?.let { status ->
+                    if (status.isActivated) {
+                        EnhancedActivationStatusCard(status = status)
+                    }
+                }
+
+                AnimatedVisibility(
+                    visible = activationResult !is ActivationResult.Success &&
+                        activationResult !is ActivationResult.AlreadyActivated,
+                    enter = fadeIn() + expandVertically(),
+                    exit = fadeOut() + shrinkVertically()
+                ) {
+                    PremiumTextField(
+                        value = code,
+                        onValueChange = {
+                            code = it.filter { c -> c.isLetterOrDigit() }
+                                .take(com.webtoapp.core.activation.ActivationManager.MAX_CODE_LENGTH)
+                            error = null
+                            activationResult = null
+                        },
+                        label = { Text(customInputLabel.ifBlank { Strings.inputActivationCode }) },
+                        placeholder = { Text(Strings.activationCodeExample) },
+                        leadingIcon = {
+                            Icon(
+                                Icons.Outlined.Key,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.primary
+                            )
+                        },
+                        singleLine = true,
+                        isError = error != null,
+                        supportingText = error?.let { { Text(it, color = MaterialTheme.colorScheme.error) } },
+                        modifier = Modifier.fillMaxWidth(),
+                        enabled = !isLoading
+                    )
+                }
+
+                activationResult?.let { result ->
+                    ActivationResultCard(result = result)
+                }
+            }
+        },
+        confirmButton = {
+            AnimatedVisibility(
+                visible = activationResult !is ActivationResult.Success &&
+                    activationResult !is ActivationResult.AlreadyActivated,
+                enter = fadeIn(),
+                exit = fadeOut()
+            ) {
+                PremiumButton(
+                    onClick = {
+                        if (code.isBlank()) {
+                            error = Strings.pleaseEnterActivationCode
+                        } else {
+                            isLoading = true
+                            error = null
+                            activationResult = null
+                        }
+                    },
+                    enabled = !isLoading && code.isNotBlank(),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    if (isLoading) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(18.dp),
+                            color = MaterialTheme.colorScheme.onPrimary,
+                            strokeWidth = 2.dp
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                    }
+                    Icon(
+                        if (isLoading) Icons.Outlined.HourglassTop else Icons.Outlined.Verified,
+                        contentDescription = null,
+                        modifier = Modifier.size(18.dp)
+                    )
+                    Spacer(modifier = Modifier.width(6.dp))
+                    Text(
+                        customButtonText.ifBlank { Strings.activate },
+                        fontWeight = FontWeight.SemiBold
+                    )
+                }
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text(Strings.btnCancel)
+            }
+        }
+    )
+
+    LaunchedEffect(isLoading) {
+        if (isLoading && code.isNotBlank()) {
+            val result = onActivate(code)
+            activationResult = result
+            isLoading = false
+
+            if (result is ActivationResult.Success ||
+                result is ActivationResult.AlreadyActivated
+            ) {
+                kotlinx.coroutines.delay(1500)
+                onDismiss()
+            }
+        }
+    }
+}
+
+@Composable
+private fun ActivationDialogHeader(
+    title: String,
+    subtitle: String,
+    isLoading: Boolean,
+    result: ActivationResult?
+) {
+    val infiniteTransition = rememberInfiniteTransition(label = "headerPulse")
+    val pulseScale by infiniteTransition.animateFloat(
+        initialValue = 1f,
+        targetValue = 1.08f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(1200, easing = EaseInOutCubic),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "pulse"
+    )
+
+    val semantic = com.webtoapp.ui.design.WtaColors.semantic
+    val iconBgColor = when (result) {
+        is ActivationResult.Success -> semantic.success
+        is ActivationResult.Invalid,
+        is ActivationResult.Expired, is ActivationResult.UsageExceeded -> MaterialTheme.colorScheme.error
+        is ActivationResult.AlreadyActivated -> MaterialTheme.colorScheme.primary
+        else -> MaterialTheme.colorScheme.primary
+    }
+
+    val icon: ImageVector = when (result) {
+        is ActivationResult.Success -> Icons.Filled.CheckCircle
+        is ActivationResult.Invalid -> Icons.Filled.Cancel
+        is ActivationResult.Expired -> Icons.Filled.TimerOff
+        is ActivationResult.UsageExceeded -> Icons.Filled.Block
+        is ActivationResult.AlreadyActivated -> Icons.Filled.Verified
+        else -> Icons.Filled.Shield
+    }
+
+    Column(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+
+        Box(
+            modifier = Modifier
+                .size(64.dp)
+                .scale(if (isLoading) pulseScale else 1f)
+                .clip(CircleShape)
+                .background(
+                    Brush.radialGradient(
+                        colors = listOf(
+                            iconBgColor.copy(alpha = 0.15f),
+                            iconBgColor.copy(alpha = 0.05f)
+                        )
+                    )
+                ),
+            contentAlignment = Alignment.Center
+        ) {
+            if (isLoading) {
+                CircularProgressIndicator(
+                    modifier = Modifier.size(40.dp),
+                    color = iconBgColor,
+                    strokeWidth = 3.dp
+                )
+            } else {
+                Icon(
+                    icon,
+                    contentDescription = null,
+                    modifier = Modifier.size(36.dp),
+                    tint = iconBgColor
+                )
+            }
+        }
+
+        Spacer(modifier = Modifier.height(12.dp))
+
+        Text(
+            text = when (result) {
+                is ActivationResult.Success -> Strings.activationSuccess
+                is ActivationResult.AlreadyActivated -> Strings.appAlreadyActivated
+                else -> title
+            },
+            style = MaterialTheme.typography.headlineSmall,
+            fontWeight = FontWeight.SemiBold,
+            textAlign = TextAlign.Center
+        )
+
+        Spacer(modifier = Modifier.height(4.dp))
+
+        Text(
+            text = when (result) {
+                is ActivationResult.Success -> Strings.activationSuccessHint
+                is ActivationResult.AlreadyActivated -> Strings.appAlreadyActivatedHint
+                else -> subtitle
+            },
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            textAlign = TextAlign.Center,
+            lineHeight = 20.sp
+        )
+    }
+}
+
+@Composable
+private fun ActivationResultCard(result: ActivationResult) {
+    val semantic = com.webtoapp.ui.design.WtaColors.semantic
+    val (icon, title, message, containerColor, contentColor, suggestion) = when (result) {
+        is ActivationResult.Success -> ResultCardData(
+            icon = Icons.Filled.CheckCircle,
+            title = Strings.activationSuccess,
+            message = Strings.activationSuccessDetail,
+            containerColor = semantic.successContainer,
+            contentColor = semantic.success,
+            suggestion = null
+        )
+        is ActivationResult.Invalid -> ResultCardData(
+            icon = Icons.Filled.Cancel,
+            title = Strings.invalidActivationCode,
+            message = result.message.ifBlank { Strings.invalidActivationCode },
+            containerColor = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.7f),
+            contentColor = MaterialTheme.colorScheme.error,
+            suggestion = Strings.invalidCodeSuggestion
+        )
+        is ActivationResult.Expired -> ResultCardData(
+            icon = Icons.Filled.TimerOff,
+            title = Strings.activationCodeExpired,
+            message = Strings.expiredDetail,
+            containerColor = semantic.warningContainer,
+            contentColor = semantic.warning,
+            suggestion = Strings.expiredSuggestion
+        )
+        is ActivationResult.UsageExceeded -> ResultCardData(
+            icon = Icons.Filled.Block,
+            title = Strings.activationCodeUsageExceeded,
+            message = Strings.usageExceededDetail,
+            containerColor = semantic.warningContainer,
+            contentColor = semantic.warning,
+            suggestion = Strings.usageExceededSuggestion
+        )
+        is ActivationResult.AlreadyActivated -> ResultCardData(
+            icon = Icons.Filled.Verified,
+            title = Strings.appAlreadyActivated,
+            message = Strings.alreadyActivatedDetail,
+            containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f),
+            contentColor = MaterialTheme.colorScheme.primary,
+            suggestion = null
+        )
+        is ActivationResult.Empty -> return
+    }
+
+    AnimatedVisibility(
+        visible = true,
+        enter = fadeIn(tween(350)) + expandVertically(
+            animationSpec = spring(dampingRatio = 0.78f, stiffness = Spring.StiffnessMediumLow)
+        )
+    ) {
+        Surface(
+            shape = RoundedCornerShape(16.dp),
+            color = containerColor,
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Column(
+                modifier = Modifier.padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                    Icon(
+                        icon,
+                        contentDescription = null,
+                        tint = contentColor,
+                        modifier = Modifier.size(22.dp)
+                    )
+                    Text(
+                        text = title,
+                        style = MaterialTheme.typography.titleSmall,
+                        fontWeight = FontWeight.SemiBold,
+                        color = contentColor
+                    )
+                }
+
+                Text(
+                    text = message,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = contentColor.copy(alpha = 0.8f),
+                    lineHeight = 18.sp
+                )
+
+                suggestion?.let { sug ->
+                    HorizontalDivider(
+                        color = contentColor.copy(alpha = 0.15f),
+                        modifier = Modifier.padding(vertical = 4.dp)
+                    )
+                    Row(
+                        verticalAlignment = Alignment.Top,
+                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                    ) {
+                        Icon(
+                            Icons.Outlined.Lightbulb,
+                            contentDescription = null,
+                            tint = contentColor.copy(alpha = 0.6f),
+                            modifier = Modifier.size(16.dp)
+                        )
+                        Text(
+                            text = sug,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = contentColor.copy(alpha = 0.7f),
+                            lineHeight = 17.sp
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun EnhancedActivationStatusCard(status: ActivationStatus) {
+    val isValid = status.isValid
+    val semantic = com.webtoapp.ui.design.WtaColors.semantic
+    // A still-valid grant inside a code prompt is not "done" — the launch gate
+    // just refused it (re-verify required, card revoked, remote recheck failed).
+    // Show the record for context but label it honestly instead of "已激活".
+    val primaryColor = when {
+        isValid -> semantic.warning
+        else -> MaterialTheme.colorScheme.error
+    }
+    val bgColor = when {
+        isValid -> semantic.warningContainer
+        else -> MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.5f)
+    }
+
+    Surface(
+        shape = RoundedCornerShape(16.dp),
+        color = bgColor,
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Column(
+            modifier = Modifier.padding(14.dp),
+            verticalArrangement = Arrangement.spacedBy(10.dp)
+        ) {
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Icon(
+                        imageVector = if (isValid) Icons.Filled.Sync else Icons.Filled.GppBad,
+                        contentDescription = null,
+                        tint = primaryColor,
+                        modifier = Modifier.size(20.dp)
+                    )
+                    Text(
+                        text = if (isValid) Strings.activationNeedsReverify else Strings.activationExpired,
+                        style = MaterialTheme.typography.titleSmall,
+                        fontWeight = FontWeight.SemiBold,
+                        color = primaryColor
+                    )
+                }
+
+                status.codeType?.let { type ->
+                    Surface(
+                        shape = RoundedCornerShape(8.dp),
+                        color = primaryColor.copy(alpha = 0.12f)
+                    ) {
+                        Text(
+                            text = getStatusTypeName(type),
+                            style = MaterialTheme.typography.labelSmall,
+                            color = primaryColor,
+                            fontWeight = FontWeight.Medium,
+                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp)
+                        )
+                    }
+                }
+            }
+
+            status.activatedTime?.let { time ->
+                StatusInfoRow(
+                    icon = Icons.Outlined.CalendarMonth,
+                    label = Strings.activationTime,
+                    value = formatTime(time),
+                    color = primaryColor
+                )
+            }
+
+            status.expireTime?.let {
+                val remaining = status.remainingTimeMs
+                if (remaining != null && remaining > 0) {
+                    val days = remaining / (24 * 60 * 60 * 1000)
+                    val hours = (remaining % (24 * 60 * 60 * 1000)) / (60 * 60 * 1000)
+                    StatusInfoRow(
+                        icon = Icons.Outlined.Timer,
+                        label = Strings.remainingTime,
+                        value = "${days}${Strings.days} ${hours}${Strings.hours}",
+                        color = primaryColor
+                    )
+
+                    status.activatedTime?.let { activatedTime ->
+                        val totalDuration = it - activatedTime
+                        if (totalDuration > 0) {
+                            val elapsed = System.currentTimeMillis() - activatedTime
+                            val progress = (elapsed.toFloat() / totalDuration).coerceIn(0f, 1f)
+                            LinearProgressIndicator(
+                                progress = { 1f - progress },
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(6.dp)
+                                    .clip(RoundedCornerShape(3.dp)),
+                                color = if (progress > 0.8f) semantic.warning else primaryColor,
+                                trackColor = primaryColor.copy(alpha = 0.1f)
+                            )
+                        }
+                    }
+                } else {
+                    StatusInfoRow(
+                        icon = Icons.Outlined.EventBusy,
+                        label = Strings.expireTime,
+                        value = formatTime(it),
+                        color = MaterialTheme.colorScheme.error
+                    )
+                }
+            }
+
+            status.usageLimit?.let { limit ->
+                val remaining = status.remainingUsage ?: 0
+                StatusInfoRow(
+                    icon = Icons.Outlined.ConfirmationNumber,
+                    label = Strings.remainingUsage,
+                    value = "$remaining / $limit",
+                    color = primaryColor
+                )
+                val progress = if (limit > 0) status.usageCount.toFloat() / limit else 0f
+                LinearProgressIndicator(
+                    progress = { 1f - progress },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(6.dp)
+                        .clip(RoundedCornerShape(3.dp)),
+                    color = if (progress > 0.8f) semantic.warning else primaryColor,
+                    trackColor = primaryColor.copy(alpha = 0.1f)
+                )
+            }
+
+            status.deviceId?.let {
+                StatusInfoRow(
+                    icon = Icons.Outlined.PhonelinkLock,
+                    label = Strings.deviceBound,
+                    value = "",
+                    color = primaryColor
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun StatusInfoRow(
+    icon: ImageVector,
+    label: String,
+    value: String,
+    color: Color
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        Icon(
+            icon,
+            contentDescription = null,
+            tint = color.copy(alpha = 0.6f),
+            modifier = Modifier.size(16.dp)
+        )
+        Text(
+            text = label,
+            style = MaterialTheme.typography.bodySmall,
+            color = color.copy(alpha = 0.7f)
+        )
+        if (value.isNotBlank()) {
+            Spacer(modifier = Modifier.weight(1f))
+            Text(
+                text = value,
+                style = MaterialTheme.typography.bodySmall,
+                fontWeight = FontWeight.SemiBold,
+                color = color
+            )
+        }
+    }
+}
+
+private data class ResultCardData(
+    val icon: ImageVector,
+    val title: String,
+    val message: String,
+    val containerColor: Color,
+    val contentColor: Color,
+    val suggestion: String?
+)
+
+private fun getStatusTypeName(type: ActivationCodeType): String = when (type) {
+    ActivationCodeType.PERMANENT -> Strings.activationTypePermanent
+    ActivationCodeType.TIME_LIMITED -> Strings.activationTypeTimeLimited
+    ActivationCodeType.USAGE_LIMITED -> Strings.activationTypeUsageLimited
+    ActivationCodeType.COMBINED -> Strings.activationTypeCombined
+}
+
+private val ACTIVATION_DATE_FORMAT = threadLocalCompat {
+    SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.getDefault())
+}
+
+private fun formatTime(timestamp: Long): String {
+    return ACTIVATION_DATE_FORMAT.get()!!.format(Date(timestamp))
+}

@@ -1,0 +1,17 @@
+{
+  "id": "builtin-web-analyzer",
+  "name": "Web Analyzer",
+  "version": "1.0.0",
+  "description": "Inspect page info, load performance and element statistics.",
+  "author": "WebToApp",
+  "icon": "search",
+  "matches": [
+    "*"
+  ],
+  "runAt": "document_idle",
+  "permissions": [
+    "NOTIFY",
+    "BADGE"
+  ],
+  "toolbar": true
+}

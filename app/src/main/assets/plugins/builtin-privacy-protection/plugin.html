@@ -1,0 +1,206 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: system-ui, -apple-system, sans-serif; padding: 16px; color: var(--wta-on-surface, #1f2937); }
+.wta-privacy-panel{padding:4px}
+.wta-privacy-item{display:flex;align-items:center;gap:12px;padding:12px;background:var(--wta-surface-dim,#f9fafb);border-radius:12px;margin-bottom:8px;cursor:pointer;transition:background .2s}
+.wta-privacy-item:active{background:var(--wta-accent-soft,rgba(99,102,241,.06))}
+.wta-privacy-item-icon{font-size:24px}
+.wta-privacy-item-text{flex:1}
+.wta-privacy-item-name{font-weight:500;color:var(--wta-on-surface,#1f2937)}
+.wta-privacy-item-desc{font-size:12px;color:var(--wta-on-surface-variant,#9ca3af)}
+.wta-toggle{position:relative;width:48px;height:28px;flex-shrink:0}
+.wta-toggle-track{position:absolute;cursor:pointer;top:0;left:0;right:0;bottom:0;background:var(--wta-outline,#d1d5db);border-radius:14px;transition:.3s}
+.wta-toggle-thumb{position:absolute;height:24px;width:24px;left:2px;bottom:2px;background:white;border-radius:50%;transition:.3s;box-shadow:0 1px 3px rgba(0,0,0,.2)}
+.wta-privacy-item[data-state="on"] .wta-toggle-track{background:var(--wta-accent,#22c55e)}
+.wta-privacy-item[data-state="on"] .wta-toggle-thumb{left:22px}
+  #wta-toast { position: fixed; left: 50%; bottom: 14px; transform: translateX(-50%);
+    background: #111827; color: #fff; font-size: 13px; padding: 8px 16px; border-radius: 20px;
+    opacity: 0; transition: opacity .2s; pointer-events: none; max-width: 90%; }
+  #wta-toast.show { opacity: .95; }
+</style>
+<script type="hcj/page">
+
+(function() {
+    'use strict';
+
+    // Feedback goes to the page toast AND the panel toast — whichever is visible.
+    function toast(m) { hcj.toast(m); hcj.panel.send({ type: 'toast', msg: String(m) }); }
+
+
+    // 多语言支持
+    const LANG = (hcj.lang || 'zh').toLowerCase().startsWith('ar') ? 'ar' :
+                 (hcj.lang || 'zh').toLowerCase().startsWith('zh') ? 'zh' : 'en';
+    const I18N = {
+        zh: { name: '隐私保护', tracking: '阻止追踪', trackingDesc: '拦截常见追踪请求', fingerprint: '指纹保护', fingerprintDesc: '模糊设备指纹信息', cookies: '清理Cookies', cookiesDesc: '退出页面时清理', enabled: '已开启', disabled: '已关闭' },
+        en: { name: 'Privacy Protection', tracking: 'Block Tracking', trackingDesc: 'Block common tracking requests', fingerprint: 'Fingerprint Protection', fingerprintDesc: 'Blur device fingerprint info', cookies: 'Clear Cookies', cookiesDesc: 'Clear cookies when leaving', enabled: 'Enabled', disabled: 'Disabled' },
+        ar: { name: 'حماية الخصوصية', tracking: 'حظر التتبع', trackingDesc: 'حظر طلبات التتبع الشائعة', fingerprint: 'حماية البصمة', fingerprintDesc: 'تمويه بصمة الجهاز', cookies: 'مسح Cookies', cookiesDesc: 'المسح عند مغادرة الصفحة', enabled: 'مفعل', disabled: 'موقف' }
+    };
+    const T = I18N[LANG] || I18N.en;
+    // hcj.config is plugin-global KV (persists across sites), unlike
+    // localStorage which is per-origin and resets per site.
+    let settings = hcj.config.get('privacy', { tracking: true, fingerprint: true, cookies: false });
+    if (!settings || typeof settings !== 'object') settings = { tracking: true, fingerprint: true, cookies: false };
+
+    function save() { hcj.config.set('privacy', settings); }
+
+    const TRACKERS = [
+        'google-analytics.com', 'googletagmanager.com', 'google-analytics.',
+        'facebook.net', 'facebook.com/tr', 'connect.facebook.net',
+        'doubleclick.net', 'googlesyndication.com', 'adservice.google',
+        'hotjar.com', 'mixpanel.com', 'segment.io', 'segment.com',
+        'amplitude.com', 'clarity.ms', 'umeng', 'cnzz.com', 'hm.baidu.com'
+    ];
+    function isTracker(url) {
+        try {
+            var s = (typeof url === 'string') ? url : (url && url.url) || String(url);
+            for (var i = 0; i < TRACKERS.length; i++) if (s.indexOf(TRACKERS[i]) >= 0) return true;
+        } catch (e) {}
+        return false;
+    }
+
+    // Wrap the JS-initiated network APIs once; the live `settings.tracking`
+    // flag gates each call so toggles take effect without re-wrapping.
+    // (Declarative resource loads — tracking pixels etc. — can't be cancelled
+    // from JS; this covers fetch/XHR/beacon where modern trackers live.)
+    function installTrackerHooks() {
+        if (window.__wtaPrivacyHooks) return;
+        window.__wtaPrivacyHooks = true;
+        try {
+            var origFetch = window.fetch;
+            if (origFetch) {
+                window.fetch = function(url, opts) {
+                    if (settings.tracking && isTracker(url)) return Promise.reject(new Error('blocked by privacy plugin'));
+                    return origFetch.apply(this, arguments);
+                };
+            }
+        } catch (e) {}
+        try {
+            var XO = XMLHttpRequest.prototype.open;
+            var XS = XMLHttpRequest.prototype.send;
+            XMLHttpRequest.prototype.open = function(m, u) {
+                this.__wtaBlocked = isTracker(u);
+                return XO.apply(this, arguments);
+            };
+            XMLHttpRequest.prototype.send = function() {
+                if (settings.tracking && this.__wtaBlocked) return;
+                return XS.apply(this, arguments);
+            };
+        } catch (e) {}
+        try {
+            if (navigator.sendBeacon) {
+                var origBeacon = navigator.sendBeacon.bind(navigator);
+                navigator.sendBeacon = function(url, data) {
+                    if (settings.tracking && isTracker(url)) return true;
+                    return origBeacon(url, data);
+                };
+            }
+        } catch (e) {}
+    }
+
+    function applyFingerprint() {
+        if (!settings.fingerprint) return;
+        try { Object.defineProperty(navigator, 'hardwareConcurrency', { get: function() { return 4; }, configurable: true }); } catch (e) {}
+        try { Object.defineProperty(navigator, 'deviceMemory', { get: function() { return 8; }, configurable: true }); } catch (e) {}
+        try { Object.defineProperty(screen, 'colorDepth', { get: function() { return 24; }, configurable: true }); } catch (e) {}
+    }
+
+    // Best-effort: JS can only clear JS-visible (non-HttpOnly) cookies.
+    function clearCookies() {
+        try {
+            var names = document.cookie.split(';').map(function(c) { return c.split('=')[0].trim(); }).filter(Boolean);
+            if (!names.length) return;
+            var host = location.hostname;
+            var domains = ['', host, '.' + host];
+            var parts = host.split('.');
+            for (var i = 0; i < parts.length - 1; i++) domains.push('.' + parts.slice(i).join('.'));
+            names.forEach(function(name) {
+                domains.forEach(function(d) {
+                    document.cookie = name + '=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/' + (d ? ';domain=' + d : '');
+                });
+            });
+        } catch (e) {}
+    }
+    window.addEventListener('pagehide', function() { if (settings.cookies) clearCookies(); });
+
+    function updatePanelUI() {
+        hcj.panel.send({ type: 'state', settings: settings, labels: { tracking: T.tracking, trackingDesc: T.trackingDesc, fingerprint: T.fingerprint, fingerprintDesc: T.fingerprintDesc, cookies: T.cookies, cookiesDesc: T.cookiesDesc } });
+    }
+
+    function privacyToggle(key) {
+        settings[key] = !settings[key];
+        save();
+        toast(settings[key] ? T.enabled : T.disabled);
+        updatePanelUI();
+    }
+
+
+    hcj.panel.onMessage(function (m) {
+        if (!m) return;
+        if (m.cmd === 'refresh') { updatePanelUI(); return; }
+        if (m.cmd === 'act' && m.action === 'privacyToggle') privacyToggle(m.arg);
+    });
+    hcj.on('action', function () { hcj.panel.open(); });
+
+    installTrackerHooks();
+    applyFingerprint();
+})();
+</script>
+</head>
+<body>
+<div id="root"><div class="wta-mod-panel wta-privacy-panel">
+<div class="wta-privacy-item" data-wta-action="privacyToggle" data-wta-arg="tracking" id="wta-priv-tracking"><span class="wta-privacy-item-icon"><svg style="display:block" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M5.6 5.6l12.8 12.8"/></svg></span><div class="wta-privacy-item-text"><div class="wta-privacy-item-name" id="wta-priv-tracking-name"></div><div class="wta-privacy-item-desc" id="wta-priv-tracking-desc"></div></div><div class="wta-toggle"><div class="wta-toggle-track"></div><div class="wta-toggle-thumb"></div></div></div>
+<div class="wta-privacy-item" data-wta-action="privacyToggle" data-wta-arg="fingerprint" id="wta-priv-fingerprint"><span class="wta-privacy-item-icon"><svg style="display:block" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12a8 8 0 018-8 8 8 0 018 8v3"/><path d="M8 12a4 4 0 014-4 4 4 0 014 4v5"/><path d="M12 12v7"/></svg></span><div class="wta-privacy-item-text"><div class="wta-privacy-item-name" id="wta-priv-fingerprint-name"></div><div class="wta-privacy-item-desc" id="wta-priv-fingerprint-desc"></div></div><div class="wta-toggle"><div class="wta-toggle-track"></div><div class="wta-toggle-thumb"></div></div></div>
+<div class="wta-privacy-item" data-wta-action="privacyToggle" data-wta-arg="cookies" id="wta-priv-cookies"><span class="wta-privacy-item-icon"><svg style="display:block" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><circle cx="9" cy="9" r="1"/><circle cx="15" cy="10" r="1"/><circle cx="10" cy="15" r="1"/><circle cx="15.5" cy="15" r="1"/></svg></span><div class="wta-privacy-item-text"><div class="wta-privacy-item-name" id="wta-priv-cookies-name"></div><div class="wta-privacy-item-desc" id="wta-priv-cookies-desc"></div></div><div class="wta-toggle"><div class="wta-toggle-track"></div><div class="wta-toggle-thumb"></div></div></div>
+</div></div>
+<div id="wta-toast"></div>
+<script>
+  var root = document.getElementById('root');
+  var toastEl = document.getElementById('wta-toast');
+  var toastTimer = null;
+
+  function wire() {
+    root.querySelectorAll('[data-wta-action]').forEach(function (el) {
+      if (el.__wired) return;
+      el.__wired = true;
+      el.addEventListener('click', function (ev) {
+        ev.preventDefault();
+        hcjPanel.send({ cmd: 'act', action: el.getAttribute('data-wta-action'), arg: el.getAttribute('data-wta-arg') || '' });
+      });
+    });
+  }
+
+  function showToast(m) {
+    toastEl.textContent = m;
+    toastEl.classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(function () { toastEl.classList.remove('show'); }, 1800);
+  }
+
+  hcjPanel.onMessage(function (m) {
+    if (!m) return;
+    if (m.type === 'toast') showToast(m.msg || '');
+    else if (m.type === 'state' && typeof render === 'function') render(m);
+  });
+
+  function render(m) {
+    var s = m.settings || {};
+    var l = m.labels || {};
+    ['tracking', 'fingerprint', 'cookies'].forEach(function (key) {
+      var el = document.getElementById('wta-priv-' + key);
+      if (el) el.setAttribute('data-state', s[key] ? 'on' : 'off');
+      var nameEl = document.getElementById('wta-priv-' + key + '-name');
+      if (nameEl && l[key]) nameEl.textContent = l[key];
+      var descEl = document.getElementById('wta-priv-' + key + '-desc');
+      if (descEl && l[key + 'Desc']) descEl.textContent = l[key + 'Desc'];
+    });
+  }
+  wire();
+  hcjPanel.send({ cmd: 'refresh' });
+</script>
+</body>
+</html>

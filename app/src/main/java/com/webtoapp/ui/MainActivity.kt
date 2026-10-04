@@ -1,0 +1,401 @@
+package com.webtoapp.ui
+
+import android.Manifest
+import android.content.Intent
+import android.content.pm.PackageManager
+import android.net.Uri
+import android.os.Build
+import android.os.Bundle
+import android.provider.Settings
+import androidx.activity.ComponentActivity
+import androidx.activity.compose.setContent
+import androidx.activity.enableEdgeToEdge
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.*
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
+import androidx.core.content.ContextCompat
+import androidx.core.content.pm.ShortcutManagerCompat
+import androidx.core.view.WindowCompat
+import com.webtoapp.WebToAppApplication
+import com.webtoapp.core.i18n.LanguageManager
+import com.webtoapp.core.i18n.Strings
+import com.webtoapp.core.logging.AppLogger
+import com.webtoapp.ui.components.FirstLaunchLanguageScreen
+import com.webtoapp.ui.navigation.AppNavigation
+import com.webtoapp.ui.shell.ShellActivity
+import com.webtoapp.ui.theme.CircularRevealOverlay
+import com.webtoapp.ui.theme.LocalThemeRevealState
+import com.webtoapp.ui.theme.WebToAppTheme
+import com.webtoapp.ui.theme.rememberThemeRevealState
+import com.webtoapp.ui.webview.WebViewActivity
+import kotlinx.coroutines.flow.map
+
+class MainActivity : ComponentActivity() {
+
+    private var showLanguageSelection by mutableStateOf(true)
+
+    private var showShortcutPermissionDialog by mutableStateOf(false)
+    private var shortcutPermissionMessage by mutableStateOf("")
+
+    private val permissionLauncher = registerForActivityResult(
+        ActivityResultContracts.RequestMultiplePermissions()
+    ) { _ ->
+
+    }
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        AppLogger.lifecycle("MainActivity", "onCreate", "savedInstanceState=${savedInstanceState != null}")
+
+        if (!isTaskRoot &&
+            intent?.action == Intent.ACTION_MAIN &&
+            intent?.hasCategory(Intent.CATEGORY_LAUNCHER) == true
+        ) {
+            AppLogger.i(
+                "MainActivity",
+                "Spurious launcher relaunch detected (task root exists), finishing to let system bring existing task forward"
+            )
+            finish()
+            return
+        }
+
+        val isShell = try {
+            val shellManager = WebToAppApplication.shellMode
+            val result = shellManager.isShellMode()
+            AppLogger.d("MainActivity", "Shell mode check: isShellMode=$result")
+            result
+        } catch (e: Exception) {
+            AppLogger.e("MainActivity", "Shell mode check failed", e)
+            false
+        } catch (e: Error) {
+            AppLogger.e("MainActivity", "Shell mode check critical error", Error(e))
+            false
+        }
+
+        if (isShell) {
+
+            AppLogger.i("MainActivity", "Entering shell mode, redirecting to ShellActivity")
+            try {
+                startActivity(Intent(this, ShellActivity::class.java))
+                finish()
+                return
+            } catch (e: Exception) {
+                AppLogger.e("MainActivity", "Failed to start ShellActivity", e)
+
+            }
+        }
+
+        if (handleIncomingUrlIntent(intent)) {
+            return
+        }
+
+        AppLogger.i("MainActivity", "Normal mode, showing main UI")
+
+        // targetSdk 33+: notifications (build progress, runtime downloads) are
+        // runtime-gated and silently off unless requested once up front.
+        if (android.os.Build.VERSION.SDK_INT >= 33) {
+            try {
+                if (androidx.core.content.ContextCompat.checkSelfPermission(
+                        this, android.Manifest.permission.POST_NOTIFICATIONS
+                    ) != android.content.pm.PackageManager.PERMISSION_GRANTED
+                ) {
+                    androidx.core.app.ActivityCompat.requestPermissions(
+                        this,
+                        arrayOf(android.Manifest.permission.POST_NOTIFICATIONS),
+                        4356
+                    )
+                }
+            } catch (e: Exception) {
+                AppLogger.w("MainActivity", "POST_NOTIFICATIONS request failed", e)
+            }
+        }
+
+        try {
+            enableEdgeToEdge()
+        } catch (e: Exception) {
+            AppLogger.w("MainActivity", "enableEdgeToEdge failed", e)
+        }
+
+        requestNecessaryPermissions()
+
+        checkShortcutPermission()
+
+        try {
+            WindowCompat.setDecorFitsSystemWindows(window, false)
+        } catch (e: Exception) {
+            AppLogger.w("MainActivity", "setDecorFitsSystemWindows failed", e)
+        }
+
+        setContent {
+
+            val themeRevealState = rememberThemeRevealState()
+
+            WebToAppTheme { isDarkTheme ->
+
+                val themeColors = MaterialTheme.colorScheme
+                LaunchedEffect(isDarkTheme, themeColors.background) {
+                    val windowInsetsController = WindowCompat.getInsetsController(window, window.decorView)
+
+                    window.statusBarColor = android.graphics.Color.TRANSPARENT
+                    windowInsetsController.isAppearanceLightStatusBars = !isDarkTheme
+
+                    window.navigationBarColor = android.graphics.Color.TRANSPARENT
+                    windowInsetsController.isAppearanceLightNavigationBars = !isDarkTheme
+                }
+
+                val context = LocalContext.current
+                val languageManager = remember { LanguageManager.getInstance(context) }
+                // Nullable gate: a `true` initial would paint AppNavigation for
+                // one frame, then flip to the language picker on first launch.
+                val hasSelectedLanguage by remember {
+                    languageManager.hasSelectedLanguageFlow.map<Boolean, Boolean?> { it }
+                }.collectAsState(initial = null)
+
+                CompositionLocalProvider(
+                    LocalThemeRevealState provides themeRevealState
+                ) {
+                    Box(modifier = Modifier.fillMaxSize()) {
+
+                        Surface(
+                            modifier = Modifier.fillMaxSize(),
+                            color = MaterialTheme.colorScheme.background
+                        ) {
+                            if (hasSelectedLanguage == false && showLanguageSelection) {
+                                FirstLaunchLanguageScreen(
+                                    onLanguageSelected = {
+                                        showLanguageSelection = false
+                                    }
+                                )
+                            } else if (hasSelectedLanguage != null) {
+                                AppNavigation()
+                            }
+                        }
+
+                        CircularRevealOverlay(revealState = themeRevealState)
+                    }
+                }
+
+                if (showShortcutPermissionDialog) {
+                    AlertDialog(
+                        onDismissRequest = { showShortcutPermissionDialog = false },
+                        title = { Text(Strings.shortcutPermissionTitle) },
+                        text = { Text(shortcutPermissionMessage) },
+                        confirmButton = {
+                            TextButton(
+                                onClick = {
+                                    showShortcutPermissionDialog = false
+                                    openAppSettings()
+                                }
+                            ) {
+                                Text(Strings.shortcutPermissionGoToSettings)
+                            }
+                        },
+                        dismissButton = {
+                            TextButton(
+                                onClick = { showShortcutPermissionDialog = false }
+                            ) {
+                                Text(Strings.shortcutPermissionLater)
+                            }
+                        }
+                    )
+                }
+            }
+        }
+    }
+
+    private fun checkShortcutPermission() {
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+
+            if (!ShortcutManagerCompat.isRequestPinShortcutSupported(this)) {
+
+                shortcutPermissionMessage = buildShortcutPermissionMessage()
+                showShortcutPermissionDialog = true
+            }
+        }
+    }
+
+    private fun buildShortcutPermissionMessage(): String {
+        val manufacturer = Build.MANUFACTURER.lowercase()
+
+        return when {
+            manufacturer.contains("xiaomi") || manufacturer.contains("redmi") -> {
+                Strings.shortcutPermissionXiaomi
+            }
+            manufacturer.contains("huawei") || manufacturer.contains("honor") -> {
+                Strings.shortcutPermissionHuawei
+            }
+            manufacturer.contains("oppo") -> {
+                Strings.shortcutPermissionOppo
+            }
+            manufacturer.contains("vivo") -> {
+                Strings.shortcutPermissionVivo
+            }
+            manufacturer.contains("meizu") -> {
+                Strings.shortcutPermissionMeizu
+            }
+            manufacturer.contains("samsung") -> {
+                Strings.shortcutPermissionSamsung
+            }
+            else -> {
+                Strings.shortcutPermissionGeneric
+            }
+        }
+    }
+
+    private fun openAppSettings() {
+        try {
+            val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
+                data = Uri.parse("package:$packageName")
+                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            }
+            startActivity(intent)
+        } catch (e: Exception) {
+
+            try {
+                startActivity(Intent(Settings.ACTION_SETTINGS))
+            } catch (e2: Exception) {
+
+            }
+        }
+    }
+
+    private fun requestNecessaryPermissions() {
+        val permissions = mutableListOf<String>()
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            permissions.add(Manifest.permission.READ_MEDIA_IMAGES)
+            permissions.add(Manifest.permission.POST_NOTIFICATIONS)
+        } else {
+            permissions.add(Manifest.permission.READ_EXTERNAL_STORAGE)
+            if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.P) {
+                permissions.add(Manifest.permission.WRITE_EXTERNAL_STORAGE)
+            }
+        }
+
+        val needRequest = permissions.filter { perm ->
+            ContextCompat.checkSelfPermission(this, perm) != PackageManager.PERMISSION_GRANTED
+        }
+
+        if (needRequest.isNotEmpty()) {
+            AppLogger.d("MainActivity", "Requesting permissions: ${needRequest.joinToString()}")
+            permissionLauncher.launch(needRequest.toTypedArray())
+        }
+    }
+
+    override fun onStart() {
+        super.onStart()
+        AppLogger.lifecycle("MainActivity", "onStart")
+    }
+
+    override fun onResume() {
+        super.onResume()
+        AppLogger.lifecycle("MainActivity", "onResume")
+    }
+
+    override fun onPause() {
+        AppLogger.lifecycle("MainActivity", "onPause")
+        super.onPause()
+    }
+
+    override fun onStop() {
+        AppLogger.lifecycle("MainActivity", "onStop")
+        super.onStop()
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        AppLogger.lifecycle("MainActivity", "onNewIntent")
+        setIntent(intent)
+
+        val isShell = try {
+            WebToAppApplication.shellMode.isShellMode()
+        } catch (e: Exception) {
+            AppLogger.e("MainActivity", "Shell mode re-check failed in onNewIntent", e)
+            false
+        } catch (e: Error) {
+            AppLogger.e("MainActivity", "Shell mode re-check critical error in onNewIntent", Error(e))
+            false
+        }
+
+        if (isShell) {
+            AppLogger.i("MainActivity", "Shell mode onNewIntent, redirecting to ShellActivity")
+            try {
+                startActivity(Intent(this, ShellActivity::class.java).apply {
+                    action = intent.action
+                    data = intent.data
+                    flags = intent.flags
+                    intent.extras?.let { putExtras(it) }
+                })
+                finish()
+                return
+            } catch (e: Exception) {
+                AppLogger.e("MainActivity", "Failed to redirect ShellActivity from onNewIntent", e)
+            }
+        }
+
+        handleIncomingUrlIntent(intent)
+    }
+
+    private fun handleIncomingUrlIntent(intent: Intent?): Boolean {
+        if (intent == null) return false
+
+        val url: String? = when (intent.action) {
+            Intent.ACTION_VIEW -> {
+
+                intent.data?.toString()
+            }
+            Intent.ACTION_SEND -> {
+
+                val sharedText = intent.getStringExtra(Intent.EXTRA_TEXT)
+                extractUrlFromText(sharedText)
+            }
+            else -> null
+        }
+
+        if (!url.isNullOrBlank() && (url.startsWith("http://") || url.startsWith("https://"))) {
+            AppLogger.i("MainActivity", "Handling incoming URL intent: $url")
+            WebViewActivity.startWithUrl(this, url)
+
+            return true
+        }
+
+        return false
+    }
+
+    private fun extractUrlFromText(text: String?): String? {
+        if (text.isNullOrBlank()) return null
+
+        val trimmed = text.trim()
+        if (trimmed.startsWith("http://") || trimmed.startsWith("https://")) {
+
+            return trimmed.split("\\s".toRegex()).firstOrNull()
+        }
+
+        val urlPattern = Regex("https?://[^\\s]+")
+        return urlPattern.find(text)?.value
+    }
+
+    override fun onDestroy() {
+        AppLogger.lifecycle("MainActivity", "onDestroy")
+        super.onDestroy()
+    }
+
+    override fun onSaveInstanceState(outState: Bundle) {
+        AppLogger.lifecycle("MainActivity", "onSaveInstanceState")
+        super.onSaveInstanceState(outState)
+    }
+}

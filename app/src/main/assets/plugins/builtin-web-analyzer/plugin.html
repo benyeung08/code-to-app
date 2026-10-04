@@ -1,0 +1,144 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: system-ui, -apple-system, sans-serif; padding: 16px; color: var(--wta-on-surface, #1f2937); }
+.wta-analyzer-panel{padding:4px}
+.wta-analyzer-section{margin-bottom:20px}
+.wta-analyzer-section-title{font-size:14px;color:var(--wta-on-surface-variant,#6b7280);margin-bottom:12px}
+.wta-analyzer-info-row{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--wta-outline,rgba(0,0,0,.06))}
+.wta-analyzer-label{color:var(--wta-on-surface-variant,#6b7280);font-size:13px}
+.wta-analyzer-value{color:var(--wta-on-surface,#1f2937);font-weight:500;font-size:13px;max-width:60%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-align:right}
+.wta-analyzer-perf-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.wta-analyzer-perf-card{background:var(--wta-surface-dim,#ecfdf5);padding:12px;border-radius:8px;text-align:center}
+.wta-analyzer-perf-num{font-size:20px;font-weight:600;color:var(--wta-accent,#059669)}
+.wta-analyzer-perf-label{font-size:11px;color:var(--wta-on-surface-variant,#6b7280)}
+.wta-analyzer-stat-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.wta-analyzer-stat{background:var(--wta-surface-dim,#f9fafb);padding:10px;border-radius:8px;text-align:center}
+.wta-analyzer-stat-icon{font-size:16px}
+.wta-analyzer-stat-num{font-size:16px;font-weight:600;color:var(--wta-on-surface,#1f2937)}
+.wta-analyzer-stat-label{font-size:10px;color:var(--wta-on-surface-variant,#9ca3af)}
+  #wta-toast { position: fixed; left: 50%; bottom: 14px; transform: translateX(-50%);
+    background: #111827; color: #fff; font-size: 13px; padding: 8px 16px; border-radius: 20px;
+    opacity: 0; transition: opacity .2s; pointer-events: none; max-width: 90%; }
+  #wta-toast.show { opacity: .95; }
+</style>
+<script type="hcj/page">
+
+(function() {
+    'use strict';
+
+    function pushPanel() { hcj.panel.send({ type: 'panel', html: getPanelHtml() }); }
+
+
+    // 多语言支持
+    const LANG = (hcj.lang || 'zh').toLowerCase().startsWith('ar') ? 'ar' :
+                 (hcj.lang || 'zh').toLowerCase().startsWith('zh') ? 'zh' : 'en';
+    const I18N = {
+        zh: { name: '网页分析', pageInfo: '页面信息', title: '标题', domain: '域名', perf: '性能数据', loadTime: '加载时间(ms)', domReady: 'DOM就绪(ms)', stats: '元素统计', scripts: '脚本', styles: '样式', images: '图片', links: '链接', forms: '表单', iframes: '内嵌框架', videos: '视频' },
+        en: { name: 'Web Analyzer', pageInfo: 'Page Info', title: 'Title', domain: 'Domain', perf: 'Performance', loadTime: 'Load Time(ms)', domReady: 'DOM Ready(ms)', stats: 'Element Stats', scripts: 'Scripts', styles: 'Styles', images: 'Images', links: 'Links', forms: 'Forms', iframes: 'Iframes', videos: 'Videos' },
+        ar: { name: 'محلل الويب', pageInfo: 'معلومات الصفحة', title: 'العنوان', domain: 'النطاق', perf: 'الأداء', loadTime: 'وقت التحميل(ms)', domReady: 'DOM جاهز(ms)', stats: 'إحصائيات العناصر', scripts: 'السكريبتات', styles: 'الأنماط', images: 'الصور', links: 'الروابط', forms: 'النماذج', iframes: 'الإطارات', videos: 'الفيديوهات' }
+    };
+    const T = I18N[LANG] || I18N.en;
+
+    function getPageInfo() {
+        const scripts = document.querySelectorAll('script[src]').length;
+        const styles = document.querySelectorAll('link[rel="stylesheet"]').length;
+        const images = document.querySelectorAll('img').length;
+        const links = document.querySelectorAll('a[href]').length;
+        const forms = document.querySelectorAll('form').length;
+        const iframes = document.querySelectorAll('iframe').length;
+        const videos = document.querySelectorAll('video').length;
+
+        return { scripts, styles, images, links, forms, iframes, videos };
+    }
+
+    function getPanelHtml() {
+        const info = getPageInfo();
+        // Navigation Timing Level 2 first; fall back to deprecated timing.
+        let loadTime = -1, domReady = -1;
+        try {
+            const nav = (performance.getEntriesByType && performance.getEntriesByType('navigation') || [])[0];
+            if (nav) {
+                loadTime = Math.round(nav.loadEventEnd);
+                domReady = Math.round(nav.domContentLoadedEventEnd);
+            } else if (performance.timing) {
+                loadTime = performance.timing.loadEventEnd - performance.timing.navigationStart;
+                domReady = performance.timing.domContentLoadedEventEnd - performance.timing.navigationStart;
+            }
+        } catch (e) {}
+
+        return '<div class="wta-analyzer-panel">' +
+            '<div class="wta-analyzer-section"><div class="wta-analyzer-section-title">' + T.pageInfo + '</div>' +
+            '<div class="wta-analyzer-info-row"><span class="wta-analyzer-label">' + T.title + '</span><span class="wta-analyzer-value">' + (document.title || '-') + '</span></div>' +
+            '<div class="wta-analyzer-info-row"><span class="wta-analyzer-label">' + T.domain + '</span><span class="wta-analyzer-value">' + location.hostname + '</span></div></div>' +
+            '<div class="wta-analyzer-section"><div class="wta-analyzer-section-title">' + T.perf + '</div>' +
+            '<div class="wta-analyzer-perf-grid">' +
+            '<div class="wta-analyzer-perf-card"><div class="wta-analyzer-perf-num">' + (loadTime > 0 ? loadTime : '-') + '</div><div class="wta-analyzer-perf-label">' + T.loadTime + '</div></div>' +
+            '<div class="wta-analyzer-perf-card" style="background:var(--wta-surface-dim,#eff6ff)"><div class="wta-analyzer-perf-num" style="color:var(--wta-accent,#3b82f6)">' + (domReady > 0 ? domReady : '-') + '</div><div class="wta-analyzer-perf-label">' + T.domReady + '</div></div></div></div>' +
+            '<div class="wta-analyzer-section"><div class="wta-analyzer-section-title">' + T.stats + '</div>' +
+            '<div class="wta-analyzer-stat-grid">' +
+            [['<svg style="display:block;margin:0 auto" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><path d="M8 13h8"/><path d="M8 17h5"/></svg>', info.scripts, T.scripts],
+             ['<svg style="display:block;margin:0 auto" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a10 10 0 000 20c1.1 0 2-.9 2-2 0-.5-.2-1-.5-1.4-.3-.4-.5-.8-.5-1.1 0-.8.7-1.5 1.5-1.5H16a6 6 0 006-6c0-4.4-4.5-8-10-8z"/><circle cx="7.5" cy="11" r="1"/><circle cx="10" cy="6.8" r="1"/><circle cx="14.5" cy="6.8" r="1"/><circle cx="17.5" cy="11" r="1"/></svg>', info.styles, T.styles],
+             ['<svg style="display:block;margin:0 auto" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="M21 15l-5-5L5 21"/></svg>', info.images, T.images],
+             ['<svg style="display:block;margin:0 auto" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 007.5.5l3-3a5 5 0 00-7-7l-1.8 1.8"/><path d="M14 11a5 5 0 00-7.5-.5l-3 3a5 5 0 007 7l1.8-1.8"/></svg>', info.links, T.links],
+             ['<svg style="display:block;margin:0 auto" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.1 2.1 0 013 3L12 15l-4 1 1-4z"/></svg>', info.forms, T.forms],
+             ['<svg style="display:block;margin:0 auto" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/></svg>', info.iframes, T.iframes],
+             ['<svg style="display:block;margin:0 auto" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="13" height="16" rx="2"/><path d="M15 9l7-4v14l-7-4z"/></svg>', info.videos, T.videos]].map(function(s) {
+                return '<div class="wta-analyzer-stat"><div class="wta-analyzer-stat-icon">' + s[0] + '</div><div class="wta-analyzer-stat-num">' + s[1] + '</div><div class="wta-analyzer-stat-label">' + s[2] + '</div></div>';
+            }).join('') +
+            '</div></div></div>';
+    }
+
+    
+    var ACT = {};
+    hcj.panel.onMessage(function (m) {
+        if (!m) return;
+        if (m.cmd === 'refresh') { pushPanel(); return; }
+        if (m.cmd === 'act' && ACT[m.action]) { ACT[m.action](m.arg || ''); }
+    });
+    hcj.on('action', function () { hcj.panel.open(); });
+})();
+</script>
+</head>
+<body>
+<div id="root"><div class="wta-analyzer-panel"><div class="wta-analyzer-section"><div class="wta-analyzer-section-title" id="wta-analyzer-status">Analyzing page...</div><div id="wta-analyzer-content"></div></div></div></div>
+<div id="wta-toast"></div>
+<script>
+  var root = document.getElementById('root');
+  var toastEl = document.getElementById('wta-toast');
+  var toastTimer = null;
+
+  function wire() {
+    root.querySelectorAll('[data-wta-action]').forEach(function (el) {
+      if (el.__wired) return;
+      el.__wired = true;
+      el.addEventListener('click', function (ev) {
+        ev.preventDefault();
+        hcjPanel.send({ cmd: 'act', action: el.getAttribute('data-wta-action'), arg: el.getAttribute('data-wta-arg') || '' });
+      });
+    });
+  }
+
+  function showToast(m) {
+    toastEl.textContent = m;
+    toastEl.classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(function () { toastEl.classList.remove('show'); }, 1800);
+  }
+
+  hcjPanel.onMessage(function (m) {
+    if (!m) return;
+    if (m.type === 'panel' && typeof m.html === 'string') { root.innerHTML = m.html; wire(); }
+    else if (m.type === 'toast') showToast(m.msg || '');
+  });
+
+
+  wire();
+  hcjPanel.send({ cmd: 'refresh' });
+</script>
+</body>
+</html>

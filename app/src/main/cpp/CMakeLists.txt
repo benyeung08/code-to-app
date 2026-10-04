@@ -1,0 +1,214 @@
+# CMakeLists.txt for WebToApp native components
+
+cmake_minimum_required(VERSION 3.22.1)
+
+project("webtoapp_native")
+
+# 设置 C++ 标准
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
+# 添加编译选项
+# 注意：不使用全局 add_compile_options，因为 node_bridge 需要导出 JNI 符号
+
+# ==================== Node.js Bridge ====================
+# JNI 桥接层：通过 dlopen 加载 libnode.so 并调用 node::Start()
+add_library(
+    node_bridge
+    SHARED
+    node_bridge.cpp
+)
+
+# 查找 Android 日志库
+find_library(
+    log-lib
+    log
+)
+
+find_library(
+    dl-lib
+    dl
+)
+
+# ★ 16KB 页面大小对齐：Android 15+ 设备使用 16KB 页面大小，
+# ELF LOAD 段必须对齐到 16KB (16384) 边界，否则应用运行在兼容模式
+
+target_link_libraries(
+    node_bridge
+    ${log-lib}
+)
+
+# node_bridge 编译选项：保留 JNI 导出符号（不使用 -fvisibility=hidden）
+target_compile_options(node_bridge PRIVATE
+    -ffunction-sections
+    -fdata-sections
+    -O2
+    -DNDEBUG
+)
+
+# node_bridge 只 gc-sections，不 strip（保留 JNI 导出符号）
+set_target_properties(node_bridge PROPERTIES
+    LINK_FLAGS "-Wl,--gc-sections -Wl,-z,max-page-size=16384"
+)
+
+# Standalone launcher used by the local build environment. It is packaged as an
+# extracted asset and executed as a real `node` binary inside the app sandbox.
+add_executable(
+    node_launcher
+    node_launcher.c
+)
+
+add_executable(
+    go_exec_loader
+    go_exec_loader.c
+)
+
+# User-mode exec loader for static ELFs (pmmp PHP) under SELinux W^X —
+# host-preview only; a real JNI shared library, loaded lazily by
+# StaticExecBridge when plain execve is unavailable. AArch64 only: the
+# child trampoline is AArch64 asm, and the loader parses AArch64 ELFs.
+if (ANDROID_ABI STREQUAL "arm64-v8a")
+    add_library(
+        static_exec
+        SHARED
+        static_exec_loader.c
+    )
+
+    target_link_libraries(
+        static_exec
+        ${log-lib}
+    )
+
+    target_compile_options(static_exec PRIVATE
+        -ffunction-sections
+        -fdata-sections
+        -O2
+        -DNDEBUG
+    )
+
+    set_target_properties(static_exec PROPERTIES
+        LINK_FLAGS "-Wl,--gc-sections -Wl,-z,max-page-size=16384"
+    )
+endif()
+
+set_property(TARGET node_launcher PROPERTY C_STANDARD 11)
+
+target_compile_options(node_launcher PRIVATE
+    -ffunction-sections
+    -fdata-sections
+    -O2
+    -DNDEBUG
+)
+
+target_link_libraries(
+    node_launcher
+    ${log-lib}
+    ${dl-lib}
+)
+
+set_target_properties(node_launcher PROPERTIES
+    LINK_FLAGS "-Wl,--gc-sections -Wl,-z,max-page-size=16384"
+)
+
+set_property(TARGET go_exec_loader PROPERTY C_STANDARD 11)
+
+target_compile_options(go_exec_loader PRIVATE
+    -ffunction-sections
+    -fdata-sections
+    -O2
+    -DNDEBUG
+)
+
+set_target_properties(go_exec_loader PROPERTIES
+    LINK_FLAGS "-Wl,--gc-sections -Wl,-z,max-page-size=16384"
+)
+
+# ==================== Performance Engine (极致性能优化引擎) ====================
+# C 级热路径加速：URL 解析、MIME 查找、mmap I/O、性能 JS 注入
+add_library(
+    perf_engine
+    SHARED
+    perf_engine.c
+)
+
+set_property(TARGET perf_engine PROPERTY C_STANDARD 11)
+
+# -O3 最大速度优化 (性能引擎不需要体积优化)
+target_compile_options(perf_engine PRIVATE
+    -fvisibility=hidden
+    -ffunction-sections
+    -fdata-sections
+    -O3
+    -DNDEBUG
+    -Wall
+    -Wextra
+)
+
+target_link_libraries(
+    perf_engine
+    ${log-lib}
+)
+
+set_target_properties(perf_engine PROPERTIES
+    LINK_FLAGS "-Wl,--gc-sections -Wl,--strip-all -Wl,-z,max-page-size=16384"
+)
+
+# ==================== System Optimizer (系统层极致性能优化) ====================
+# C 级系统调优：CPU 亲和性、线程优先级、OOM 评分、I/O 预读、温度监控
+add_library(
+    sys_optimizer
+    SHARED
+    sys_optimizer.c
+)
+
+set_property(TARGET sys_optimizer PROPERTY C_STANDARD 11)
+
+# -O3 最大速度优化
+target_compile_options(sys_optimizer PRIVATE
+    -fvisibility=hidden
+    -ffunction-sections
+    -fdata-sections
+    -O3
+    -DNDEBUG
+    -Wall
+    -Wextra
+)
+
+target_link_libraries(
+    sys_optimizer
+    ${log-lib}
+)
+
+set_target_properties(sys_optimizer PROPERTIES
+    LINK_FLAGS "-Wl,--gc-sections -Wl,--strip-all -Wl,-z,max-page-size=16384"
+)
+
+# ==================== Browser Kernel (浏览器内核伪装引擎) ====================
+# 反 WebView 检测: navigator/chrome/WebGL/Permissions/Error stack 全面伪装
+add_library(
+    browser_kernel
+    SHARED
+    browser_kernel.c
+)
+
+set_property(TARGET browser_kernel PROPERTY C_STANDARD 11)
+
+# -Os 体积优化 (此库主要是静态字符串, 不需要 -O3 速度优化)
+target_compile_options(browser_kernel PRIVATE
+    -fvisibility=hidden
+    -ffunction-sections
+    -fdata-sections
+    -Os
+    -DNDEBUG
+    -Wall
+    -Wextra
+)
+
+target_link_libraries(
+    browser_kernel
+    ${log-lib}
+)
+
+set_target_properties(browser_kernel PROPERTIES
+    LINK_FLAGS "-Wl,--gc-sections -Wl,--strip-all -Wl,-z,max-page-size=16384"
+)

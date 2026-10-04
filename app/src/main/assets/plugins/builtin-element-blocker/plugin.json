@@ -1,0 +1,18 @@
+{
+  "id": "builtin-element-blocker",
+  "name": "Element Blocker",
+  "version": "1.1.0",
+  "description": "Pick page elements to hide — rules persist per site.",
+  "author": "WebToApp",
+  "icon": "block",
+  "matches": [
+    "*"
+  ],
+  "runAt": "document_start",
+  "permissions": [
+    "STORAGE",
+    "NOTIFY",
+    "BADGE"
+  ],
+  "toolbar": true
+}

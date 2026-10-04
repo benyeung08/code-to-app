@@ -1,0 +1,17 @@
+{
+  "id": "builtin-content-enhancer",
+  "name": "Content Enhancer",
+  "version": "1.0.0",
+  "description": "Unlock copy, copy page text/HTML, quick scroll to top or bottom.",
+  "author": "WebToApp",
+  "icon": "auto_awesome",
+  "matches": [
+    "*"
+  ],
+  "runAt": "document_end",
+  "permissions": [
+    "NOTIFY",
+    "BADGE"
+  ],
+  "toolbar": true
+}

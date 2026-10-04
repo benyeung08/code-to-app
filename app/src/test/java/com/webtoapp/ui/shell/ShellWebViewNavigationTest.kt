@@ -1,0 +1,120 @@
+package com.webtoapp.ui.shell
+
+import com.google.common.truth.Truth.assertThat
+import org.junit.Test
+
+class ShellWebViewNavigationTest {
+
+    @Test
+    fun `back exits when previous page is generated error page`() {
+        assertThat(
+            ShellWebViewNavigation.shouldFinishInsteadOfBack(
+                currentUrl = "http://127.0.0.1:18500/",
+                previousUrl = "data:text/html;charset=utf-8;base64,PGgxPkVycm9yPC9oMT4="
+            )
+        ).isTrue()
+    }
+
+    @Test
+    fun `back exits when current generated error page points back to local runtime`() {
+        assertThat(
+            ShellWebViewNavigation.shouldFinishInsteadOfBack(
+                currentUrl = "data:text/html;charset=utf-8;base64,PGgxPkVycm9yPC9oMT4=",
+                previousUrl = "http://127.0.0.1:18500/"
+            )
+        ).isTrue()
+    }
+
+    @Test
+    fun `back exits when previous page is blank`() {
+        assertThat(
+            ShellWebViewNavigation.shouldFinishInsteadOfBack(
+                currentUrl = "http://127.0.0.1:18500/",
+                previousUrl = "about:blank"
+            )
+        ).isTrue()
+    }
+
+    @Test
+    fun `back skips blank entry instead of exiting when real page sits below it`() {
+        // [realA, about:blank, realB]: pressing back on realB used to FINISH the
+        // app because the previous entry was blank — one gesture exited past the
+        // blank AND the app (two layers). It must skip the artifact and land on
+        // realA instead.
+        assertThat(
+            ShellWebViewNavigation.resolveBackAction(
+                canGoBack = true,
+                currentIndex = 2,
+                currentUrls = listOf("https://example.com/page2"),
+                previousUrls = listOf("about:blank"),
+                beforePreviousUrls = listOf("https://example.com/page1")
+            )
+        ).isEqualTo(ShellWebViewNavigation.BackAction.SKIP_PREVIOUS)
+    }
+
+    @Test
+    fun `back skips generated error entry instead of exiting when real page sits below it`() {
+        assertThat(
+            ShellWebViewNavigation.resolveBackAction(
+                canGoBack = true,
+                currentIndex = 2,
+                currentUrls = listOf("https://example.com/page2"),
+                previousUrls = listOf("data:text/html;charset=utf-8;base64,PGgxPkVycm9yPC9oMT4="),
+                beforePreviousUrls = listOf("https://example.com/page1")
+            )
+        ).isEqualTo(ShellWebViewNavigation.BackAction.SKIP_PREVIOUS)
+    }
+
+    @Test
+    fun `back exits when generated error page points back to failed remote preview url`() {
+        assertThat(
+            ShellWebViewNavigation.resolveBackAction(
+                canGoBack = true,
+                currentIndex = 1,
+                currentUrls = listOf("data:text/html;charset=utf-8;base64,PGgxPkVycm9yPC9oMT4="),
+                previousUrls = listOf("https://offline.example.com"),
+                beforePreviousUrls = emptyList()
+            )
+        ).isEqualTo(ShellWebViewNavigation.BackAction.FINISH)
+    }
+
+    @Test
+    fun `back skips failed remote url when real history exists before generated error page`() {
+        assertThat(
+            ShellWebViewNavigation.resolveBackAction(
+                canGoBack = true,
+                currentIndex = 2,
+                currentUrls = listOf("data:text/html;charset=utf-8;base64,PGgxPkVycm9yPC9oMT4="),
+                previousUrls = listOf("https://offline.example.com"),
+                beforePreviousUrls = listOf("https://example.com/home")
+            )
+        ).isEqualTo(ShellWebViewNavigation.BackAction.SKIP_PREVIOUS)
+    }
+
+    @Test
+    fun `back keeps normal web history`() {
+        assertThat(
+            ShellWebViewNavigation.shouldFinishInsteadOfBack(
+                currentUrl = "https://example.com/page2",
+                previousUrl = "https://example.com/page1"
+            )
+        ).isFalse()
+    }
+
+    @Test
+    fun `js back transport does not string-compare the eval result`() {
+        // Regression: the JS path used to return 'back'/'none' and compare the raw
+        // evaluateJavascript result to "back" — but evaluateJavascript JSON-encodes
+        // string results ("\"back\""), so the check never matched. history.back()
+        // had already executed, then goBackNative fired too — same-document (#)
+        // sites committed instantly and the stale list read as canGoBack=false →
+        // the Activity finished instead of stepping back.
+        val src = java.io.File("src/main/java/com/webtoapp/ui/shell/ShellWebViewNavigation.kt")
+            .takeIf { it.isFile }
+            ?: java.io.File("app/src/main/java/com/webtoapp/ui/shell/ShellWebViewNavigation.kt")
+        val body = src.readText()
+        assertThat(body).contains("resolveBackActionFor")
+        assertThat(body).doesNotContain("\"back\" == result")
+        assertThat(body).doesNotContain("return 'back'")
+    }
+}

@@ -1,0 +1,18 @@
+{
+  "id": "builtin-privacy-protection",
+  "name": "Privacy Protection",
+  "version": "1.0.0",
+  "description": "Block trackers, blur fingerprint signals, clear cookies on exit.",
+  "author": "WebToApp",
+  "icon": "shield",
+  "matches": [
+    "*"
+  ],
+  "runAt": "document_start",
+  "permissions": [
+    "STORAGE",
+    "NOTIFY",
+    "BADGE"
+  ],
+  "toolbar": true
+}

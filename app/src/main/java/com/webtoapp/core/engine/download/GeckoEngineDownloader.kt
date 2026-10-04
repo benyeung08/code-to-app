@@ -1,0 +1,321 @@
+package com.webtoapp.core.engine.download
+
+import android.content.Context
+import com.webtoapp.core.logging.AppLogger
+import com.webtoapp.core.engine.EngineType
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.withContext
+import com.webtoapp.core.network.NetworkModule
+import okhttp3.Request
+import java.io.File
+import java.io.FileOutputStream
+import java.util.zip.ZipInputStream
+
+sealed class DownloadState {
+    data object Idle : DownloadState()
+    data class Downloading(val progress: Float, val message: String) : DownloadState()
+    data object Completed : DownloadState()
+    data class Error(val message: String) : DownloadState()
+}
+
+class GeckoEngineDownloader(
+    private val context: Context,
+    private val fileManager: EngineFileManager
+) {
+    companion object {
+        private const val TAG = "GeckoEngineDownloader"
+        private const val MAVEN_BASE_URL = "https://maven.mozilla.org/maven2/org/mozilla/geckoview"
+
+        const val DEFAULT_VERSION = "142.0.20250827004350"
+        val SUPPORTED_ABIS = listOf("arm64-v8a", "armeabi-v7a", "x86_64", "x86")
+
+        private val ABI_ARTIFACT_MAP = mapOf(
+            "arm64-v8a" to "geckoview-arm64-v8a",
+            "armeabi-v7a" to "geckoview-armeabi-v7a",
+            "x86_64" to "geckoview-x86_64",
+            "x86" to "geckoview-x86"
+        )
+    }
+
+    private val client get() = NetworkModule.downloadClient
+
+    private val _downloadState = MutableStateFlow<DownloadState>(DownloadState.Idle)
+    val downloadState: StateFlow<DownloadState> = _downloadState.asStateFlow()
+
+    @Volatile
+    private var cancelRequested = false
+
+    suspend fun download(
+        abi: String? = null,
+        version: String = DEFAULT_VERSION
+    ): Boolean {
+        return withContext(Dispatchers.IO) {
+            val targetAbi = abi ?: fileManager.getDevicePrimaryAbi()
+            cancelRequested = false
+            val versionCandidates = buildList {
+                add(version)
+                if (version != DEFAULT_VERSION) add(DEFAULT_VERSION)
+            }.distinct()
+
+            try {
+                val artifactName = ABI_ARTIFACT_MAP[targetAbi]
+                    ?: throw IllegalArgumentException("Unsupported ABI: $targetAbi")
+                val tempAar = File(context.cacheDir, "geckoview_temp.aar")
+                var lastError: String? = null
+
+                for ((index, candidateVersion) in versionCandidates.withIndex()) {
+                    if (fileManager.isAbiDownloaded(EngineType.GECKOVIEW, targetAbi)) {
+                        val existingVersion = fileManager.getDownloadedVersion(EngineType.GECKOVIEW)
+                        if (existingVersion == candidateVersion) {
+                            AppLogger.i(TAG, "GeckoView already exists, skip")
+                            _downloadState.value = DownloadState.Completed
+                            return@withContext true
+                        }
+                    }
+
+                    _downloadState.value = DownloadState.Downloading(0f, "Preparing...")
+                    val aarUrl = MAVEN_BASE_URL + "/" + artifactName + "/" + candidateVersion + "/" + artifactName + "-" + candidateVersion + ".aar"
+                    AppLogger.i(TAG, "Download URL: $aarUrl")
+                    _downloadState.value = DownloadState.Downloading(
+                        0.01f,
+                        "Downloading GeckoView (${index + 1}/${versionCandidates.size})..."
+                    )
+
+                    var lastSampleTime = 0L
+                    var lastSampleBytes = 0L
+                    var smoothedSpeed = 0.0  // bytes/sec, EMA-smoothed
+                    var lastEmitTime = 0L
+
+                    val downloadSuccess = downloadFile(aarUrl, tempAar) { progress, downloaded, total ->
+                        if (!cancelRequested) {
+                            val now = System.nanoTime()
+                            if (lastSampleTime != 0L) {
+                                val dtSec = (now - lastSampleTime) / 1e9
+                                if (dtSec > 0) {
+                                    val instant = (downloaded - lastSampleBytes) / dtSec
+                                    smoothedSpeed = if (smoothedSpeed <= 0) instant
+                                        else smoothedSpeed * 0.7 + instant * 0.3
+                                }
+                            }
+                            lastSampleTime = now
+                            lastSampleBytes = downloaded
+                            // Throttle state emissions: the read loop fires per 8KB
+                            // chunk, far faster than the UI needs.
+                            if (now - lastEmitTime >= 200_000_000L || progress >= 1f) {
+                                lastEmitTime = now
+                                _downloadState.value = DownloadState.Downloading(
+                                    progress * 0.8f,
+                                    buildDownloadMessage(progress, downloaded, total, smoothedSpeed)
+                                )
+                            }
+                        }
+                    }
+
+                    if (cancelRequested) {
+                        tempAar.delete()
+                        _downloadState.value = DownloadState.Idle
+                        return@withContext false
+                    }
+
+                    if (!downloadSuccess) {
+                        tempAar.delete()
+                        lastError = "Download failed for version $candidateVersion"
+                        AppLogger.w(TAG, lastError!!)
+                        continue
+                    }
+
+                    _downloadState.value = DownloadState.Downloading(0.85f, "Extracting...")
+
+                    val installedVersion = fileManager.getDownloadedVersion(EngineType.GECKOVIEW)
+                    if (
+                        fileManager.isEngineDownloaded(EngineType.GECKOVIEW) &&
+                        installedVersion != candidateVersion
+                    ) {
+                        AppLogger.i(
+                            TAG,
+                            "Replacing GeckoView ${installedVersion ?: "unknown"} with $candidateVersion"
+                        )
+                        fileManager.deleteEngineFiles(EngineType.GECKOVIEW)
+                    }
+
+                    val extractSuccess = extractEngineFilesFromAar(tempAar, targetAbi)
+                    tempAar.delete()
+
+                    if (!extractSuccess) {
+                        lastError = "Extract failed for version $candidateVersion"
+                        AppLogger.w(TAG, lastError!!)
+                        continue
+                    }
+
+                    fileManager.setDownloadedVersion(EngineType.GECKOVIEW, candidateVersion)
+                    _downloadState.value = DownloadState.Completed
+                    return@withContext true
+                }
+
+                _downloadState.value = DownloadState.Error(lastError ?: "Download failed")
+                false
+
+            } catch (e: CancellationException) {
+                _downloadState.value = DownloadState.Idle
+                throw e
+            } catch (e: Exception) {
+                AppLogger.e(TAG, "Download GeckoView failed", e)
+                _downloadState.value = DownloadState.Error(e.message ?: "Unknown error")
+                false
+            }
+        }
+    }
+
+    fun cancelDownload() {
+        cancelRequested = true
+    }
+
+    fun resetState() {
+        _downloadState.value = DownloadState.Idle
+    }
+
+    fun getDownloadUrl(abi: String, version: String = DEFAULT_VERSION): String {
+        val artifactName = ABI_ARTIFACT_MAP[abi] ?: ABI_ARTIFACT_MAP["arm64-v8a"]!!
+        return MAVEN_BASE_URL + "/" + artifactName + "/" + version + "/" + artifactName + "-" + version + ".aar"
+    }
+
+    private fun buildDownloadMessage(
+        progress: Float,
+        downloaded: Long,
+        total: Long,
+        bytesPerSec: Double
+    ): String {
+        val msg = StringBuilder("Downloading... " + (progress * 100).toInt() + "%")
+        if (total > 0) msg.append(" · ").append(formatSize(downloaded))
+            .append('/').append(formatSize(total))
+        if (bytesPerSec > 0) msg.append(" · ").append(formatSpeed(bytesPerSec))
+        return msg.toString()
+    }
+
+    private fun formatSize(bytes: Long): String = when {
+        bytes < 1024 -> "$bytes B"
+        bytes < 1024 * 1024 -> "${bytes / 1024} KB"
+        else -> "%.1f MB".format(bytes / (1024.0 * 1024.0))
+    }
+
+    private fun formatSpeed(bytesPerSec: Double): String = when {
+        bytesPerSec < 1024 -> "${bytesPerSec.toLong()} B/s"
+        bytesPerSec < 1024 * 1024 -> "%.0f KB/s".format(bytesPerSec / 1024.0)
+        else -> "%.1f MB/s".format(bytesPerSec / (1024.0 * 1024.0))
+    }
+
+    private fun downloadFile(
+        url: String,
+        destFile: File,
+        onProgress: ((progress: Float, downloadedBytes: Long, totalBytes: Long) -> Unit)? = null
+    ): Boolean {
+        try {
+            val request = Request.Builder()
+                .url(url)
+                .header("User-Agent", "Mozilla/5.0")
+                .build()
+
+            val response = client.newCall(request).execute()
+            if (!response.isSuccessful) {
+                AppLogger.e(TAG, "HTTP " + response.code)
+                response.close()
+                return false
+            }
+
+            val body = response.body ?: run {
+                response.close()
+                return false
+            }
+            val contentLength = body.contentLength()
+            val input = body.byteStream()
+            val output = FileOutputStream(destFile)
+
+            try {
+                val buffer = ByteArray(8192)
+                var bytesRead: Int
+                var totalBytesRead = 0L
+
+                while (input.read(buffer).also { bytesRead = it } != -1) {
+                    if (cancelRequested) {
+                        destFile.delete()
+                        return false
+                    }
+                    output.write(buffer, 0, bytesRead)
+                    totalBytesRead += bytesRead
+                    onProgress?.invoke(
+                        if (contentLength > 0) totalBytesRead.toFloat() / contentLength else 0f,
+                        totalBytesRead,
+                        contentLength
+                    )
+                }
+            } finally {
+                output.close()
+                input.close()
+                response.close()
+            }
+
+            return destFile.exists() && destFile.length() > 0
+        } catch (e: Exception) {
+            AppLogger.e(TAG, "Download error: " + url, e)
+            return false
+        }
+    }
+
+    private fun extractEngineFilesFromAar(aarFile: File, targetAbi: String): Boolean {
+        try {
+            val abiDir = fileManager.getAbiDir(EngineType.GECKOVIEW, targetAbi)
+            val omniJaDest = fileManager.getOmniJaFile(EngineType.GECKOVIEW)
+            var extractedSoCount = 0
+            var extractedOmniJa = false
+            val soPrefix = "jni/" + targetAbi + "/"
+
+            val omniJaEntry = "assets/" + EngineFileManager.GECKO_OMNI_JA
+
+            val guard = com.webtoapp.util.SafeZip.EntryGuard()
+
+            ZipInputStream(aarFile.inputStream().buffered()).use { zis ->
+                var entry = zis.nextEntry
+                while (entry != null) {
+                    guard.onEntry()
+                    val name = entry.name
+                    if (!entry.isDirectory && name.startsWith(soPrefix) && name.endsWith(".so")) {
+                        val soFileName = name.substringAfterLast("/")
+                        val destFile = File(abiDir, soFileName)
+                        FileOutputStream(destFile).use { out ->
+                            guard.copyTo(zis, out)
+                        }
+                        AppLogger.i(TAG, "Extracted: " + soFileName)
+                        extractedSoCount++
+                    } else if (!entry.isDirectory && name == omniJaEntry) {
+                        FileOutputStream(omniJaDest).use { out ->
+                            guard.copyTo(zis, out)
+                        }
+                        AppLogger.i(TAG, "Extracted: omni.ja (" + (omniJaDest.length() / 1024) + " KB)")
+                        extractedOmniJa = true
+                    }
+                    zis.closeEntry()
+                    entry = zis.nextEntry
+                }
+            }
+
+            AppLogger.i(TAG, "Extracted " + extractedSoCount + " .so files, omni.ja=" + extractedOmniJa)
+
+            if (extractedSoCount == 0) {
+                AppLogger.e(TAG, "No .so extracted from AAR for $targetAbi")
+                return false
+            }
+            if (!extractedOmniJa) {
+                AppLogger.e(TAG, "omni.ja not found in AAR (expected at $omniJaEntry)")
+                return false
+            }
+            return true
+        } catch (e: Exception) {
+            AppLogger.e(TAG, "Extract AAR failed", e)
+            return false
+        }
+    }
+}

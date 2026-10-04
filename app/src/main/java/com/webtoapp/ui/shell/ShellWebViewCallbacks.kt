@@ -1,0 +1,297 @@
+package com.webtoapp.ui.shell
+
+import android.content.Intent
+import android.graphics.Bitmap
+import android.net.Uri
+import android.view.View
+import android.webkit.GeolocationPermissions
+import android.webkit.PermissionRequest
+import android.webkit.WebChromeClient
+import android.webkit.WebView
+import android.widget.Toast
+import com.webtoapp.core.logging.AppLogger
+import com.webtoapp.core.i18n.Strings
+import com.webtoapp.core.shell.ShellConfig
+import com.webtoapp.core.webview.LongPressHandler
+import com.webtoapp.core.webview.VideoPosterCompat
+import com.webtoapp.core.webview.WebScrollTracker
+import com.webtoapp.core.webview.WebViewCallbacks
+
+private fun isLocalRuntimeShellUrl(url: String?): Boolean {
+    if (url.isNullOrBlank()) return false
+    return url.startsWith("http://127.0.0.1:", ignoreCase = true) ||
+        url.startsWith("http://localhost:", ignoreCase = true)
+}
+
+/** Marker prefixes used by our own injected wrappers (userscripts, modules, bridges). */
+private fun isOwnInjectionMarker(message: String): Boolean =
+    message.startsWith("[UserScript:") || message.startsWith("[WebToApp") ||
+        message.startsWith("[WTA]") || message.startsWith("[wta-")
+
+fun createShellWebViewCallbacks(
+    context: android.content.Context,
+    config: ShellConfig,
+    webViewRefProvider: () -> WebView?,
+    currentUrlProvider: () -> String,
+    longPressHandler: LongPressHandler,
+    handleShowCustomView: (View, WebChromeClient.CustomViewCallback?) -> Unit,
+    handleHideCustomView: () -> Unit,
+    handleFileChooser: (android.webkit.ValueCallback<Array<Uri>>?, WebChromeClient.FileChooserParams?) -> Boolean,
+    updateLoading: (Boolean) -> Unit,
+    updateUrl: (String) -> Unit,
+    updateTitle: (String) -> Unit,
+    updateProgress: (Int) -> Unit,
+    updateError: (String?) -> Unit,
+    updateNavigation: (canBack: Boolean, canForward: Boolean) -> Unit,
+    updateWebViewRef: (WebView?) -> Unit,
+    notifyRecreationKeyIncrement: () -> Unit,
+    notifyLongPressMenu: (LongPressHandler.LongPressResult, Float, Float) -> Unit,
+    resetStatusBarAutoColor: () -> Unit = {},
+    scheduleStatusBarAutoColorSample: () -> Unit = {},
+    onRefreshFinished: () -> Unit = {},
+    onConsoleLog: (ConsoleLogEntry) -> Unit = {}
+): WebViewCallbacks {
+    return object : WebViewCallbacks {
+        override fun onPageStarted(url: String?) {
+            if (url == "about:blank") return
+            // Issue #943: a share arriving mid-navigation must not be pushed into the document
+            // that is on its way out.
+            (context as? ShellActivity)?.onShellPageStarted()
+            updateLoading(true)
+            updateUrl(url ?: "")
+            webViewRefProvider()?.let { WebScrollTracker.reset(it) }
+            resetStatusBarAutoColor()
+            com.webtoapp.core.shell.ShellLogger.logWebView("开始加载", url ?: "")
+        }
+
+        override fun onConsoleMessage(level: Int, message: String, sourceId: String, lineNumber: Int) {
+            val consoleLevel = when (level) {
+                0 -> ConsoleLevel.DEBUG
+                1 -> ConsoleLevel.LOG
+                2 -> ConsoleLevel.INFO
+                3 -> ConsoleLevel.WARNING
+                4 -> ConsoleLevel.ERROR
+                else -> ConsoleLevel.LOG
+            }
+            AppLogger.d("ShellConsole", "[$consoleLevel] $message ($sourceId:$lineNumber)")
+            // Errors thrown inside our injected wrappers (userscripts, modules, bridges)
+            // only ever reach the page console — users see "script does nothing" with no
+            // trace. Echo marker-prefixed messages into the shell log so the copied error
+            // report / log file carries them.
+            if (level >= 3 && isOwnInjectionMarker(message)) {
+                val line = "[$consoleLevel] $message ($sourceId:$lineNumber)"
+                if (level >= 4) {
+                    com.webtoapp.core.shell.ShellLogger.e("ShellConsole", line)
+                } else {
+                    com.webtoapp.core.shell.ShellLogger.w("ShellConsole", line)
+                }
+            }
+            onConsoleLog(ConsoleLogEntry(consoleLevel, message, sourceId, lineNumber, System.currentTimeMillis()))
+        }
+
+        override fun onUrlChanged(webView: WebView?, url: String?) {
+
+            webView?.let {
+                updateNavigation(it.canGoBack(), it.canGoForward())
+            }
+            if (url != null) updateUrl(url)
+            scheduleStatusBarAutoColorSample()
+        }
+
+        override fun onNavigationStateChanged(canGoBack: Boolean, canGoForward: Boolean) {
+            // GeckoView kernel: history state arrives as engine events because there is no
+            // WebView to poll (webViewRefProvider() stays null). Without this the toolbar
+            // back/forward buttons never enable in generated Gecko apps.
+            updateNavigation(canGoBack, canGoForward)
+        }
+
+        override fun onPageCommitVisible(url: String?) {
+            scheduleStatusBarAutoColorSample()
+        }
+
+        override fun onPageFinished(url: String?) {
+            if (url == "about:blank") return
+            updateLoading(false)
+            onRefreshFinished()
+            updateUrl(url ?: "")
+            com.webtoapp.core.shell.ShellLogger.logWebView("Loading complete", url ?: "")
+            webViewRefProvider()?.let {
+                val isLocalRuntimePage = isLocalRuntimeShellUrl(url)
+                updateNavigation(it.canGoBack(), it.canGoForward())
+                WebScrollTracker.injectScript(it)
+                VideoPosterCompat.injectScript(it)
+
+                if (config.translateEnabled && !isLocalRuntimePage) {
+                    injectTranslateScript(it, config.translateTargetLanguage, config.translateShowButton)
+                }
+
+                if (!isLocalRuntimePage && config.webViewConfig.longPressMenuEnabled) {
+                    longPressHandler.injectLongPressEnhancer(it)
+                } else {
+                    AppLogger.d("ShellActivity", "Skip Shell onPageFinished enhancements for local runtime page: $url")
+                }
+
+            }
+            // WebViews without document-start script support lose the
+            // media-session polyfill on every navigation; re-inject it
+            // (idempotent). Runs for local runtime pages too.
+            (context as? ShellActivity)?.mediaSessionBridge?.onPageFinishedFallback()
+            // Issue #943: release any share that was queued while the page was still loading.
+            (context as? ShellActivity)?.onShellPageReady()
+            scheduleStatusBarAutoColorSample()
+        }
+
+        override fun onProgressChanged(progress: Int) {
+            updateProgress(progress)
+        }
+
+        override fun onTitleChanged(title: String?) {
+            if (title == "about:blank" || title.isNullOrBlank()) return
+            updateTitle(title)
+        }
+
+        override fun onIconReceived(icon: Bitmap?) {}
+
+        override fun onError(errorCode: Int, description: String) {
+            updateError(description)
+            updateLoading(false)
+            com.webtoapp.core.shell.ShellLogger.logWebView("加载错误", currentUrlProvider(), "errorCode=$errorCode, description=$description")
+        }
+
+        override fun onSslError(error: String) {
+            updateError(Strings.sslError)
+            com.webtoapp.core.shell.ShellLogger.logWebView("SSL错误", currentUrlProvider(), error)
+        }
+
+        override fun onExternalAppLaunch(url: String, sourceUrl: String?) {
+            // The page that bounced out is usually a one-shot trampoline; flag it
+            // so a post-process-death restore never reloads it (#1030).
+            (context as? ShellActivity)?.noteExternalAppLaunch(sourceUrl)
+        }
+
+        override fun onExternalLink(url: String) {
+            try {
+                val safeUrl = normalizeExternalUrlForIntent(url)
+                val intent = Intent(Intent.ACTION_VIEW, Uri.parse(safeUrl))
+                intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                context.startActivity(intent)
+            } catch (e: Exception) {
+                AppLogger.w("ShellActivity", "No app to handle external link: $url", e)
+                Toast.makeText(
+                    context,
+                    Strings.cannotOpenLink,
+                    Toast.LENGTH_SHORT
+                ).show()
+            }
+        }
+
+        override fun onShowCustomView(view: View?, callback: WebChromeClient.CustomViewCallback?) {
+            view?.let { handleShowCustomView(it, callback) }
+        }
+
+        override fun onHideCustomView() {
+            handleHideCustomView()
+        }
+
+        override fun onGeolocationPermission(
+            origin: String?,
+            callback: GeolocationPermissions.Callback?
+        ) {
+
+            (context as? ShellActivity)?.handleGeolocationPermission(origin, callback)
+                ?: callback?.invoke(origin, false, false)
+        }
+
+        override fun onAndroidPermissionsRequest(permissions: Array<String>, onResult: (Boolean) -> Unit) {
+            (context as? ShellActivity)?.handleAndroidPermissionsRequest(permissions, onResult)
+                ?: onResult(true)
+        }
+
+        override fun requestGeolocationAccess(onResult: (Boolean) -> Unit) {
+            (context as? ShellActivity)?.requestGeolocationAccess(onResult)
+                ?: onResult(false)
+        }
+
+        override fun onPermissionRequest(request: PermissionRequest?) {
+
+            AppLogger.d("ShellActivity", "WebViewCallbacks.onPermissionRequest called, request: ${request?.resources?.joinToString()}")
+            request?.let { req ->
+                val shellActivity = context as? ShellActivity
+                AppLogger.d("ShellActivity", "ShellActivity cast result: ${shellActivity != null}")
+                if (shellActivity != null) {
+                    shellActivity.handlePermissionRequest(req)
+                } else {
+                    AppLogger.w("ShellActivity", "Context is not ShellActivity, granting directly")
+                    req.grant(req.resources)
+                }
+            } ?: AppLogger.w("ShellActivity", "Permission request is null")
+        }
+
+        override fun onShowFileChooser(
+            filePathCallback: android.webkit.ValueCallback<Array<Uri>>?,
+            fileChooserParams: WebChromeClient.FileChooserParams?
+        ): Boolean {
+            return handleFileChooser(filePathCallback, fileChooserParams)
+        }
+
+        override fun onDownloadStart(
+            url: String,
+            userAgent: String,
+            contentDisposition: String,
+            mimeType: String,
+            contentLength: Long
+        ) {
+
+            (context as? ShellActivity)?.handleDownloadWithPermission(
+                url, userAgent, contentDisposition, mimeType, contentLength
+            )
+        }
+
+        override fun onLongPress(webView: WebView, x: Float, y: Float): Boolean {
+
+            val hitResult = webView.hitTestResult
+            val hitType = hitResult.type
+            val isLink = hitType == WebView.HitTestResult.SRC_ANCHOR_TYPE ||
+                         hitType == WebView.HitTestResult.ANCHOR_TYPE
+
+            if (!config.webViewConfig.longPressMenuEnabled) {
+                return isLink
+            }
+
+            if (hitType == WebView.HitTestResult.EDIT_TEXT_TYPE ||
+                hitType == WebView.HitTestResult.UNKNOWN_TYPE) {
+                return false
+            }
+
+            longPressHandler.getLongPressDetails(webView, x, y) { result ->
+                when (result) {
+                    is LongPressHandler.LongPressResult.Image,
+                    is LongPressHandler.LongPressResult.Video,
+                    is LongPressHandler.LongPressResult.Link,
+                    is LongPressHandler.LongPressResult.ImageLink -> {
+                        notifyLongPressMenu(result, x, y)
+                    }
+                    is LongPressHandler.LongPressResult.Text,
+                    is LongPressHandler.LongPressResult.None -> {
+
+                    }
+                }
+            }
+
+            return when (hitType) {
+                WebView.HitTestResult.IMAGE_TYPE,
+                WebView.HitTestResult.SRC_IMAGE_ANCHOR_TYPE,
+                WebView.HitTestResult.SRC_ANCHOR_TYPE,
+                WebView.HitTestResult.ANCHOR_TYPE -> true
+                else -> false
+            }
+        }
+
+        override fun onRenderProcessGone(didCrash: Boolean) {
+            AppLogger.w("ShellActivity", "Render process gone (crash=$didCrash), triggering WebView recreation")
+            updateWebViewRef(null)
+            updateError(null)
+            notifyRecreationKeyIncrement()
+        }
+    }
+}

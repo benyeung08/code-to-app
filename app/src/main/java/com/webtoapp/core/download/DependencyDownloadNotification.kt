@@ -1,0 +1,273 @@
+package com.webtoapp.core.download
+
+import android.annotation.SuppressLint
+import android.Manifest
+import android.app.NotificationChannel
+import android.app.NotificationManager
+import android.app.PendingIntent
+import android.content.BroadcastReceiver
+import android.content.Context
+import android.content.Intent
+import android.content.IntentFilter
+import android.content.pm.PackageManager
+import android.os.Build
+import android.os.SystemClock
+import androidx.core.app.NotificationCompat
+import androidx.core.content.ContextCompat
+import com.webtoapp.core.i18n.Strings
+import com.webtoapp.core.logging.AppLogger
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.launch
+
+@SuppressLint("StaticFieldLeak")
+class DependencyDownloadNotification private constructor(private val context: Context) {
+
+    companion object {
+        private const val TAG = "DependencyDownloadNotification"
+        private const val CHANNEL_ID = "dep_download_channel"
+        private val CHANNEL_NAME get() = Strings.runtimeDownloadChannel
+        private const val NOTIFICATION_ID = 8001
+        private const val PROGRESS_NOTIFICATION_INTERVAL_MS = 2_000L
+
+        const val ACTION_PAUSE = "com.webtoapp.DEP_DOWNLOAD_PAUSE"
+        const val ACTION_RESUME = "com.webtoapp.DEP_DOWNLOAD_RESUME"
+
+        @Volatile
+        private var INSTANCE: DependencyDownloadNotification? = null
+
+        fun getInstance(context: Context): DependencyDownloadNotification {
+            return INSTANCE ?: synchronized(this) {
+                INSTANCE ?: DependencyDownloadNotification(context.applicationContext).also { INSTANCE = it }
+            }
+        }
+    }
+
+    private val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
+    private val progressNotificationGate = NotificationRateGate(PROGRESS_NOTIFICATION_INTERVAL_MS)
+    private var receiver: BroadcastReceiver? = null
+
+    init {
+        createChannel()
+        registerReceiver()
+        observeEngine()
+    }
+
+    private fun createChannel() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            try {
+                val name = CHANNEL_NAME.ifBlank { "Downloads" }
+                val channel = NotificationChannel(
+                    CHANNEL_ID,
+                    name,
+                    NotificationManager.IMPORTANCE_LOW
+                ).apply {
+                    val desc = Strings.runtimeDownloadChannelDesc
+                    if (desc.isNotBlank()) description = desc
+                    setShowBadge(false)
+                }
+                notificationManager.createNotificationChannel(channel)
+            } catch (e: Exception) {
+                AppLogger.e(TAG, "createNotificationChannel failed", e)
+            }
+        }
+    }
+
+    private fun registerReceiver() {
+        receiver = object : BroadcastReceiver() {
+            override fun onReceive(ctx: Context?, intent: Intent?) {
+                when (intent?.action) {
+                    ACTION_PAUSE -> DependencyDownloadEngine.pause()
+                    ACTION_RESUME -> DependencyDownloadEngine.resume()
+                }
+            }
+        }
+        val filter = IntentFilter().apply {
+            addAction(ACTION_PAUSE)
+            addAction(ACTION_RESUME)
+        }
+        ContextCompat.registerReceiver(
+            context,
+            receiver,
+            filter,
+            ContextCompat.RECEIVER_NOT_EXPORTED
+        )
+    }
+
+    private fun observeEngine() {
+        scope.launch {
+            DependencyDownloadEngine.state.collectLatest { state ->
+                when (state) {
+                    is DependencyDownloadEngine.State.Downloading -> showProgress(state)
+                    is DependencyDownloadEngine.State.Paused -> showPaused(state)
+                    is DependencyDownloadEngine.State.Extracting -> showExtracting(state.displayName)
+                    is DependencyDownloadEngine.State.Complete -> showComplete()
+                    is DependencyDownloadEngine.State.Error -> showError(state.message)
+                    else -> dismiss()
+                }
+            }
+        }
+    }
+
+    private fun hasPermission(): Boolean {
+        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            ContextCompat.checkSelfPermission(
+                context, Manifest.permission.POST_NOTIFICATIONS
+            ) == PackageManager.PERMISSION_GRANTED
+        } else true
+    }
+
+    private fun showProgress(dl: DependencyDownloadEngine.State.Downloading) {
+        if (!hasPermission()) {
+            dismiss()
+            return
+        }
+        if (!progressNotificationGate.allow("downloading", dl.displayName, SystemClock.elapsedRealtime())) return
+
+        val percent = (dl.progress * 100).toInt()
+        val sizeText = "${DependencyDownloadEngine.formatSize(dl.bytesDownloaded)} / ${DependencyDownloadEngine.formatSize(dl.totalBytes)}"
+        val speedText = DependencyDownloadEngine.formatSpeed(dl.speedBytesPerSec)
+        val etaText = DependencyDownloadEngine.formatEta(dl.etaSeconds)
+        val startText = DependencyDownloadEngine.formatTime(dl.startTimeMillis)
+
+        val details = buildString {
+            append("$sizeText · $speedText · ${Strings.depDownloadRemaining} $etaText\n")
+            append("${Strings.depDownloadStarted}: $startText\n")
+            append(dl.url)
+        }
+
+        // The receiver is registered RECEIVER_NOT_EXPORTED; on Android 14+ an implicit
+        // intent is dropped before it ever reaches it, so the action must carry the package.
+        val pauseIntent = PendingIntent.getBroadcast(
+            context, 0,
+            Intent(ACTION_PAUSE).setPackage(context.packageName),
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+
+        val notification = NotificationCompat.Builder(context, CHANNEL_ID)
+            .setSmallIcon(android.R.drawable.stat_sys_download)
+            .setContentTitle("${dl.displayName}  $percent%")
+            .setContentText("$sizeText · $speedText · ${Strings.depDownloadRemaining} $etaText")
+            .setStyle(NotificationCompat.BigTextStyle().bigText(details))
+            .setProgress(100, percent, dl.totalBytes <= 0)
+            .addAction(android.R.drawable.ic_media_pause, Strings.depDownloadPause, pauseIntent)
+            .setOngoing(true)
+            .setOnlyAlertOnce(true)
+            .setPriority(NotificationCompat.PRIORITY_LOW)
+            .build()
+
+        notificationManager.notify(NOTIFICATION_ID, notification)
+    }
+
+    private fun showPaused(paused: DependencyDownloadEngine.State.Paused) {
+        if (!hasPermission()) {
+            dismiss()
+            return
+        }
+        if (!progressNotificationGate.allow("paused", paused.displayName, SystemClock.elapsedRealtime())) return
+
+        val percent = (paused.progress * 100).toInt()
+        val sizeText = "${DependencyDownloadEngine.formatSize(paused.bytesDownloaded)} / ${DependencyDownloadEngine.formatSize(paused.totalBytes)}"
+
+        val resumeIntent = PendingIntent.getBroadcast(
+            context, 0,
+            Intent(ACTION_RESUME).setPackage(context.packageName),
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+
+        val details = buildString {
+            append("${Strings.depDownloadPaused} · $sizeText\n")
+            append("${Strings.depDownloadStarted}: ${DependencyDownloadEngine.formatTime(paused.startTimeMillis)}\n")
+            append(paused.url)
+        }
+
+        val notification = NotificationCompat.Builder(context, CHANNEL_ID)
+            .setSmallIcon(android.R.drawable.ic_media_pause)
+            .setContentTitle("${paused.displayName}  ${Strings.depDownloadPaused} $percent%")
+            .setContentText("${Strings.depDownloadPaused} · $sizeText")
+            .setStyle(NotificationCompat.BigTextStyle().bigText(details))
+            .setProgress(100, percent, false)
+            .addAction(android.R.drawable.ic_media_play, Strings.depDownloadResume, resumeIntent)
+            .setOngoing(true)
+            .setOnlyAlertOnce(true)
+            .setPriority(NotificationCompat.PRIORITY_LOW)
+            .build()
+
+        notificationManager.notify(NOTIFICATION_ID, notification)
+    }
+
+    private fun showExtracting(displayName: String) {
+        if (!hasPermission()) {
+            dismiss()
+            return
+        }
+        progressNotificationGate.allow("extracting", displayName, SystemClock.elapsedRealtime())
+
+        val notification = NotificationCompat.Builder(context, CHANNEL_ID)
+            .setSmallIcon(android.R.drawable.stat_sys_download_done)
+            .setContentTitle("${Strings.depDownloadExtracting} $displayName")
+            .setProgress(0, 0, true)
+            .setOngoing(true)
+            .setOnlyAlertOnce(true)
+            .setPriority(NotificationCompat.PRIORITY_LOW)
+            .build()
+
+        notificationManager.notify(NOTIFICATION_ID, notification)
+    }
+
+    private fun showComplete() {
+        progressNotificationGate.reset()
+        dismiss()
+    }
+
+    private fun showError(message: String) {
+        progressNotificationGate.reset()
+
+        if (!hasPermission()) {
+            dismiss()
+            return
+        }
+
+        val notification = NotificationCompat.Builder(context, CHANNEL_ID)
+            .setSmallIcon(android.R.drawable.stat_notify_error)
+            .setContentTitle(Strings.downloadFailed)
+            .setContentText(message)
+            .setAutoCancel(true)
+            .setPriority(NotificationCompat.PRIORITY_DEFAULT)
+            .build()
+
+        notificationManager.notify(NOTIFICATION_ID, notification)
+    }
+
+    private fun dismiss() {
+        progressNotificationGate.reset()
+        notificationManager.cancel(NOTIFICATION_ID)
+    }
+}
+
+internal class NotificationRateGate(private val minIntervalMs: Long) {
+    private var lastPhase: String? = null
+    private var lastDisplayName: String? = null
+    private var lastNotifyAtMs: Long = Long.MIN_VALUE
+
+    fun allow(phase: String, displayName: String?, nowMs: Long): Boolean {
+        val phaseChanged = phase != lastPhase || displayName != lastDisplayName
+        if (!phaseChanged && nowMs - lastNotifyAtMs < minIntervalMs) {
+            return false
+        }
+
+        lastPhase = phase
+        lastDisplayName = displayName
+        lastNotifyAtMs = nowMs
+        return true
+    }
+
+    fun reset() {
+        lastPhase = null
+        lastDisplayName = null
+        lastNotifyAtMs = Long.MIN_VALUE
+    }
+}

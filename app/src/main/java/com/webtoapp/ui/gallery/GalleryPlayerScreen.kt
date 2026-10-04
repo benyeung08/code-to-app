@@ -1,0 +1,1076 @@
+package com.webtoapp.ui.gallery
+
+import androidx.compose.animation.*
+import androidx.compose.foundation.*
+import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.gestures.awaitEachGesture
+import androidx.compose.foundation.gestures.awaitFirstDown
+import androidx.compose.foundation.gestures.waitForUpOrCancellation
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.itemsIndexed as gridItemsIndexed
+import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.*
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.outlined.*
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.dp
+import coil.compose.AsyncImage
+import coil.request.ImageRequest
+import com.webtoapp.core.i18n.Strings
+import com.webtoapp.data.model.*
+import com.webtoapp.ui.shared.AspectRatioSurface
+import com.webtoapp.ui.shared.ZoomableState
+import com.webtoapp.ui.shared.zoomable
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
+import java.io.File
+
+@OptIn(ExperimentalFoundationApi::class)
+@Composable
+fun GalleryPlayerScreen(
+    config: GalleryConfig,
+    startIndex: Int,
+    onBack: () -> Unit,
+    // Persistence key for rememberPosition (e.g. per-app id). Null disables saving.
+    positionKey: String? = null,
+    // Overview (grid/list/timeline) is the entry unless resuming into the pager.
+    startInOverview: Boolean = true
+) {
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+
+    val positionPrefs = remember(positionKey) {
+        positionKey?.let {
+            context.getSharedPreferences(GALLERY_POSITION_PREFS, android.content.Context.MODE_PRIVATE)
+        }
+    }
+
+    val initialOrder = remember(config) {
+        when (config.playMode) {
+            GalleryPlayMode.SHUFFLE -> config.getSortedItems().shuffled()
+            else -> config.getSortedItems()
+        }
+    }
+    // Mutable playback order: shuffle-on-loop reshuffles in place on every wrap.
+    var items by remember(config) { mutableStateOf(initialOrder) }
+
+    val pagerState = rememberPagerState(
+        initialPage = startIndex,
+        pageCount = { items.size }
+    )
+
+    val currentIndex by remember { derivedStateOf { pagerState.settledPage } }
+    val currentItem = items.getOrNull(currentIndex)
+
+    // rememberPosition: persist the settled page so reopening continues here.
+    LaunchedEffect(currentIndex) {
+        val key = positionKey
+        if (key != null && currentIndex in items.indices) {
+            positionPrefs?.edit()?.putInt(key, currentIndex)?.apply()
+        }
+    }
+
+    var showGrid by remember { mutableStateOf(startInOverview) }
+    // Pager back returns to the overview only when the session started there;
+    // a resume-to-pager session exits directly.
+    val canReturnToGrid = startInOverview
+    androidx.activity.compose.BackHandler(enabled = !showGrid && canReturnToGrid) {
+        showGrid = true
+    }
+
+    val bgColor = remember(config.backgroundColor) {
+        try {
+            Color(android.graphics.Color.parseColor(config.backgroundColor))
+        } catch (e: Exception) {
+            Color.Black
+        }
+    }
+
+    if (showGrid) {
+        GalleryOverview(
+            config = config,
+            items = items,
+            bgColor = bgColor,
+            onBack = onBack,
+            onItemClick = { index ->
+                scope.launch {
+                    showGrid = false
+                    pagerState.scrollToPage(index.coerceIn(0, items.size - 1))
+                }
+            }
+        )
+        return
+    }
+
+    var showControls by remember { mutableStateOf(true) }
+    var isPlaying by remember { mutableStateOf(config.autoPlay) }
+
+    LaunchedEffect(currentIndex, isPlaying) {
+
+        if (isPlaying && currentItem?.type == GalleryItemType.IMAGE && !pagerState.isScrollInProgress) {
+            delay(config.imageInterval * 1000L)
+
+            val advance = com.webtoapp.ui.shared.galleryAutoAdvanceTarget(
+                currentIndex, items.size, config.loop, config.shuffleOnLoop
+            )
+            if (advance != null) {
+                if (advance.reshuffle) items = items.shuffled()
+                pagerState.animateScrollToPage(advance.targetIndex)
+            } else {
+                isPlaying = false
+            }
+        }
+    }
+
+    LaunchedEffect(showControls) {
+        if (showControls) {
+            delay(3000)
+            showControls = false
+        }
+    }
+
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(bgColor)
+            .pointerInput(Unit) {
+                detectTapGestures(
+                    onTap = { showControls = !showControls }
+                )
+            }
+    ) {
+
+        HorizontalPager(
+            state = pagerState,
+            modifier = Modifier.fillMaxSize()
+        ) { page ->
+            val item = items.getOrNull(page)
+            if (item != null) {
+                when (item.type) {
+                    GalleryItemType.IMAGE -> {
+                        GalleryImageViewer(
+                            item = item,
+                            modifier = Modifier.fillMaxSize()
+                        )
+                    }
+                    GalleryItemType.VIDEO -> {
+                        GalleryVideoPlayer(
+                            item = item,
+                            isCurrentPage = page == currentIndex,
+                            isPlaying = isPlaying && page == currentIndex,
+                            enableAudio = config.enableAudio,
+                            showControls = showControls,
+                            onPlayStateChange = { playing -> isPlaying = playing },
+                            onVideoEnded = {
+                                if (config.videoAutoNext) {
+                                    scope.launch {
+                                        val advance = com.webtoapp.ui.shared.galleryAutoAdvanceTarget(
+                                            currentIndex, items.size, config.loop, config.shuffleOnLoop
+                                        )
+                                        if (advance != null) {
+                                            if (advance.reshuffle) items = items.shuffled()
+                                            pagerState.animateScrollToPage(advance.targetIndex)
+                                        }
+                                    }
+                                }
+                            },
+                            onToggleControls = { showControls = !showControls },
+                            modifier = Modifier.fillMaxSize()
+                        )
+                    }
+                }
+            }
+        }
+
+        AnimatedVisibility(
+            visible = showControls && config.showMediaInfo,
+            enter = fadeIn() + slideInVertically(),
+            exit = fadeOut() + slideOutVertically(),
+            modifier = Modifier.align(Alignment.TopCenter)
+        ) {
+            TopInfoBar(
+                currentItem = currentItem,
+                currentIndex = currentIndex,
+                totalCount = items.size,
+                onBack = { if (canReturnToGrid) showGrid = true else onBack() }
+            )
+        }
+
+        if (config.showThumbnailBar) {
+            AnimatedVisibility(
+                visible = showControls,
+                enter = fadeIn() + slideInVertically(initialOffsetY = { it }),
+                exit = fadeOut() + slideOutVertically(targetOffsetY = { it }),
+                modifier = Modifier.align(Alignment.BottomCenter)
+            ) {
+                ThumbnailBar(
+                    items = items,
+                    currentIndex = currentIndex,
+                    onItemClick = { index ->
+                        scope.launch {
+                            pagerState.animateScrollToPage(index)
+                        }
+                    }
+                )
+            }
+        }
+
+        if (currentItem?.type == GalleryItemType.IMAGE) {
+            AnimatedVisibility(
+                visible = showControls,
+                enter = fadeIn(),
+                exit = fadeOut(),
+                modifier = Modifier.align(Alignment.Center)
+            ) {
+                IconButton(
+                    onClick = { isPlaying = !isPlaying },
+                    modifier = Modifier
+                        .size(64.dp)
+                        .background(
+                            Color.Black.copy(alpha = 0.5f),
+                            CircleShape
+                        )
+                ) {
+                    Icon(
+                        if (isPlaying) Icons.Default.Pause else Icons.Default.PlayArrow,
+                        contentDescription = if (isPlaying) Strings.galleryPlayerPause else Strings.galleryPlayerPlay,
+                        modifier = Modifier.size(36.dp),
+                        tint = Color.White
+                    )
+                }
+            }
+        }
+
+        AnimatedVisibility(
+            visible = showControls && currentIndex > 0,
+            enter = fadeIn(),
+            exit = fadeOut(),
+            modifier = Modifier
+                .align(Alignment.CenterStart)
+                .padding(16.dp)
+        ) {
+            IconButton(
+                onClick = {
+                    scope.launch {
+                        pagerState.animateScrollToPage(currentIndex - 1)
+                    }
+                },
+                modifier = Modifier
+                    .size(48.dp)
+                    .background(
+                        Color.Black.copy(alpha = 0.5f),
+                        CircleShape
+                    )
+            ) {
+                Icon(
+                    Icons.Default.ChevronLeft,
+                    contentDescription = Strings.galleryPlayerPrevious,
+                    tint = Color.White
+                )
+            }
+        }
+
+        AnimatedVisibility(
+            visible = showControls && currentIndex < items.size - 1,
+            enter = fadeIn(),
+            exit = fadeOut(),
+            modifier = Modifier
+                .align(Alignment.CenterEnd)
+                .padding(16.dp)
+        ) {
+            IconButton(
+                onClick = {
+                    scope.launch {
+                        pagerState.animateScrollToPage(currentIndex + 1)
+                    }
+                },
+                modifier = Modifier
+                    .size(48.dp)
+                    .background(
+                        Color.Black.copy(alpha = 0.5f),
+                        CircleShape
+                    )
+            ) {
+                Icon(
+                    Icons.Default.ChevronRight,
+                    contentDescription = Strings.galleryPlayerNext,
+                    tint = Color.White
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun TopInfoBar(
+    currentItem: GalleryItem?,
+    currentIndex: Int,
+    totalCount: Int,
+    onBack: () -> Unit
+) {
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        color = Color.Black.copy(alpha = 0.6f)
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 8.dp, vertical = 8.dp)
+                .statusBarsPadding(),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            IconButton(onClick = onBack) {
+                Icon(
+                    Icons.AutoMirrored.Filled.ArrowBack,
+                    contentDescription = Strings.back,
+                    tint = Color.White
+                )
+            }
+
+            Spacer(modifier = Modifier.width(8.dp))
+
+            Column(modifier = Modifier.weight(weight = 1f, fill = true)) {
+                currentItem?.let { item ->
+                    Text(
+                        text = item.name.ifBlank { "Media ${currentIndex + 1}" },
+                        style = MaterialTheme.typography.titleMedium,
+                        color = Color.White,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                }
+                Text(
+                    text = "${currentIndex + 1} / $totalCount",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = Color.White.copy(alpha = 0.7f)
+                )
+            }
+
+            currentItem?.let { item ->
+                Icon(
+                    if (item.type == GalleryItemType.VIDEO) Icons.Outlined.Videocam
+                    else Icons.Outlined.Image,
+                    contentDescription = null,
+                    tint = Color.White.copy(alpha = 0.7f),
+                    modifier = Modifier.size(20.dp)
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun ThumbnailBar(
+    items: List<GalleryItem>,
+    currentIndex: Int,
+    onItemClick: (Int) -> Unit
+) {
+    val context = LocalContext.current
+    val listState = rememberLazyListState()
+
+    LaunchedEffect(currentIndex) {
+        if (currentIndex in items.indices) {
+            listState.animateScrollToItem(
+                index = currentIndex,
+                scrollOffset = -100
+            )
+        }
+    }
+
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        color = Color.Black.copy(alpha = 0.6f)
+    ) {
+        LazyRow(
+            state = listState,
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(vertical = 8.dp)
+                .navigationBarsPadding(),
+            horizontalArrangement = Arrangement.spacedBy(4.dp),
+            contentPadding = PaddingValues(horizontal = 16.dp)
+        ) {
+            itemsIndexed(items, key = { _, item -> item.id }) { index, item ->
+                val isSelected = index == currentIndex
+
+                Box(
+                    modifier = Modifier
+                        .animateItem()
+                        .size(if (isSelected) 64.dp else 56.dp)
+                        .clip(RoundedCornerShape(4.dp))
+                        .border(
+                            width = if (isSelected) 2.dp else 0.dp,
+                            color = if (isSelected) Color.White else Color.Transparent,
+                            shape = RoundedCornerShape(4.dp)
+                        )
+                        .clickable { onItemClick(index) }
+                ) {
+                    val imagePath = item.thumbnailPath ?: item.path
+                    AsyncImage(
+                        model = ImageRequest.Builder(context)
+                            .data(File(imagePath))
+                            .crossfade(true)
+                            .build(),
+                        contentDescription = item.name,
+                        modifier = Modifier.fillMaxSize(),
+                        contentScale = ContentScale.Crop
+                    )
+
+                    if (item.type == GalleryItemType.VIDEO) {
+                        Icon(
+                            Icons.Default.PlayCircle,
+                            contentDescription = null,
+                            modifier = Modifier
+                                .size(20.dp)
+                                .align(Alignment.Center),
+                            tint = Color.White.copy(alpha = 0.8f)
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun GalleryImageViewer(
+    item: GalleryItem,
+    modifier: Modifier = Modifier
+) {
+    val context = LocalContext.current
+
+    BoxWithConstraints(
+        modifier = modifier,
+        contentAlignment = Alignment.Center
+    ) {
+        val density = LocalDensity.current
+        // Same pinch/pan/double-tap behavior as the exported shell viewer (#801): fresh
+        // zoom state per item, content size from the loaded painter.
+        val zoom = remember(item.path) { ZoomableState() }
+        var intrinsicSizePx by remember(item.path) { mutableStateOf<Size?>(null) }
+        val viewportPx = with(density) { Size(maxWidth.toPx(), maxHeight.toPx()) }
+
+        LaunchedEffect(viewportPx, intrinsicSizePx) {
+            intrinsicSizePx?.let { size ->
+                zoom.setLayout(viewportPx, size)
+            }
+        }
+
+        AsyncImage(
+            model = ImageRequest.Builder(context)
+                .data(File(item.path))
+                .crossfade(true)
+                .build(),
+            contentDescription = item.name,
+            onState = { state ->
+                val painterSize = (state as? coil.compose.AsyncImagePainter.State.Success)
+                    ?.painter?.intrinsicSize
+                if (painterSize != null && painterSize.width > 0f && painterSize.height > 0f) {
+                    // intrinsicSize is already in pixels — no density conversion.
+                    intrinsicSizePx = painterSize
+                }
+            },
+            modifier = Modifier
+                .fillMaxSize()
+                .pointerInput(item.path) {
+                    detectTapGestures(
+                        onDoubleTap = { tap -> zoom.toggleZoom(tap) }
+                    )
+                }
+                .zoomable(zoom),
+            contentScale = ContentScale.Fit
+        )
+    }
+}
+
+@Composable
+fun GalleryVideoPlayer(
+    item: GalleryItem,
+    isCurrentPage: Boolean,
+    isPlaying: Boolean,
+    enableAudio: Boolean,
+    showControls: Boolean,
+    onPlayStateChange: (Boolean) -> Unit,
+    onVideoEnded: () -> Unit,
+    onToggleControls: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val context = LocalContext.current
+
+    var player by remember { mutableStateOf<android.media.MediaPlayer?>(null) }
+    var surfaceHolder by remember { mutableStateOf<android.view.SurfaceHolder?>(null) }
+    var isPrepared by remember { mutableStateOf(false) }
+    var currentPosition by remember { mutableLongStateOf(0L) }
+    var duration by remember { mutableLongStateOf(0L) }
+    var isFastForwarding by remember { mutableStateOf(false) }
+    var playbackSpeed by remember { mutableFloatStateOf(1f) }
+    var videoWidth by remember { mutableIntStateOf(0) }
+    var videoHeight by remember { mutableIntStateOf(0) }
+
+    DisposableEffect(item.path) {
+        val mediaPlayer = android.media.MediaPlayer().apply {
+            try {
+                setDataSource(item.path)
+                setOnPreparedListener { mp ->
+                    isPrepared = true
+                    duration = mp.duration.toLong()
+                    videoWidth = mp.videoWidth
+                    videoHeight = mp.videoHeight
+                    surfaceHolder?.let { mp.setDisplay(it) }
+                    if (isPlaying) mp.start()
+                }
+                setOnVideoSizeChangedListener { _, width, height ->
+                    videoWidth = width
+                    videoHeight = height
+                }
+                setOnCompletionListener {
+                    onVideoEnded()
+                }
+                setOnErrorListener { _, _, _ -> true }
+                prepareAsync()
+            } catch (e: Exception) {
+
+            }
+        }
+        player = mediaPlayer
+
+        onDispose {
+            try {
+                mediaPlayer.stop()
+                mediaPlayer.release()
+            } catch (e: Exception) {
+
+            }
+            player = null
+            isPrepared = false
+            videoWidth = 0
+            videoHeight = 0
+        }
+    }
+
+    LaunchedEffect(isPlaying, isPrepared, isCurrentPage) {
+        player?.let { mp ->
+            if (isPrepared) {
+                if (isPlaying && isCurrentPage) {
+                    if (!mp.isPlaying) mp.start()
+                } else {
+                    if (mp.isPlaying) mp.pause()
+                }
+            }
+        }
+    }
+
+    LaunchedEffect(enableAudio, isPrepared) {
+        player?.let { mp ->
+            if (isPrepared) {
+                mp.setVolume(
+                    if (enableAudio) 1f else 0f,
+                    if (enableAudio) 1f else 0f
+                )
+            }
+        }
+    }
+
+    LaunchedEffect(isPlaying, isPrepared) {
+        while (isPlaying && isPrepared) {
+            player?.let { mp ->
+                try {
+                    currentPosition = mp.currentPosition.toLong()
+                } catch (e: Exception) {
+
+                }
+            }
+            delay(100)
+        }
+    }
+
+    LaunchedEffect(isFastForwarding) {
+        if (isFastForwarding) {
+            player?.let { mp ->
+                try {
+
+                    mp.playbackParams = mp.playbackParams.setSpeed(2f)
+                } catch (e: Exception) {
+
+                }
+            }
+        } else {
+            player?.let { mp ->
+                try {
+                    mp.playbackParams = mp.playbackParams.setSpeed(playbackSpeed)
+                } catch (e: Exception) {
+
+                }
+            }
+        }
+    }
+
+    Box(
+        modifier = modifier
+            .pointerInput(Unit) {
+                detectTapGestures(
+                    onTap = { onToggleControls() },
+                    onDoubleTap = { offset ->
+                        val width = size.width
+                        val seekAmount = 10000
+                        player?.let { mp ->
+                            if (isPrepared) {
+                                val newPosition = if (offset.x < width / 2) {
+
+                                    (mp.currentPosition - seekAmount).coerceAtLeast(0)
+                                } else {
+
+                                    (mp.currentPosition + seekAmount).coerceAtMost(mp.duration)
+                                }
+                                mp.seekTo(newPosition)
+                            }
+                        }
+                    },
+                    onLongPress = {
+                        isFastForwarding = true
+                    }
+                )
+            }
+            .pointerInput(Unit) {
+                awaitEachGesture {
+                    awaitFirstDown()
+                    waitForUpOrCancellation()
+                    isFastForwarding = false
+                }
+            }
+    ) {
+
+        AspectRatioSurface(
+            videoWidth = videoWidth,
+            videoHeight = videoHeight,
+            fillScreen = false,
+            modifier = Modifier.fillMaxSize(),
+            onSurfaceCreated = { holder ->
+                surfaceHolder = holder
+                player?.setDisplay(holder)
+            },
+            onSurfaceDestroyed = {
+                surfaceHolder = null
+            }
+        )
+
+        AnimatedVisibility(
+            visible = showControls,
+            enter = fadeIn(),
+            exit = fadeOut(),
+            modifier = Modifier.align(Alignment.BottomCenter)
+        ) {
+            VideoControlBar(
+                currentPosition = currentPosition,
+                duration = duration,
+                isPlaying = isPlaying,
+                playbackSpeed = playbackSpeed,
+                onPlayPause = { onPlayStateChange(!isPlaying) },
+                onSeek = { position ->
+                    player?.seekTo(position.toInt())
+                    currentPosition = position
+                },
+                onSpeedChange = { speed ->
+                    playbackSpeed = speed
+                    player?.let { mp ->
+                        try {
+                            mp.playbackParams = mp.playbackParams.setSpeed(speed)
+                        } catch (e: Exception) {
+
+                        }
+                    }
+                }
+            )
+        }
+
+        AnimatedVisibility(
+            visible = isFastForwarding,
+            enter = fadeIn(),
+            exit = fadeOut(),
+            modifier = Modifier.align(Alignment.Center)
+        ) {
+            Surface(
+                color = Color.Black.copy(alpha = 0.7f),
+                shape = RoundedCornerShape(8.dp)
+            ) {
+                Row(
+                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(
+                        Icons.Default.FastForward,
+                        contentDescription = null,
+                        tint = Color.White
+                    )
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text("2x", color = Color.White)
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun VideoControlBar(
+    currentPosition: Long,
+    duration: Long,
+    isPlaying: Boolean,
+    playbackSpeed: Float,
+    onPlayPause: () -> Unit,
+    onSeek: (Long) -> Unit,
+    onSpeedChange: (Float) -> Unit
+) {
+    var showSpeedMenu by remember { mutableStateOf(false) }
+
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        color = Color.Black.copy(alpha = 0.7f)
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 8.dp)
+                .navigationBarsPadding()
+        ) {
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = formatTime(currentPosition),
+                    style = MaterialTheme.typography.labelSmall,
+                    color = Color.White
+                )
+
+                Slider(
+                    value = if (duration > 0) currentPosition.toFloat() / duration else 0f,
+                    onValueChange = { onSeek((it * duration).toLong()) },
+                    modifier = Modifier
+                        .weight(weight = 1f, fill = true)
+                        .padding(horizontal = 8.dp),
+                    colors = SliderDefaults.colors(
+                        thumbColor = Color.White,
+                        activeTrackColor = Color.White,
+                        inactiveTrackColor = Color.White.copy(alpha = 0.3f)
+                    )
+                )
+
+                Text(
+                    text = formatTime(duration),
+                    style = MaterialTheme.typography.labelSmall,
+                    color = Color.White
+                )
+            }
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceEvenly,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+
+                Box {
+                    TextButton(onClick = { showSpeedMenu = true }) {
+                        Text(
+                            text = "${playbackSpeed}x",
+                            color = Color.White
+                        )
+                    }
+                    DropdownMenu(
+                        expanded = showSpeedMenu,
+                        onDismissRequest = { showSpeedMenu = false }
+                    ) {
+                        listOf(0.5f, 0.75f, 1f, 1.25f, 1.5f, 2f).forEach { speed ->
+                            DropdownMenuItem(
+                                text = { Text("${speed}x") },
+                                onClick = {
+                                    onSpeedChange(speed)
+                                    showSpeedMenu = false
+                                }
+                            )
+                        }
+                    }
+                }
+
+                IconButton(onClick = { onSeek((currentPosition - 10000).coerceAtLeast(0)) }) {
+                    Icon(
+                        Icons.Default.Replay10,
+                        contentDescription = Strings.galleryPlayerSeekBack,
+                        tint = Color.White
+                    )
+                }
+
+                IconButton(
+                    onClick = onPlayPause,
+                    modifier = Modifier.size(56.dp)
+                ) {
+                    Icon(
+                        if (isPlaying) Icons.Default.Pause else Icons.Default.PlayArrow,
+                        contentDescription = if (isPlaying) Strings.galleryPlayerPause else Strings.galleryPlayerPlay,
+                        modifier = Modifier.size(36.dp),
+                        tint = Color.White
+                    )
+                }
+
+                IconButton(onClick = { onSeek((currentPosition + 10000).coerceAtMost(duration)) }) {
+                    Icon(
+                        Icons.Default.Forward10,
+                        contentDescription = Strings.galleryPlayerSeekForward,
+                        tint = Color.White
+                    )
+                }
+
+                Spacer(modifier = Modifier.width(48.dp))
+            }
+        }
+    }
+}
+
+private fun formatTime(ms: Long): String {
+    val seconds = (ms / 1000) % 60
+    val minutes = (ms / 1000 / 60) % 60
+    val hours = ms / 1000 / 60 / 60
+    return if (hours > 0) {
+        String.format(java.util.Locale.getDefault(), "%d:%02d:%02d", hours, minutes, seconds)
+    } else {
+        String.format(java.util.Locale.getDefault(), "%02d:%02d", minutes, seconds)
+    }
+}
+
+/** SharedPreferences file for gallery resume positions, keyed per gallery. */
+internal const val GALLERY_POSITION_PREFS = "gallery_positions"
+
+internal fun galleryPositionKey(galleryId: Long): String = "pos_$galleryId"
+
+@Composable
+private fun GalleryOverview(
+    config: GalleryConfig,
+    items: List<GalleryItem>,
+    bgColor: Color,
+    onBack: () -> Unit,
+    onItemClick: (Int) -> Unit
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(bgColor)
+    ) {
+        Surface(
+            modifier = Modifier.fillMaxWidth(),
+            color = Color.Black.copy(alpha = 0.6f)
+        ) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 8.dp, vertical = 8.dp)
+                    .statusBarsPadding(),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                IconButton(onClick = onBack) {
+                    Icon(
+                        Icons.AutoMirrored.Filled.ArrowBack,
+                        contentDescription = Strings.back,
+                        tint = Color.White
+                    )
+                }
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(
+                    text = "${items.size}",
+                    style = MaterialTheme.typography.titleMedium,
+                    color = Color.White
+                )
+            }
+        }
+
+        when (config.defaultView) {
+            GalleryViewMode.LIST -> GalleryListView(items = items, onItemClick = onItemClick)
+            GalleryViewMode.TIMELINE -> GalleryTimelineView(items = items, onItemClick = onItemClick)
+            else -> GalleryGridView(
+                items = items,
+                columns = config.gridColumns.coerceIn(1, 6),
+                onItemClick = onItemClick
+            )
+        }
+    }
+}
+
+@Composable
+private fun GalleryGridView(
+    items: List<GalleryItem>,
+    columns: Int,
+    onItemClick: (Int) -> Unit
+) {
+    val context = LocalContext.current
+    LazyVerticalGrid(
+        columns = GridCells.Fixed(columns),
+        modifier = Modifier.fillMaxSize(),
+        contentPadding = PaddingValues(8.dp),
+        horizontalArrangement = Arrangement.spacedBy(4.dp),
+        verticalArrangement = Arrangement.spacedBy(4.dp)
+    ) {
+        gridItemsIndexed(items, key = { _, item -> item.id }) { index, item ->
+            Box(
+                modifier = Modifier
+                    .aspectRatio(1f)
+                    .clip(RoundedCornerShape(4.dp))
+                    .clickable { onItemClick(index) }
+            ) {
+                val imagePath = item.thumbnailPath ?: item.path
+                AsyncImage(
+                    model = ImageRequest.Builder(context)
+                        .data(File(imagePath))
+                        .crossfade(true)
+                        .build(),
+                    contentDescription = item.name,
+                    modifier = Modifier.fillMaxSize(),
+                    contentScale = ContentScale.Crop
+                )
+                if (item.type == GalleryItemType.VIDEO) {
+                    Icon(
+                        Icons.Default.PlayCircle,
+                        contentDescription = null,
+                        modifier = Modifier
+                            .size(24.dp)
+                            .align(Alignment.Center),
+                        tint = Color.White.copy(alpha = 0.8f)
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun GalleryListView(
+    items: List<GalleryItem>,
+    onItemClick: (Int) -> Unit
+) {
+    LazyColumn(
+        modifier = Modifier.fillMaxSize(),
+        contentPadding = PaddingValues(vertical = 8.dp),
+        verticalArrangement = Arrangement.spacedBy(4.dp)
+    ) {
+        itemsIndexed(items, key = { _, item -> item.id }) { index, item ->
+            GalleryOverviewRow(
+                item = item,
+                onClick = { onItemClick(index) }
+            )
+        }
+    }
+}
+
+@Composable
+private fun GalleryTimelineView(
+    items: List<GalleryItem>,
+    onItemClick: (Int) -> Unit
+) {
+    val dateFormat = remember { java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.US) }
+    val groups = remember(items) {
+        items.withIndex().groupBy { (_, item) ->
+            if (item.createdAt > 0) dateFormat.format(java.util.Date(item.createdAt)) else ""
+        }
+    }
+    LazyColumn(
+        modifier = Modifier.fillMaxSize(),
+        contentPadding = PaddingValues(vertical = 8.dp)
+    ) {
+        groups.forEach { (date, indexed) ->
+            if (date.isNotEmpty()) {
+                item(key = "header_$date") {
+                    Text(
+                        text = date,
+                        style = MaterialTheme.typography.labelMedium,
+                        color = Color.White.copy(alpha = 0.7f),
+                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp)
+                    )
+                }
+            }
+            itemsIndexed(indexed, key = { _, (_, item) -> item.id }) { _, (index, item) ->
+                GalleryOverviewRow(
+                    item = item,
+                    onClick = { onItemClick(index) }
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun GalleryOverviewRow(
+    item: GalleryItem,
+    onClick: () -> Unit
+) {
+    val context = LocalContext.current
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick)
+            .padding(horizontal = 16.dp, vertical = 4.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Box(
+            modifier = Modifier
+                .size(56.dp)
+                .clip(RoundedCornerShape(4.dp))
+        ) {
+            val imagePath = item.thumbnailPath ?: item.path
+            AsyncImage(
+                model = ImageRequest.Builder(context)
+                    .data(File(imagePath))
+                    .crossfade(true)
+                    .build(),
+                contentDescription = item.name,
+                modifier = Modifier.fillMaxSize(),
+                contentScale = ContentScale.Crop
+            )
+            if (item.type == GalleryItemType.VIDEO) {
+                Icon(
+                    Icons.Default.PlayCircle,
+                    contentDescription = null,
+                    modifier = Modifier
+                        .size(20.dp)
+                        .align(Alignment.Center),
+                    tint = Color.White.copy(alpha = 0.8f)
+                )
+            }
+        }
+        Spacer(modifier = Modifier.width(12.dp))
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                text = item.name.ifBlank { "Media" },
+                style = MaterialTheme.typography.bodyMedium,
+                color = Color.White,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
+            if (item.type == GalleryItemType.VIDEO && item.formattedDuration.isNotEmpty()) {
+                Text(
+                    text = item.formattedDuration,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = Color.White.copy(alpha = 0.7f)
+                )
+            }
+        }
+    }
+}

@@ -1,0 +1,526 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: system-ui, -apple-system, sans-serif; padding: 16px; color: var(--wta-on-surface, #1f2937); }
+.wta-blocker-panel{padding:4px}
+.wta-blocker-select-btn{width:100%;background:var(--wta-accent,#ef4444);color:#fff;border:none;padding:14px;border-radius:12px;font-size:15px;font-weight:500;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;transition:opacity .2s}
+.wta-blocker-select-btn:active{opacity:.8}
+.wta-blocker-count{font-size:14px;color:var(--wta-on-surface-variant,#6b7280);margin:12px 0}
+.wta-blocker-list{max-height:200px;overflow-y:auto}
+.wta-blocker-item{display:flex;align-items:center;gap:8px;padding:10px;background:var(--wta-surface-dim,#f9fafb);border-radius:8px;margin-bottom:6px;font-size:13px;color:var(--wta-on-surface,#991b1b)}
+.wta-blocker-item-selector{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-family:monospace;font-size:12px}
+.wta-blocker-item-btn{background:#fee2e2;border:none;cursor:pointer;font-size:14px;color:#dc2626;padding:4px 8px;border-radius:4px;transition:all .2s}
+.wta-blocker-item-btn:active{background:#fecaca}
+.wta-blocker-clear-btn{width:100%;padding:12px;border-radius:10px;border:1px solid var(--wta-outline,#fecaca);background:var(--wta-surface-dim,#fff5f5);color:#dc2626;font-size:14px;cursor:pointer;transition:all .2s;margin-top:12px}
+.wta-blocker-clear-btn:active{background:#fef2f2}
+.wta-blocker-empty{text-align:center;padding:24px;color:var(--wta-on-surface-variant,#9ca3af)}
+.wta-blocker-empty-icon{font-size:32px;margin-bottom:8px}
+  #wta-toast { position: fixed; left: 50%; bottom: 14px; transform: translateX(-50%);
+    background: #111827; color: #fff; font-size: 13px; padding: 8px 16px; border-radius: 20px;
+    opacity: 0; transition: opacity .2s; pointer-events: none; max-width: 90%; }
+  #wta-toast.show { opacity: .95; }
+</style>
+<script type="hcj/page">
+
+(function() {
+    'use strict';
+
+    // updatePluginPayloads re-injects every phase when the store resolves
+    // late — make the whole script a no-op on re-entry.
+    if (window.__wtaEbInit) return;
+    window.__wtaEbInit = true;
+
+    var ACT = {};
+    // Feedback goes to the page toast AND the panel toast — whichever is visible.
+    function toast(m) { hcj.toast(m); hcj.panel.send({ type: 'toast', msg: String(m) }); }
+    function pushPanel() { hcj.panel.send({ type: 'panel', html: getPanelHtml() }); }
+
+
+    // 多语言支持
+    const LANG = (hcj.lang || 'zh').toLowerCase().startsWith('ar') ? 'ar' :
+                 (hcj.lang || 'zh').toLowerCase().startsWith('zh') ? 'zh' : 'en';
+    const I18N = {
+        zh: {
+            name: '元素屏蔽',
+            blocked: '已屏蔽元素',
+            unblocked: '已取消屏蔽',
+            selected: '已选中',
+            tapAgainToBlock: '再次点按或点「屏蔽」确认',
+            selectMode: '选择模式：点按选择元素，再次点按屏蔽',
+            clearedAll: '已清除所有屏蔽',
+            selectElement: '选择要屏蔽的元素',
+            confirmBlock: '屏蔽',
+            cancel: '取消',
+            minimize: '收起',
+            expandBar: '展开选择栏',
+            pickHint: '点按页面元素进行选择',
+            blockedCount: '已屏蔽 {0} 个元素',
+            delete: '删除',
+            copyRule: '复制规则',
+            ruleCopied: '屏蔽规则已复制，可粘贴到去广告自定义规则',
+            clearAll: '清除所有屏蔽',
+            clickToSelect: '点击上方按钮选择要屏蔽的元素'
+        },
+        en: {
+            name: 'Element Blocker',
+            blocked: 'Element blocked',
+            unblocked: 'Unblocked',
+            selected: 'Selected',
+            tapAgainToBlock: 'tap again or press Block',
+            selectMode: 'Select mode: tap to select, tap again to block',
+            clearedAll: 'All blocks cleared',
+            selectElement: 'Select element to block',
+            confirmBlock: 'Block',
+            cancel: 'Cancel',
+            minimize: 'Minimize',
+            expandBar: 'Expand picker bar',
+            pickHint: 'Tap an element to select it',
+            blockedCount: '{0} elements blocked',
+            delete: 'Delete',
+            copyRule: 'Copy rule',
+            ruleCopied: 'Block rule copied; paste it into ad-block custom rules',
+            clearAll: 'Clear all blocks',
+            clickToSelect: 'Click the button above to select elements'
+        },
+        ar: {
+            name: 'مانع العناصر',
+            blocked: 'تم حظر العنصر',
+            unblocked: 'تم إلغاء الحظر',
+            selected: 'محدد',
+            tapAgainToBlock: 'انقر مرة أخرى أو اضغط حظر',
+            selectMode: 'وضع التحديد: انقر للتحديد، انقر مرة أخرى للحظر',
+            clearedAll: 'تم مسح جميع الحظر',
+            selectElement: 'حدد العنصر للحظر',
+            confirmBlock: 'حظر',
+            cancel: 'إلغاء',
+            minimize: 'تصغير',
+            expandBar: 'توسيع شريط الاختيار',
+            pickHint: 'انقر على عنصر لتحديده',
+            blockedCount: 'تم حظر {0} عنصر',
+            delete: 'حذف',
+            copyRule: 'نسخ القاعدة',
+            ruleCopied: 'تم نسخ قاعدة الحظر؛ الصقها في القواعد المخصصة لمنع الإعلانات',
+            clearAll: 'مسح جميع الحظر',
+            clickToSelect: 'انقر على الزر أعلاه لتحديد العناصر'
+        }
+    };
+    const T = I18N[LANG] || I18N.en;
+    const STORAGE_KEY = 'wta_blocked_elements';
+    let blockedSelectors = [];
+    try { blockedSelectors = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]') || []; } catch (e) {}
+    let selectMode = false;
+    let selectedElement = null;
+    let highlightOverlay = null;
+    let escHandler = null;
+    let pickerBar = null;
+    let pickerChip = null;
+    let applyAttempts = 0;
+
+    // Create高亮覆盖层
+    function createOverlay() {
+        if (highlightOverlay) return;
+        highlightOverlay = document.createElement('div');
+        highlightOverlay.id = 'wta-element-highlight';
+        highlightOverlay.style.cssText = 'position:fixed;pointer-events:none;z-index:2147483646;border:2px solid #ef4444;background:rgba(239,68,68,0.15);transition:all 0.1s ease;display:none';
+        document.body.appendChild(highlightOverlay);
+    }
+
+    // Generate元素的唯一选择器
+    function getSelector(el) {
+        if (!el || el === document.body || el === document.documentElement) return null;
+        if (el.id) return '#' + CSS.escape(el.id);
+
+        let path = [];
+        while (el && el !== document.body && el !== document.documentElement) {
+            let selector = el.tagName.toLowerCase();
+            if (el.className && typeof el.className === 'string') {
+                const classes = el.className.trim().split(/\s+/).filter(c => c && !c.includes('wta-'));
+                if (classes.length) selector += '.' + classes.map(c => CSS.escape(c)).join('.');
+            }
+            const parent = el.parentElement;
+            if (parent) {
+                const siblings = Array.from(parent.children).filter(c => c.tagName === el.tagName);
+                if (siblings.length > 1) {
+                    const idx = siblings.indexOf(el) + 1;
+                    selector += ':nth-of-type(' + idx + ')';
+                }
+            }
+            path.unshift(selector);
+            el = parent;
+            if (path.length >= 4) break;
+        }
+        return path.join(' > ');
+    }
+
+    // App屏蔽规则
+    function applyBlockedRules() {
+        const parent = document.head || document.documentElement;
+        if (!parent) {
+            // document_start: the parser may not have emitted a root yet.
+            // Retry on the next frames so the style lands before first paint.
+            if (applyAttempts++ < 120) requestAnimationFrame(applyBlockedRules);
+            return;
+        }
+        applyAttempts = 0;
+        let styleEl = document.getElementById('wta-blocked-styles');
+        if (!styleEl) {
+            styleEl = document.createElement('style');
+            styleEl.id = 'wta-blocked-styles';
+            parent.appendChild(styleEl);
+        }
+        if (blockedSelectors.length) {
+            styleEl.textContent = blockedSelectors.map(s => s + '{display:none!important}').join('');
+        } else {
+            styleEl.textContent = '';
+        }
+    }
+
+    // Save屏蔽规则 (per-origin localStorage — rules are site-scoped by nature)
+    function saveRules() {
+        try { localStorage.setItem(STORAGE_KEY, JSON.stringify(blockedSelectors)); } catch (e) {}
+        applyBlockedRules();
+    }
+
+    // 屏蔽元素
+    function blockElement(selector) {
+        if (!selector || blockedSelectors.includes(selector)) return;
+        blockedSelectors.push(selector);
+        saveRules();
+        toast(T.blocked);
+    }
+
+    // Copy屏蔽规则到剪贴板 (issue #765)：拼成“域名##选择器”的去广告
+    // 自定义规则格式，粘贴即用。navigator.clipboard 在非安全上下文不可用
+    // （如 http 页面），此时回退到 textarea + execCommand。
+    function copySelector(index) {
+        const selector = blockedSelectors[index];
+        if (!selector) return;
+        let rule = selector;
+        try {
+            const host = window.location.hostname;
+            if (host) rule = host + '##' + selector;
+        } catch (e) { /* file/blob 页面无 hostname，用裸选择器 */ }
+        function done(ok) {
+            toast(ok ? T.ruleCopied : selector);
+        }
+        try {
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(rule).then(function() { done(true); }, function() { legacyCopy(rule, done); });
+            } else {
+                legacyCopy(rule, done);
+            }
+        } catch (e) {
+            legacyCopy(rule, done);
+        }
+    }
+
+    function legacyCopy(text, done) {
+        try {
+            const ta = document.createElement('textarea');
+            ta.value = text;
+            ta.style.cssText = 'position:fixed;opacity:0;pointer-events:none';
+            document.body.appendChild(ta);
+            ta.select();
+            const ok = document.execCommand('copy');
+            document.body.removeChild(ta);
+            done(!!ok);
+        } catch (e) {
+            done(false);
+        }
+    }
+
+    // Cancel屏蔽
+    function unblockElement(index) {
+        blockedSelectors.splice(index, 1);
+        saveRules();
+        toast(T.unblocked);
+        pushPanel();
+    }
+
+    function pickElement(x, y) {
+        const el = document.elementFromPoint(x, y);
+        if (!el || el === highlightOverlay || inPickerUi(el) || el === document.body || el === document.documentElement) return null;
+        return el;
+    }
+
+    function highlight(el) {
+        if (!highlightOverlay || !el) return;
+        const rect = el.getBoundingClientRect();
+        highlightOverlay.style.display = 'block';
+        highlightOverlay.style.left = rect.left + 'px';
+        highlightOverlay.style.top = rect.top + 'px';
+        highlightOverlay.style.width = rect.width + 'px';
+        highlightOverlay.style.height = rect.height + 'px';
+    }
+
+    // ---- Floating confirm bar (issue #1088) -----------------------------
+    // Double-tapping a small or moving element to confirm is unreliable;
+    // Brave/uBO/AdGuard all offer a floating confirm button instead. The bar
+    // is additive: tap-twice / double-click still block directly.
+    function inPickerUi(el) {
+        return !!(el && el.closest && el.closest('#wta-picker-bar,#wta-picker-chip'));
+    }
+
+    function ensurePickerStyle() {
+        if (document.getElementById('wta-picker-style')) return;
+        const st = document.createElement('style');
+        st.id = 'wta-picker-style';
+        st.textContent =
+            '#wta-picker-bar{position:fixed;left:50%;bottom:calc(16px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);z-index:2147483647;display:flex;align-items:center;gap:8px;background:rgba(17,24,39,.95);color:#fff;border-radius:14px;padding:8px 10px 8px 14px;box-shadow:0 4px 18px rgba(0,0,0,.35);font:13px/1.4 system-ui,sans-serif;max-width:calc(100vw - 24px)}' +
+            '#wta-picker-info{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-family:monospace;font-size:12px;opacity:.9}' +
+            '.wta-pk-btn{border:none;border-radius:10px;padding:9px 13px;font-size:14px;font-weight:600;cursor:pointer;color:#fff;line-height:1}' +
+            '.wta-pk-block{background:#ef4444}' +
+            '.wta-pk-block[disabled]{opacity:.45}' +
+            '.wta-pk-ghost{background:rgba(255,255,255,.14);padding:9px 10px}' +
+            '#wta-picker-chip{position:fixed;right:14px;bottom:calc(16px + env(safe-area-inset-bottom,0px));z-index:2147483647;width:44px;height:44px;border-radius:22px;border:none;background:rgba(17,24,39,.95);color:#fff;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 14px rgba(0,0,0,.35);cursor:pointer}';
+        (document.head || document.documentElement).appendChild(st);
+    }
+
+    function updatePickerBar() {
+        if (!pickerBar) return;
+        const info = pickerBar.querySelector('#wta-picker-info');
+        const btn = pickerBar.querySelector('#wta-picker-block');
+        btn.textContent = T.confirmBlock;
+        if (selectedElement) {
+            info.textContent = getSelector(selectedElement) || selectedElement.tagName.toLowerCase();
+            btn.disabled = false;
+        } else {
+            info.textContent = T.pickHint;
+            btn.disabled = true;
+        }
+    }
+
+    function setBarMinimized(min) {
+        if (pickerBar) pickerBar.style.display = min ? 'none' : 'flex';
+        if (pickerChip) pickerChip.style.display = min ? 'flex' : 'none';
+    }
+
+    function onConfirmBlock(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        if (!selectedElement) return;
+        const selector = getSelector(selectedElement);
+        if (selector) { blockElement(selector); exitSelectMode(); }
+    }
+
+    function createPickerBar() {
+        removePickerBar();
+        ensurePickerStyle();
+        pickerBar = document.createElement('div');
+        pickerBar.id = 'wta-picker-bar';
+        pickerBar.innerHTML =
+            '<span id="wta-picker-info"></span>' +
+            '<button type="button" id="wta-picker-block" class="wta-pk-btn wta-pk-block"></button>' +
+            '<button type="button" id="wta-picker-min" class="wta-pk-btn wta-pk-ghost" title="' + T.minimize + '"><svg style="display:block" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M5 12h14"/></svg></button>' +
+            '<button type="button" id="wta-picker-cancel" class="wta-pk-btn wta-pk-ghost" title="' + T.cancel + '"><svg style="display:block" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M6 6l12 12"/><path d="M18 6L6 18"/></svg></button>';
+        pickerBar.querySelector('#wta-picker-block').addEventListener('click', onConfirmBlock);
+        pickerBar.querySelector('#wta-picker-min').addEventListener('click', function(e) {
+            e.preventDefault(); e.stopPropagation(); setBarMinimized(true);
+        });
+        pickerBar.querySelector('#wta-picker-cancel').addEventListener('click', function(e) {
+            e.preventDefault(); e.stopPropagation(); exitSelectMode();
+        });
+        document.body.appendChild(pickerBar);
+
+        pickerChip = document.createElement('button');
+        pickerChip.id = 'wta-picker-chip';
+        pickerChip.type = 'button';
+        pickerChip.title = T.expandBar;
+        pickerChip.innerHTML = '<svg style="display:block" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1.5"/></svg>';
+        pickerChip.addEventListener('click', function(e) {
+            e.preventDefault(); e.stopPropagation(); setBarMinimized(false);
+        });
+        document.body.appendChild(pickerChip);
+
+        setBarMinimized(false);
+        updatePickerBar();
+    }
+
+    function removePickerBar() {
+        if (pickerBar) { pickerBar.remove(); pickerBar = null; }
+        if (pickerChip) { pickerChip.remove(); pickerChip = null; }
+    }
+    // --------------------------------------------------------------------
+
+    // Desktop hover preview (mousemove doesn't fire on touchscreens)
+    function onMouseMove(e) {
+        if (!selectMode) return;
+        const el = pickElement(e.clientX, e.clientY);
+        if (!el) {
+            // Hovering picker UI or dead space — keep the selection highlight.
+            if (highlightOverlay && !selectedElement) highlightOverlay.style.display = 'none';
+            return;
+        }
+        highlight(el);
+    }
+
+    // Tap/click: first tap selects (works on touch via e.target), second tap
+    // on the SAME element blocks it. Double-click still blocks directly on
+    // desktop.
+    function onTap(e) {
+        if (!selectMode) return;
+        // Taps on the confirm bar/chip must fall through to their own buttons.
+        if (inPickerUi(e.target)) return;
+        let el = e.target;
+        if (!el || el === highlightOverlay || el === document.body || el === document.documentElement) {
+            el = (e.clientX || e.clientY) ? pickElement(e.clientX, e.clientY) : null;
+        }
+        if (!el) return;
+        e.preventDefault();
+        e.stopPropagation();
+        e.stopImmediatePropagation();
+        if (selectedElement === el) {
+            const selector = getSelector(el);
+            if (selector) { blockElement(selector); exitSelectMode(); }
+        } else {
+            selectedElement = el;
+            highlight(el);
+            updatePickerBar();
+            toast(T.selected + ': ' + el.tagName.toLowerCase() + ' — ' + T.tapAgainToBlock);
+        }
+    }
+
+    function onDblClick(e) {
+        if (!selectMode) return;
+        if (inPickerUi(e.target)) return;
+        const el = e.target;
+        if (!el || el === highlightOverlay) return;
+        e.preventDefault();
+        e.stopPropagation();
+        const selector = getSelector(el);
+        if (selector) { blockElement(selector); exitSelectMode(); }
+    }
+
+    // 进入选择模式
+    function enterSelectMode() {
+        if (selectMode) return;
+        selectMode = true;
+        selectedElement = null;
+        createOverlay();
+        createPickerBar();
+        document.addEventListener('mousemove', onMouseMove, true);
+        document.addEventListener('click', onTap, true);
+        document.addEventListener('touchend', onTap, true);
+        document.addEventListener('dblclick', onDblClick, true);
+        if (document.body) document.body.style.cursor = 'crosshair';
+        toast(T.selectMode);
+        hcj.panel.close();
+
+        escHandler = function(e) {
+            if (e.key === 'Escape') exitSelectMode();
+        };
+        document.addEventListener('keydown', escHandler);
+    }
+
+    // 退出选择模式
+    function exitSelectMode() {
+        if (!selectMode) return;
+        selectMode = false;
+        selectedElement = null;
+        removePickerBar();
+        if (highlightOverlay) highlightOverlay.style.display = 'none';
+        document.removeEventListener('mousemove', onMouseMove, true);
+        document.removeEventListener('click', onTap, true);
+        document.removeEventListener('touchend', onTap, true);
+        document.removeEventListener('dblclick', onDblClick, true);
+        if (escHandler) { document.removeEventListener('keydown', escHandler); escHandler = null; }
+        if (document.body) document.body.style.cursor = '';
+        pushPanel();
+    }
+
+    // 清除所有屏蔽
+    function clearAll() {
+        blockedSelectors = [];
+        saveRules();
+        toast(T.clearedAll);
+        pushPanel();
+    }
+
+    function getPanelHtml() {
+        let html = '<div class="wta-blocker-panel">' +
+            '<button class="wta-blocker-select-btn" data-wta-action="enterSelectMode"><span><svg style="display:block" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3l14 9-6.2 1.3L17 20l-2.6 1.2-3.2-6.6L6 19V3z"/></svg></span> ' + T.selectElement + '</button>';
+
+        html += '<div class="wta-blocker-count">' + T.blockedCount.replace('{0}', blockedSelectors.length) + '</div>';
+
+        if (blockedSelectors.length) {
+            html += '<div class="wta-blocker-list">';
+            blockedSelectors.forEach(function(selector, i) {
+                html += '<div class="wta-blocker-item">' +
+                    '<span class="wta-blocker-item-selector">' + selector.replace(/</g, '&lt;') + '</span>' +
+                    '<button class="wta-blocker-item-btn" data-wta-action="copySelector" data-wta-arg="' + i + '" title="' + T.copyRule + '">⧉</button>' +
+                    '<button class="wta-blocker-item-btn" data-wta-action="unblock" data-wta-arg="' + i + '"><svg style="display:block" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 6l12 12"/><path d="M18 6L6 18"/></svg></button></div>';
+            });
+            html += '</div>';
+            html += '<button class="wta-blocker-clear-btn" data-wta-action="clearAllBlocks">' + T.clearAll + '</button>';
+        } else {
+            html += '<div class="wta-blocker-empty"><div class="wta-blocker-empty-icon"><svg style="display:block;margin:0 auto" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1.5"/></svg></div><div>' + T.clickToSelect + '</div></div>';
+        }
+
+        return html + '</div>';
+    }
+
+    ACT.enterSelectMode = enterSelectMode;
+    ACT.unblock = function(i) { unblockElement(parseInt(i)); };
+    ACT.copySelector = function(i) { copySelector(parseInt(i)); };
+    ACT.clearAllBlocks = clearAll;
+
+    
+
+    hcj.panel.onMessage(function (m) {
+        if (!m) return;
+        if (m.cmd === 'refresh') { pushPanel(); return; }
+        if (m.cmd === 'act' && ACT[m.action]) { ACT[m.action](m.arg || ''); }
+    });
+    hcj.on('action', function () { hcj.panel.open(); });
+
+    applyBlockedRules();
+    // document_start runs before/while the parser builds the tree — re-apply
+    // once the DOM settles in case the first attempt landed before <head>.
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', applyBlockedRules);
+    }
+})();
+</script>
+</head>
+<body>
+<div id="root"><div class="wta-blocker-empty"><div class="wta-blocker-empty-icon"><svg style="display:block;margin:0 auto" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1.5"/></svg></div><div>Loading...</div></div></div>
+<div id="wta-toast"></div>
+<script>
+  var root = document.getElementById('root');
+  var toastEl = document.getElementById('wta-toast');
+  var toastTimer = null;
+
+  function wire() {
+    root.querySelectorAll('[data-wta-action]').forEach(function (el) {
+      if (el.__wired) return;
+      el.__wired = true;
+      el.addEventListener('click', function (ev) {
+        ev.preventDefault();
+        hcjPanel.send({ cmd: 'act', action: el.getAttribute('data-wta-action'), arg: el.getAttribute('data-wta-arg') || '' });
+      });
+    });
+  }
+
+  function showToast(m) {
+    toastEl.textContent = m;
+    toastEl.classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(function () { toastEl.classList.remove('show'); }, 1800);
+  }
+
+  hcjPanel.onMessage(function (m) {
+    if (!m) return;
+    if (m.type === 'panel' && typeof m.html === 'string') { root.innerHTML = m.html; wire(); }
+    else if (m.type === 'toast') showToast(m.msg || '');
+  });
+
+
+  wire();
+  hcjPanel.send({ cmd: 'refresh' });
+</script>
+</body>
+</html>

@@ -1,0 +1,362 @@
+package com.webtoapp.ui.components
+
+import android.widget.Toast
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ColumnScope
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Download
+import androidx.compose.material.icons.outlined.Inventory2
+import androidx.compose.material.icons.outlined.RestartAlt
+import androidx.compose.material.icons.outlined.Upload
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.LinearProgressIndicator
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.unit.dp
+import com.webtoapp.WebToAppApplication
+import com.webtoapp.core.backup.DataBackupManager
+import com.webtoapp.core.i18n.Strings
+import com.webtoapp.ui.design.WtaAlertDialog
+import com.webtoapp.ui.design.WtaButton
+import com.webtoapp.ui.design.WtaButtonSize
+import com.webtoapp.ui.design.WtaButtonVariant
+import com.webtoapp.ui.design.WtaCard
+import com.webtoapp.ui.design.WtaCardTone
+import com.webtoapp.ui.design.WtaMotion
+import com.webtoapp.ui.design.WtaStatusBanner
+import com.webtoapp.ui.design.WtaStatusTone
+import com.webtoapp.ui.theme.LocalShowDescriptions
+import com.webtoapp.ui.theme.ifDescriptionsShown
+import kotlinx.coroutines.launch
+
+@Composable
+fun DataBackupDialog(onDismiss: () -> Unit) {
+    WtaAlertDialog(
+        onDismissRequest = onDismiss,
+        icon = Icons.Outlined.Inventory2,
+        title = Strings.dataBackupTitle,
+        confirmButton = {
+            WtaButton(
+                onClick = onDismiss,
+                text = Strings.close,
+                variant = WtaButtonVariant.Text,
+                size = WtaButtonSize.Medium
+            )
+        },
+        content = {
+            Strings.dataBackupDesc.ifDescriptionsShown()?.let { desc ->
+                Text(
+                    text = desc,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+            DataBackupControls()
+        }
+    )
+}
+
+@Composable
+private fun ColumnScope.DataBackupControls() {
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+    val backupManager = remember { DataBackupManager(context) }
+    val repository = remember { WebToAppApplication.repository }
+
+    var isExporting by remember { mutableStateOf(false) }
+    var isImporting by remember { mutableStateOf(false) }
+    var progressMessage by remember { mutableStateOf("") }
+    var errorThrowable by remember { mutableStateOf<Throwable?>(null) }
+    var errorScope by remember { mutableStateOf("") }
+    var showRestartDialog by remember { mutableStateOf(false) }
+    val isBusy = isExporting || isImporting
+
+    val exportLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.CreateDocument("application/zip")
+    ) { uri ->
+        if (uri != null) {
+            scope.launch {
+                isExporting = true
+                val result = backupManager.exportAllData(
+                    repository = repository,
+                    outputUri = uri,
+                    onProgress = { _, _, message ->
+                        progressMessage = message
+                    }
+                )
+                isExporting = false
+                progressMessage = ""
+                result.onSuccess { exportResult ->
+                    Toast.makeText(
+                        context,
+                        Strings.backupExportSuccess.format(
+                            exportResult.appCount,
+                            exportResult.resourceCount
+                        ),
+                        Toast.LENGTH_LONG
+                    ).show()
+                }.onFailure { e ->
+                    errorScope = "Data backup export"
+                    errorThrowable = e
+                }
+            }
+        }
+    }
+
+    val importLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.OpenDocument()
+    ) { uri ->
+        if (uri != null) {
+            scope.launch {
+                isImporting = true
+                val result = backupManager.importAllData(
+                    repository = repository,
+                    inputUri = uri,
+                    onProgress = { _, _, message ->
+                        progressMessage = message
+                    }
+                )
+                isImporting = false
+                progressMessage = ""
+                result.onSuccess { importResult ->
+                    Toast.makeText(
+                        context,
+                        if (importResult.duplicateCount > 0) {
+                            Strings.backupImportSuccessDupes.format(
+                                importResult.importedCount,
+                                importResult.totalCount,
+                                importResult.duplicateCount
+                            )
+                        } else {
+                            Strings.backupImportSuccess.format(
+                                importResult.importedCount,
+                                importResult.totalCount
+                            )
+                        },
+                        Toast.LENGTH_LONG
+                    ).show()
+                    // Restored DataStore/SharedPreferences files only take effect
+                    // after restart (in-memory caches would otherwise clobber them).
+                    // Ask first — silently killing the process reads as a crash.
+                    if (importResult.localFilesRestored) {
+                        showRestartDialog = true
+                    }
+                }.onFailure { e ->
+                    errorScope = "Data backup import"
+                    errorThrowable = e
+                }
+            }
+        }
+    }
+
+    errorThrowable?.let { err ->
+        WtaErrorDialog(
+            scope = errorScope,
+            message = err.message,
+            throwable = err,
+            onDismiss = { errorThrowable = null }
+        )
+    }
+
+    if (showRestartDialog) {
+        com.webtoapp.ui.design.WtaAlertDialog(
+            onDismissRequest = { showRestartDialog = false },
+            icon = Icons.Outlined.RestartAlt,
+            title = Strings.backupRestartTitle,
+            text = Strings.backupRestartMessage,
+            confirmButton = {
+                WtaButton(
+                    onClick = {
+                        showRestartDialog = false
+                        backupManager.scheduleAppRestart()
+                    },
+                    text = Strings.backupRestartNow,
+                    variant = WtaButtonVariant.Primary,
+                    size = WtaButtonSize.Medium
+                )
+            },
+            dismissButton = {
+                WtaButton(
+                    onClick = { showRestartDialog = false },
+                    text = Strings.backupRestartLater,
+                    variant = WtaButtonVariant.Text,
+                    size = WtaButtonSize.Medium
+                )
+            }
+        )
+    }
+
+    AnimatedVisibility(
+        visible = isBusy,
+        enter = fadeIn(WtaMotion.enterTween()),
+        exit = fadeOut(WtaMotion.exitTween())
+    ) {
+        Column(modifier = Modifier.fillMaxWidth()) {
+            LinearProgressIndicator(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(3.dp)
+            )
+            if (progressMessage.isNotBlank()) {
+                Spacer(Modifier.height(8.dp))
+                Text(
+                    progressMessage,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+            Spacer(Modifier.height(14.dp))
+        }
+    }
+
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(10.dp)
+    ) {
+        ExportButton(
+            isExporting = isExporting,
+            enabled = !isBusy,
+            onClick = {
+                val fileName = backupManager.generateBackupFileName()
+                exportLauncher.launch(fileName)
+            },
+            modifier = Modifier.weight(1f)
+        )
+        ImportButton(
+            isImporting = isImporting,
+            enabled = !isBusy,
+            onClick = {
+                importLauncher.launch(arrayOf("application/zip"))
+            },
+            modifier = Modifier.weight(1f)
+        )
+    }
+
+    AnimatedVisibility(
+        visible = !isBusy && LocalShowDescriptions.current,
+        enter = fadeIn(WtaMotion.enterTween()),
+        exit = fadeOut(WtaMotion.exitTween())
+    ) {
+        Column(modifier = Modifier.fillMaxWidth()) {
+            Spacer(Modifier.height(12.dp))
+            WtaStatusBanner(
+                message = Strings.dataBackupNote,
+                tone = WtaStatusTone.Info
+            )
+        }
+    }
+}
+
+@Composable
+private fun ExportButton(
+    isExporting: Boolean,
+    enabled: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    if (isExporting) {
+        WtaCard(
+            modifier = modifier,
+            tone = WtaCardTone.Surface,
+            contentPadding = androidx.compose.foundation.layout.PaddingValues(
+                horizontal = 16.dp,
+                vertical = 10.dp
+            )
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.Center,
+                verticalAlignment = androidx.compose.ui.Alignment.CenterVertically
+            ) {
+                CircularProgressIndicator(
+                    modifier = Modifier.size(16.dp),
+                    strokeWidth = 2.dp,
+                    color = MaterialTheme.colorScheme.primary
+                )
+                Spacer(Modifier.width(10.dp))
+                Text(
+                    Strings.exportData,
+                    style = MaterialTheme.typography.labelLarge,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+        }
+    } else {
+        WtaButton(
+            onClick = onClick,
+            text = Strings.exportData,
+            variant = WtaButtonVariant.Outlined,
+            size = WtaButtonSize.Medium,
+            enabled = enabled,
+            leadingIcon = Icons.Outlined.Upload,
+            modifier = modifier
+        )
+    }
+}
+
+@Composable
+private fun ImportButton(
+    isImporting: Boolean,
+    enabled: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    if (isImporting) {
+        WtaCard(
+            modifier = modifier,
+            tone = WtaCardTone.Highlighted,
+            contentPadding = androidx.compose.foundation.layout.PaddingValues(
+                horizontal = 16.dp,
+                vertical = 10.dp
+            )
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.Center,
+                verticalAlignment = androidx.compose.ui.Alignment.CenterVertically
+            ) {
+                CircularProgressIndicator(
+                    modifier = Modifier.size(16.dp),
+                    strokeWidth = 2.dp,
+                    color = MaterialTheme.colorScheme.onPrimaryContainer
+                )
+                Spacer(Modifier.width(10.dp))
+                Text(
+                    Strings.importData,
+                    style = MaterialTheme.typography.labelLarge,
+                    color = MaterialTheme.colorScheme.onPrimaryContainer
+                )
+            }
+        }
+    } else {
+        WtaButton(
+            onClick = onClick,
+            text = Strings.importData,
+            variant = WtaButtonVariant.Primary,
+            size = WtaButtonSize.Medium,
+            enabled = enabled,
+            leadingIcon = Icons.Outlined.Download,
+            modifier = modifier
+        )
+    }
+}

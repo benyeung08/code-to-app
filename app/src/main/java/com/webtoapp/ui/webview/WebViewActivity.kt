@@ -1,0 +1,4249 @@
+package com.webtoapp.ui.webview
+import com.webtoapp.core.engine.BrowserSurface
+import com.webtoapp.core.engine.EngineViewFactory
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.webtoapp.ui.components.PremiumButton
+import com.webtoapp.ui.components.AutoRefreshCountdownChip
+
+import android.annotation.SuppressLint
+import android.content.Context
+import android.content.Intent
+import android.graphics.Bitmap
+import android.net.Uri
+import android.os.Bundle
+import com.webtoapp.core.logging.AppLogger
+import android.view.KeyEvent
+import android.view.MotionEvent
+import android.view.View
+import android.view.ViewGroup
+import android.webkit.*
+import android.widget.Toast
+import androidx.activity.OnBackPressedCallback
+import androidx.activity.compose.BackHandler
+import androidx.activity.compose.setContent
+import androidx.activity.enableEdgeToEdge
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.appcompat.app.AppCompatActivity
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
+import androidx.compose.foundation.layout.*
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.*
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ArrowForward
+import androidx.compose.material.icons.outlined.Search
+import androidx.compose.material.icons.outlined.Terminal
+import androidx.compose.material.icons.outlined.ZoomIn
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.viewinterop.AndroidView
+import androidx.lifecycle.lifecycleScope
+import com.webtoapp.ui.components.WebSwipeRefreshLayout
+import com.webtoapp.WebToAppApplication
+import com.webtoapp.core.bgm.BgmPlayer
+import com.webtoapp.core.webview.HtmlRuntimeLoadInspector
+import com.webtoapp.core.port.PortConflictException
+import com.webtoapp.core.port.PortManager
+import com.webtoapp.core.webview.LocalHttpServer
+import com.webtoapp.core.webview.LongPressHandler
+import com.webtoapp.core.webview.VideoPosterCompat
+import com.webtoapp.core.webview.WebScrollTracker
+import com.webtoapp.core.webview.WebViewCallbacks
+import com.webtoapp.core.webview.WebViewManager
+import com.webtoapp.core.i18n.Strings
+import com.webtoapp.data.model.KeyboardAdjustMode
+import com.webtoapp.data.model.LongPressMenuStyle
+import com.webtoapp.data.model.HtmlLoadMode
+import com.webtoapp.data.model.SplashOrientation
+import com.webtoapp.data.model.SplashType
+import com.webtoapp.data.model.WebApp
+import com.webtoapp.data.model.hasAnyToolbarItem
+import com.webtoapp.data.model.resolveToolbarButtons
+import android.content.pm.ActivityInfo
+import com.webtoapp.ui.theme.WebToAppTheme
+import com.webtoapp.util.DownloadHelper
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.isActive
+import kotlinx.coroutines.launch
+import com.webtoapp.ui.shared.WindowHelper
+import com.webtoapp.ui.shell.ConsoleLevel
+import com.webtoapp.ui.shell.ConsoleLogEntry
+import com.webtoapp.ui.shell.ConsolePanel
+import com.webtoapp.ui.shell.ShellWebViewNavigation
+import com.webtoapp.ui.shell.GeolocationPermissionsSingleton
+import java.io.File
+import com.webtoapp.core.wordpress.WordPressDependencyManager
+import com.webtoapp.core.wordpress.WordPressPhpRuntime
+import com.webtoapp.core.wordpress.WordPressManager
+import com.webtoapp.data.model.WordPressConfig
+import com.webtoapp.core.php.PhpAppRuntime
+import com.webtoapp.core.stats.AppUsageTracker
+import androidx.compose.ui.text.style.TextOverflow
+import com.webtoapp.ui.components.announcement.toUiTemplate
+
+/** Marker prefixes used by our own injected wrappers (userscripts, modules, bridges). */
+private fun isOwnInjectionMarker(message: String): Boolean =
+    message.startsWith("[UserScript:") || message.startsWith("[WebToApp") ||
+        message.startsWith("[WTA]") || message.startsWith("[wta-")
+
+/** Bounded console buffer: page console spam must not grow state without limit. */
+private const val CONSOLE_LOG_CAP = 500
+
+class WebViewActivity : AppCompatActivity() {
+
+    companion object {
+        private const val EXTRA_APP_ID = "app_id"
+        private const val EXTRA_URL = "url"
+        private const val EXTRA_TEST_URL = "test_url"
+        private const val EXTRA_TEST_MODULE_IDS = "test_module_ids"
+        private const val EXTRA_PREVIEW_APP_JSON = "preview_app_json"
+
+        fun start(context: Context, appId: Long) {
+            context.startActivity(Intent(context, WebViewActivity::class.java).apply {
+                putExtra(EXTRA_APP_ID, appId)
+            })
+        }
+
+        fun startWithUrl(context: Context, url: String) {
+            context.startActivity(Intent(context, WebViewActivity::class.java).apply {
+                putExtra(EXTRA_URL, url)
+            })
+        }
+
+        fun startPreview(context: Context, webAppJson: String) {
+            context.startActivity(Intent(context, WebViewActivity::class.java).apply {
+                putExtra(EXTRA_PREVIEW_APP_JSON, webAppJson)
+            })
+        }
+
+        fun startForTest(context: Context, testUrl: String, moduleIds: List<String>) {
+            context.startActivity(Intent(context, WebViewActivity::class.java).apply {
+                putExtra(EXTRA_TEST_URL, testUrl)
+                putStringArrayListExtra(EXTRA_TEST_MODULE_IDS, ArrayList(moduleIds))
+            })
+        }
+    }
+
+    private var webView: WebView? = null
+    internal var browserSurface: BrowserSurface? = null
+    private var customView: View? = null
+    private var customViewCallback: WebChromeClient.CustomViewCallback? = null
+    private var filePathCallback: ValueCallback<Array<Uri>>? = null
+    internal var mediaSessionBridge: com.webtoapp.core.webview.MediaSessionBridge? = null
+    internal var geckoMediaAdapter: com.webtoapp.core.engine.GeckoMediaSessionAdapter? = null
+
+    private var pendingPermissionRequest: PermissionRequest? = null
+    private var pendingEnginePermissionCallback: ((Boolean) -> Unit)? = null
+    private var pendingGeolocationOrigin: String? = null
+    private var pendingGeolocationCallback: GeolocationPermissions.Callback? = null
+    private val pendingLocationAccessCallbacks = mutableListOf<(Boolean) -> Unit>()
+    internal var geolocationPolicy: String = "ALWAYS_ASK"
+    internal var geolocationAccuracy: String = "COARSE"
+
+    internal var enableBackStatePreservation: Boolean = false
+
+    // Follow-system dark mode of the app currently being previewed, resolved from the
+    // intent-carried preview app or (after load) the saved app; consumed by
+    // onConfigurationChanged because uiMode changes do not recreate this activity.
+    private var activeFollowSystemDarkMode: Boolean? = null
+
+    // Saved app resolved by WebViewScreen for app-id launches (null for preview/test intents);
+    // lets Activity-level handlers (back behavior) see the effective config.
+    private var resolvedSavedApp: WebApp? = null
+
+    private var immersiveFullscreenEnabled: Boolean = false
+    private var showStatusBarInFullscreen: Boolean = false
+    internal var hideStatusBarInVideoFullscreen: Boolean = true
+    internal var showNavigationBarInFullscreen: Boolean = false
+
+    private var originalOrientationBeforeFullscreen: Int = ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
+    internal var fullscreenVideoOrientation: com.webtoapp.data.model.FullscreenVideoOrientation = com.webtoapp.data.model.FullscreenVideoOrientation.AUTO_SENSOR_LANDSCAPE
+
+    private var statusBarColorMode: com.webtoapp.data.model.StatusBarColorMode = com.webtoapp.data.model.StatusBarColorMode.TRANSPARENT
+    private var statusBarCustomColor: String? = null
+    private var statusBarDarkIcons: Boolean? = null
+    private var statusBarBackgroundType: com.webtoapp.data.model.StatusBarBackgroundType = com.webtoapp.data.model.StatusBarBackgroundType.COLOR
+
+    private var statusBarColorModeDark: com.webtoapp.data.model.StatusBarColorMode = com.webtoapp.data.model.StatusBarColorMode.TRANSPARENT
+    private var statusBarCustomColorDark: String? = null
+    private var statusBarDarkIconsDark: Boolean? = null
+    private var statusBarBackgroundTypeDark: com.webtoapp.data.model.StatusBarBackgroundType = com.webtoapp.data.model.StatusBarBackgroundType.COLOR
+    private var statusBarBackgroundAlpha: Float = 1.0f
+    private var statusBarBackgroundAlphaDark: Float = 1.0f
+    private var statusBarAutoColor: String? = null
+    internal var keyboardAdjustMode: KeyboardAdjustMode = KeyboardAdjustMode.RESIZE
+
+    private var currentIsDarkTheme: Boolean = false
+
+    private data class ResolvedStatusBarColor(
+        val mode: String,
+        val color: String?
+    )
+
+    private fun resolveStatusBarColor(
+        colorMode: com.webtoapp.data.model.StatusBarColorMode,
+        customColor: String?
+    ): ResolvedStatusBarColor {
+        return when (colorMode) {
+            com.webtoapp.data.model.StatusBarColorMode.PAGE_TOP -> {
+                val resolvedColor = statusBarAutoColor ?: customColor
+                if (resolvedColor.isNullOrBlank()) {
+                    ResolvedStatusBarColor(com.webtoapp.data.model.StatusBarColorMode.THEME.name, null)
+                } else {
+                    ResolvedStatusBarColor(com.webtoapp.data.model.StatusBarColorMode.CUSTOM.name, resolvedColor)
+                }
+            }
+            else -> ResolvedStatusBarColor(colorMode.name, customColor)
+        }
+    }
+
+    private fun refreshStatusBarAppearance() {
+        if (customView != null) return
+        if (immersiveFullscreenEnabled) {
+            applyImmersiveFullscreen(true, isDarkTheme = currentIsDarkTheme)
+            return
+        }
+        val effectiveColorMode = if (currentIsDarkTheme) statusBarColorModeDark else statusBarColorMode
+        val effectiveCustomColor = if (currentIsDarkTheme) statusBarCustomColorDark else statusBarCustomColor
+        val effectiveDarkIcons = if (currentIsDarkTheme) statusBarDarkIconsDark else statusBarDarkIcons
+        val effectiveAlpha = if (currentIsDarkTheme) statusBarBackgroundAlphaDark else statusBarBackgroundAlpha
+        applyStatusBarColor(effectiveColorMode, effectiveCustomColor, effectiveDarkIcons, currentIsDarkTheme, effectiveAlpha)
+    }
+
+    private fun applyStatusBarColor(
+        colorMode: com.webtoapp.data.model.StatusBarColorMode,
+        customColor: String?,
+        darkIcons: Boolean?,
+        isDarkTheme: Boolean,
+        backgroundAlpha: Float = 1f
+    ) {
+        val resolved = resolveStatusBarColor(colorMode, customColor)
+        WindowHelper.applyStatusBarColor(this, resolved.mode, resolved.color, darkIcons, isDarkTheme, backgroundAlpha)
+    }
+
+    private fun applyImmersiveFullscreen(enabled: Boolean, hideNavBar: Boolean? = null, isDarkTheme: Boolean = currentIsDarkTheme) {
+        val shouldHideNavBar = hideNavBar ?: !showNavigationBarInFullscreen
+        val effectiveColorMode = if (isDarkTheme) statusBarColorModeDark else statusBarColorMode
+        val effectiveCustomColor = if (isDarkTheme) statusBarCustomColorDark else statusBarCustomColor
+        val resolved = resolveStatusBarColor(effectiveColorMode, effectiveCustomColor)
+        // Issue #711: while a web video holds HTML5 fullscreen (custom view showing), the
+        // status bar is force-hidden regardless of the static "show status bar in fullscreen"
+        // preference; the flag is cleared in hideCustomView() when the video exits fullscreen.
+        val effectiveShowStatusBar = showStatusBarInFullscreen &&
+            !(hideStatusBarInVideoFullscreen && customView != null)
+        WindowHelper.applyImmersiveFullscreen(
+            activity = this,
+            enabled = enabled,
+            hideNavBar = shouldHideNavBar,
+            isDarkTheme = isDarkTheme,
+            showStatusBar = effectiveShowStatusBar,
+            statusBarColorMode = resolved.mode,
+            statusBarCustomColor = resolved.color,
+            statusBarDarkIcons = if (isDarkTheme) statusBarDarkIconsDark else statusBarDarkIcons,
+            statusBarBgType = if (isDarkTheme) statusBarBackgroundTypeDark.name else statusBarBackgroundType.name,
+            keyboardAdjustMode = keyboardAdjustMode,
+            tag = "WebViewActivity"
+        )
+    }
+
+    internal fun refreshWindowConfig() {
+        applyImmersiveFullscreen(immersiveFullscreenEnabled)
+    }
+
+    private var cameraPhotoUri: android.net.Uri? = null
+
+    private val fileChooserActivityLauncher = registerForActivityResult(
+        ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        val callback = filePathCallback
+        if (callback == null) return@registerForActivityResult
+
+        if (result.resultCode == android.app.Activity.RESULT_OK) {
+            val resultUris = mutableListOf<android.net.Uri>()
+            val data = result.data
+            if (data == null || (data.data == null && data.clipData == null)) {
+                cameraPhotoUri?.let { resultUris.add(it) }
+            } else {
+                data.data?.let { resultUris.add(it) }
+                data.clipData?.let { clipData ->
+                    for (i in 0 until clipData.itemCount) {
+                        clipData.getItemAt(i).uri?.let { resultUris.add(it) }
+                    }
+                }
+            }
+            callback.onReceiveValue(resultUris.toTypedArray())
+        } else {
+            callback.onReceiveValue(null)
+        }
+        filePathCallback = null
+        cameraPhotoUri = null
+    }
+
+    private var pendingFileChooserParams: android.webkit.WebChromeClient.FileChooserParams? = null
+    private val cameraForChooserPermLauncher = registerForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { _ ->
+        launchFileChooserIntent(pendingFileChooserParams)
+        pendingFileChooserParams = null
+    }
+
+    private fun handleFileChooser(
+        callback: android.webkit.ValueCallback<Array<android.net.Uri>>?,
+        params: android.webkit.WebChromeClient.FileChooserParams?
+    ): Boolean {
+        filePathCallback?.onReceiveValue(null)
+        filePathCallback = callback
+        if (callback == null) return false
+
+        val needsCamera = isCameraRequiredForChooser(params)
+        val hasCam = androidx.core.content.ContextCompat.checkSelfPermission(
+            this, android.Manifest.permission.CAMERA
+        ) == android.content.pm.PackageManager.PERMISSION_GRANTED
+
+        if (needsCamera && !hasCam) {
+            pendingFileChooserParams = params
+            cameraForChooserPermLauncher.launch(android.Manifest.permission.CAMERA)
+        } else {
+            launchFileChooserIntent(params)
+        }
+        return true
+    }
+
+    private fun isCameraRequiredForChooser(params: android.webkit.WebChromeClient.FileChooserParams?): Boolean {
+        if (params == null) return false
+        if (params.isCaptureEnabled) return true
+
+        val acceptTypes = params.acceptTypes
+        if (acceptTypes == null || acceptTypes.isEmpty() || (acceptTypes.size == 1 && acceptTypes[0].isNullOrBlank())) {
+            return true
+        }
+
+        for (type in acceptTypes) {
+            if (type.isNullOrBlank()) continue
+            val lower = type.lowercase()
+            if (lower.startsWith("image/") || lower.startsWith("video/")) return true
+            if (lower in setOf(".jpg", ".jpeg", ".png", ".gif", ".webp", ".heic", ".heif",
+                    ".bmp", ".svg", ".mp4", ".mov", ".avi", ".mkv", ".webm", ".3gp")) return true
+        }
+
+        return false
+    }
+
+    private fun extensionToMimeTypeForChooser(ext: String): String {
+        return when (ext) {
+            ".json" -> "application/json"
+            ".xml" -> "application/xml"
+            ".csv" -> "text/csv"
+            ".txt" -> "text/plain"
+            ".pdf" -> "application/pdf"
+            ".doc" -> "application/msword"
+            ".docx" -> "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+            ".xls" -> "application/vnd.ms-excel"
+            ".xlsx" -> "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+            ".ppt" -> "application/vnd.ms-powerpoint"
+            ".pptx" -> "application/vnd.openxmlformats-officedocument.presentationml.presentation"
+            ".html", ".htm" -> "text/html"
+            ".css" -> "text/css"
+            ".js" -> "application/javascript"
+            ".py" -> "text/x-python"
+            ".yaml", ".yml" -> "application/x-yaml"
+            ".md" -> "text/markdown"
+            ".jpg", ".jpeg" -> "image/jpeg"
+            ".png" -> "image/png"
+            ".gif" -> "image/gif"
+            ".webp" -> "image/webp"
+            ".svg" -> "image/svg+xml"
+            ".bmp" -> "image/bmp"
+            ".mp3" -> "audio/mpeg"
+            ".wav" -> "audio/wav"
+            ".mp4" -> "video/mp4"
+            ".webm" -> "video/webm"
+            ".zip" -> "application/zip"
+            ".gz", ".gzip" -> "application/gzip"
+            ".rar" -> "application/vnd.rar"
+            ".7z" -> "application/x-7z-compressed"
+            ".apk" -> "application/vnd.android.package-archive"
+            ".sql" -> "application/sql"
+            else -> {
+                val extWithoutDot = ext.removePrefix(".")
+                android.webkit.MimeTypeMap.getSingleton().getMimeTypeFromExtension(extWithoutDot)
+                    ?: "application/octet-stream"
+            }
+        }
+    }
+
+    private fun launchFileChooserIntent(params: android.webkit.WebChromeClient.FileChooserParams?) {
+        try {
+            val needsCamera = isCameraRequiredForChooser(params)
+            val hasCam = needsCamera && androidx.core.content.ContextCompat.checkSelfPermission(
+                this, android.Manifest.permission.CAMERA
+            ) == android.content.pm.PackageManager.PERMISSION_GRANTED
+
+            if (params?.isCaptureEnabled == true && hasCam) {
+                val acceptTypes = params.acceptTypes ?: arrayOf("image/*")
+                val isVideo = acceptTypes.any {
+                    it?.lowercase()?.startsWith("video/") == true
+                }
+                val captureAction = if (isVideo) {
+                    android.provider.MediaStore.ACTION_VIDEO_CAPTURE
+                } else {
+                    android.provider.MediaStore.ACTION_IMAGE_CAPTURE
+                }
+                val captureIntent = android.content.Intent(captureAction)
+                if (captureAction == android.provider.MediaStore.ACTION_IMAGE_CAPTURE) {
+                    try {
+                        val ts = java.text.SimpleDateFormat("yyyyMMdd_HHmmss", java.util.Locale.US).format(java.util.Date())
+                        val dir = java.io.File(cacheDir, "camera_photos").apply { mkdirs() }
+                        val photoFile = java.io.File.createTempFile("IMG_${ts}_", ".jpg", dir)
+                        cameraPhotoUri = androidx.core.content.FileProvider.getUriForFile(
+                            this, "${packageName}.fileprovider", photoFile
+                        )
+                        captureIntent.putExtra(android.provider.MediaStore.EXTRA_OUTPUT, cameraPhotoUri)
+                        captureIntent.addFlags(android.content.Intent.FLAG_GRANT_WRITE_URI_PERMISSION)
+                    } catch (e: Exception) {
+                        AppLogger.e("WebViewActivity", "Camera capture file creation failed", e)
+                    }
+                }
+                if (captureIntent.resolveActivity(packageManager) != null) {
+                    fileChooserActivityLauncher.launch(captureIntent)
+                    AppLogger.d("WebViewActivity", "Direct camera capture launched: action=$captureAction")
+                    return
+                }
+            }
+
+            val extraIntents = mutableListOf<android.content.Intent>()
+            if (hasCam) {
+                try {
+                    val ts = java.text.SimpleDateFormat("yyyyMMdd_HHmmss", java.util.Locale.US).format(java.util.Date())
+                    val dir = java.io.File(cacheDir, "camera_photos").apply { mkdirs() }
+                    val photoFile = java.io.File.createTempFile("IMG_${ts}_", ".jpg", dir)
+                    cameraPhotoUri = androidx.core.content.FileProvider.getUriForFile(
+                        this, "${packageName}.fileprovider", photoFile
+                    )
+                    val camIntent = android.content.Intent(android.provider.MediaStore.ACTION_IMAGE_CAPTURE).apply {
+                        putExtra(android.provider.MediaStore.EXTRA_OUTPUT, cameraPhotoUri)
+                        addFlags(android.content.Intent.FLAG_GRANT_WRITE_URI_PERMISSION)
+                    }
+                    if (camIntent.resolveActivity(packageManager) != null) extraIntents.add(camIntent)
+                    val vidIntent = android.content.Intent(android.provider.MediaStore.ACTION_VIDEO_CAPTURE)
+                    if (vidIntent.resolveActivity(packageManager) != null) extraIntents.add(vidIntent)
+                } catch (e: Exception) {
+                    AppLogger.e("WebViewActivity", "Camera intent failed", e)
+                }
+            }
+
+            val rawAcceptTypes = params?.acceptTypes ?: arrayOf("*/*")
+            val resolvedMimeTypes = rawAcceptTypes
+                .filter { !it.isNullOrBlank() }
+                .map { type ->
+                    if (type.startsWith(".")) extensionToMimeTypeForChooser(type.lowercase()) else type
+                }
+                .distinct()
+
+            val mimeType = when {
+                resolvedMimeTypes.isEmpty() -> "*/*"
+                resolvedMimeTypes.size == 1 -> resolvedMimeTypes[0]
+                else -> "*/*"
+            }
+
+            val contentIntent = android.content.Intent(android.content.Intent.ACTION_GET_CONTENT).apply {
+                addCategory(android.content.Intent.CATEGORY_OPENABLE)
+                type = mimeType
+                if (params?.mode == android.webkit.WebChromeClient.FileChooserParams.MODE_OPEN_MULTIPLE) {
+                    putExtra(android.content.Intent.EXTRA_ALLOW_MULTIPLE, true)
+                }
+                if (resolvedMimeTypes.size > 1) {
+                    putExtra(android.content.Intent.EXTRA_MIME_TYPES, resolvedMimeTypes.toTypedArray())
+                    type = "*/*"
+                }
+            }
+            val chooser = android.content.Intent.createChooser(contentIntent, null).apply {
+                if (extraIntents.isNotEmpty()) putExtra(android.content.Intent.EXTRA_INITIAL_INTENTS, extraIntents.toTypedArray())
+            }
+            fileChooserActivityLauncher.launch(chooser)
+        } catch (e: Exception) {
+            AppLogger.e("WebViewActivity", "File chooser launch failed", e)
+            filePathCallback?.onReceiveValue(null)
+            filePathCallback = null
+        }
+    }
+
+    private val permissionLauncher = registerForActivityResult(
+        ActivityResultContracts.RequestMultiplePermissions()
+    ) { permissions ->
+        val allGranted = permissions.values.all { it }
+        pendingPermissionRequest?.let { request ->
+            if (allGranted) {
+                request.grant(request.resources)
+            } else {
+                request.deny()
+            }
+            pendingPermissionRequest = null
+        }
+    }
+
+    /**
+     * Android runtime permission requests coming from the GeckoView engine
+     * (PermissionDelegate.onAndroidPermissionsRequest). The engine must not auto-grant:
+     * without the real OS dialog, geolocation/camera/mic silently fail because Gecko is
+     * told the permission exists while it was never obtained (#344 — the shell already
+     * does this properly; the host preview used to fall through to the default grant).
+     */
+    private val enginePermissionLauncher = registerForActivityResult(
+        ActivityResultContracts.RequestMultiplePermissions()
+    ) { permissions ->
+        val allGranted = permissions.values.all { it }
+        pendingEnginePermissionCallback?.invoke(allGranted)
+        pendingEnginePermissionCallback = null
+    }
+
+    fun handleAndroidPermissionsRequest(permissions: Array<String>, onResult: (Boolean) -> Unit) {
+        val notGranted = permissions.distinct().filter {
+            androidx.core.content.ContextCompat.checkSelfPermission(
+                this, it
+            ) != android.content.pm.PackageManager.PERMISSION_GRANTED
+        }
+        if (notGranted.isEmpty()) {
+            onResult(true)
+            return
+        }
+        pendingEnginePermissionCallback = onResult
+        try {
+            enginePermissionLauncher.launch(notGranted.toTypedArray())
+        } catch (e: Exception) {
+            AppLogger.e("WebViewActivity", "Engine permission request failed", e)
+            pendingEnginePermissionCallback = null
+            onResult(false)
+        }
+    }
+
+    private val locationPermissionLauncher = registerForActivityResult(
+        ActivityResultContracts.RequestMultiplePermissions()
+    ) { permissions ->
+        val granted = permissions.values.any { it }
+        if (pendingLocationAccessCallbacks.isNotEmpty()) {
+            if (granted && isSystemLocationEnabled()) settleLocationAccess(true)
+            else if (granted) showLocationSettingsDialog()
+            else settleLocationAccess(false)
+            return@registerForActivityResult
+        }
+        if (granted && pendingGeolocationOrigin != null) {
+            GeolocationPermissionsSingleton.addAllowedOrigin(pendingGeolocationOrigin!!)
+            if (isSystemLocationEnabled()) {
+                pendingGeolocationCallback?.invoke(pendingGeolocationOrigin, true, false)
+                pendingGeolocationOrigin = null
+                pendingGeolocationCallback = null
+            } else {
+                showLocationSettingsDialog()
+            }
+        } else {
+            pendingGeolocationCallback?.invoke(pendingGeolocationOrigin, granted, false)
+            pendingGeolocationOrigin = null
+            pendingGeolocationCallback = null
+        }
+    }
+
+    private val locationSettingsLauncher = registerForActivityResult(
+        ActivityResultContracts.StartActivityForResult()
+    ) {
+        if (pendingLocationAccessCallbacks.isNotEmpty()) {
+            settleLocationAccess(isSystemLocationEnabled())
+            return@registerForActivityResult
+        }
+        val origin = pendingGeolocationOrigin
+        val cb = pendingGeolocationCallback
+        if (origin != null && cb != null && isSystemLocationEnabled()) {
+            cb.invoke(origin, true, false)
+        } else {
+            cb?.invoke(origin, false, false)
+        }
+        pendingGeolocationOrigin = null
+        pendingGeolocationCallback = null
+    }
+
+    private fun isSystemLocationEnabled(): Boolean {
+        val lm = getSystemService(Context.LOCATION_SERVICE) as? android.location.LocationManager
+            ?: return false
+        return lm.isProviderEnabled(android.location.LocationManager.GPS_PROVIDER) ||
+            lm.isProviderEnabled(android.location.LocationManager.NETWORK_PROVIDER)
+    }
+
+    private fun showLocationSettingsDialog() {
+        androidx.appcompat.app.AlertDialog.Builder(this)
+            .setTitle(Strings.geolocationLocationOffTitle)
+            .setMessage(Strings.geolocationLocationOffMessage)
+            .setPositiveButton(Strings.geolocationLocationOffOpenSettings) { _, _ ->
+                try {
+                    locationSettingsLauncher.launch(
+                        android.content.Intent(android.provider.Settings.ACTION_LOCATION_SOURCE_SETTINGS)
+                    )
+                } catch (e: Exception) {
+                    AppLogger.w("WebViewActivity", "location settings intent failed: ${e.message}")
+                    settleLocationAccess(false)
+                    pendingGeolocationCallback?.invoke(pendingGeolocationOrigin, false, false)
+                    pendingGeolocationOrigin = null
+                    pendingGeolocationCallback = null
+                }
+            }
+            .setNegativeButton(Strings.geolocationLocationOffCancel) { _, _ ->
+                settleLocationAccess(false)
+                pendingGeolocationCallback?.invoke(pendingGeolocationOrigin, false, false)
+                pendingGeolocationOrigin = null
+                pendingGeolocationCallback = null
+            }
+            .setCancelable(false)
+            .show()
+    }
+
+    fun requestGeolocationAccess(onResult: (Boolean) -> Unit) {
+        val perms = if (geolocationAccuracy.equals("FINE", ignoreCase = true)) {
+            arrayOf(
+                android.Manifest.permission.ACCESS_FINE_LOCATION,
+                android.Manifest.permission.ACCESS_COARSE_LOCATION
+            )
+        } else {
+            arrayOf(android.Manifest.permission.ACCESS_COARSE_LOCATION)
+        }
+        val notGranted = perms.filter {
+            androidx.core.content.ContextCompat.checkSelfPermission(this, it) !=
+                android.content.pm.PackageManager.PERMISSION_GRANTED
+        }
+        if (notGranted.isEmpty()) {
+            if (isSystemLocationEnabled()) onResult(true)
+            else {
+                pendingLocationAccessCallbacks.add(onResult)
+                showLocationSettingsDialog()
+            }
+            return
+        }
+        pendingLocationAccessCallbacks.add(onResult)
+        locationPermissionLauncher.launch(notGranted.toTypedArray())
+    }
+
+    private fun settleLocationAccess(granted: Boolean) {
+        val callbacks = pendingLocationAccessCallbacks.toList()
+        pendingLocationAccessCallbacks.clear()
+        callbacks.forEach { it(granted) }
+    }
+
+    private val notificationPermissionLauncher = registerForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { granted ->
+        if (granted) {
+            AppLogger.d("WebViewActivity", "Notification permission granted")
+        } else {
+            AppLogger.d("WebViewActivity", "Notification permission denied")
+        }
+    }
+
+    private fun requestNotificationPermissionIfNeeded() {
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
+            val hasPermission = androidx.core.content.ContextCompat.checkSelfPermission(
+                this,
+                android.Manifest.permission.POST_NOTIFICATIONS
+            ) == android.content.pm.PackageManager.PERMISSION_GRANTED
+
+            if (!hasPermission) {
+                notificationPermissionLauncher.launch(android.Manifest.permission.POST_NOTIFICATIONS)
+            }
+        }
+    }
+
+    fun handlePermissionRequest(request: PermissionRequest) {
+        val resources = request.resources
+        val androidPermissions = mutableListOf<String>()
+
+        resources.forEach { resource ->
+            when (resource) {
+                PermissionRequest.RESOURCE_VIDEO_CAPTURE -> {
+                    androidPermissions.add(android.Manifest.permission.CAMERA)
+                }
+                PermissionRequest.RESOURCE_AUDIO_CAPTURE -> {
+
+                    androidPermissions.add(android.Manifest.permission.RECORD_AUDIO)
+                }
+                PermissionRequest.RESOURCE_MIDI_SYSEX -> {
+
+                }
+                PermissionRequest.RESOURCE_PROTECTED_MEDIA_ID -> {
+
+                }
+            }
+        }
+
+        val uniquePermissions = androidPermissions.distinct()
+
+        if (uniquePermissions.isEmpty()) {
+
+            request.grant(resources)
+            return
+        }
+
+        val notGranted = uniquePermissions.filter {
+            androidx.core.content.ContextCompat.checkSelfPermission(
+                this, it
+            ) != android.content.pm.PackageManager.PERMISSION_GRANTED
+        }
+
+        if (notGranted.isEmpty()) {
+
+            request.grant(resources)
+        } else {
+
+            pendingPermissionRequest = request
+            permissionLauncher.launch(notGranted.toTypedArray())
+        }
+    }
+
+    fun handleGeolocationPermission(origin: String?, callback: GeolocationPermissions.Callback?) {
+        when (geolocationPolicy.uppercase()) {
+            "DENY_ALL" -> {
+                callback?.invoke(origin, false, false)
+                return
+            }
+            "REMEMBER_PER_HOST" -> {
+                val isAllowed = GeolocationPermissionsSingleton.getAllowedOrigins()
+                    .any { origin != null && it == origin }
+                if (isAllowed) {
+                    callback?.invoke(origin, true, false)
+                    return
+                }
+            }
+        }
+
+        pendingGeolocationOrigin = origin
+        pendingGeolocationCallback = callback
+        val perms = if (geolocationAccuracy.equals("FINE", ignoreCase = true)) {
+            arrayOf(
+                android.Manifest.permission.ACCESS_FINE_LOCATION,
+                android.Manifest.permission.ACCESS_COARSE_LOCATION
+            )
+        } else {
+            arrayOf(android.Manifest.permission.ACCESS_COARSE_LOCATION)
+        }
+        locationPermissionLauncher.launch(perms)
+    }
+
+    private var usageTracker: AppUsageTracker? = null
+    private var trackedAppId: Long = -1
+
+    // WebView session state carried across Activity recreation (Bundle path) and
+    // cold restarts after process death (last-URL store path). Parity with
+    // ShellActivity, which already restores the WebView back-forward list.
+    private var webViewStateBundle: Bundle? = null
+    private val resumeStore by lazy { com.webtoapp.core.webview.WebViewResumeStore(this) }
+
+    /**
+     * External-pointer normalizer (#1031): same OEM button-event quirk handling
+     * as ShellActivity so preview and generated APKs behave alike.
+     */
+    private val mouseInputCompat = com.webtoapp.core.webview.MouseInputCompat()
+    private var sessionKey: String? = null
+    private var launchDirectUrl: String? = null
+    private var launchPreviewApp: WebApp? = null
+
+
+    private fun loadInBrowser(url: String) {
+        val surface = browserSurface
+        if (surface != null) {
+            surface.loadUrl(url)
+        } else {
+            webView?.loadUrl(url)
+        }
+    }
+
+    private fun reloadBrowser() {
+        val surface = browserSurface
+        if (surface != null) {
+            surface.reload()
+        } else {
+            webView?.reload()
+        }
+    }
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+
+        try {
+            enableEdgeToEdge()
+        } catch (e: Exception) {
+            AppLogger.w("WebViewActivity", "enableEdgeToEdge failed", e)
+        }
+
+        super.onCreate(savedInstanceState)
+
+        requestNotificationPermissionIfNeeded()
+
+        immersiveFullscreenEnabled = false
+        applyImmersiveFullscreen(immersiveFullscreenEnabled)
+
+        val appId = intent.getLongExtra(EXTRA_APP_ID, -1)
+
+        if (appId > 0) {
+            trackedAppId = appId
+            try {
+                usageTracker = org.koin.java.KoinJavaComponent.get(AppUsageTracker::class.java)
+                usageTracker?.trackLaunch(appId)
+            } catch (e: Exception) {
+                AppLogger.w("WebViewActivity", "Usage tracker init failed: ${e.message}")
+            }
+        }
+        val directUrl = intent.getStringExtra(EXTRA_URL)
+
+        val testUrl = intent.getStringExtra(EXTRA_TEST_URL)
+        val testModuleIds = intent.getStringArrayListExtra(EXTRA_TEST_MODULE_IDS)
+
+        val previewAppJson = intent.getStringExtra(EXTRA_PREVIEW_APP_JSON)
+        val previewApp: com.webtoapp.data.model.WebApp? = if (!previewAppJson.isNullOrBlank()) {
+            try {
+
+                com.webtoapp.data.converter.Converters.gson.fromJson(
+                    previewAppJson, com.webtoapp.data.model.WebApp::class.java
+                )
+            } catch (e: Exception) {
+                AppLogger.w("WebViewActivity", "Failed to parse preview WebApp JSON: ${e.message}")
+                null
+            }
+        } else null
+
+        // savedInstanceState carries the WebView back-forward list written by
+        // onSaveInstanceState; it is consumed by the AndroidView factory once the
+        // surface's WebView exists. On a cold start (null bundle) the resume store
+        // provides the last visited URL instead.
+        savedInstanceState?.let { webViewStateBundle = it }
+        launchDirectUrl = directUrl
+        launchPreviewApp = previewApp
+        sessionKey = resumeStore.sessionKey(
+            appId = appId,
+            directUrl = directUrl,
+            previewBaseUrl = previewApp?.url,
+            isTest = !testUrl.isNullOrBlank()
+        )
+
+        enableBackStatePreservation = previewApp?.webViewConfig?.enableBackStatePreservation ?: false
+        activeFollowSystemDarkMode = previewApp?.webViewConfig?.followSystemDarkMode
+        com.webtoapp.core.engine.GeckoViewEngine.applyEnterpriseRootsEnabled(
+            previewApp?.apkExportConfig?.networkTrustConfig?.trustUserCa == true
+        )
+
+        setContent {
+            WebToAppTheme { isDarkTheme ->
+
+                currentIsDarkTheme = isDarkTheme
+
+                LaunchedEffect(
+                    isDarkTheme,
+                    statusBarColorMode,
+                    statusBarCustomColor,
+                    statusBarDarkIcons,
+                    statusBarColorModeDark,
+                    statusBarCustomColorDark,
+                    statusBarDarkIconsDark,
+                    statusBarAutoColor
+                ) {
+                    if (!immersiveFullscreenEnabled) {
+                        val effectiveColorMode = if (isDarkTheme) statusBarColorModeDark else statusBarColorMode
+                        val effectiveCustomColor = if (isDarkTheme) statusBarCustomColorDark else statusBarCustomColor
+                        val effectiveDarkIcons = if (isDarkTheme) statusBarDarkIconsDark else statusBarDarkIcons
+                        applyStatusBarColor(effectiveColorMode, effectiveCustomColor, effectiveDarkIcons, isDarkTheme)
+                    }
+                }
+
+                WebViewScreen(
+                appId = appId,
+                directUrl = directUrl,
+                previewApp = previewApp,
+                testUrl = testUrl,
+                testModuleIds = testModuleIds,
+                onStatusBarConfigChanged = { colorMode, customColor, darkIcons, showStatusBar, backgroundType, backgroundAlpha, colorModeDark, customColorDark, darkIconsDark, backgroundTypeDark, backgroundAlphaDark ->
+
+                    statusBarColorMode = colorMode
+                    statusBarCustomColor = customColor
+                    statusBarDarkIcons = darkIcons
+                    showStatusBarInFullscreen = showStatusBar
+                    statusBarBackgroundType = backgroundType
+                    statusBarBackgroundAlpha = backgroundAlpha
+
+                    statusBarColorModeDark = colorModeDark
+                    statusBarCustomColorDark = customColorDark
+                    statusBarDarkIconsDark = darkIconsDark
+                    statusBarBackgroundTypeDark = backgroundTypeDark
+                    statusBarBackgroundAlphaDark = backgroundAlphaDark
+                },
+                onStatusBarAutoColorChanged = { color ->
+                    if (statusBarAutoColor == color) return@WebViewScreen
+                    statusBarAutoColor = color
+                    refreshStatusBarAppearance()
+                },
+                onSavedAppLoaded = { app ->
+                    resolvedSavedApp = app
+                    // App-id launches resolve these from the saved config; the onCreate pass
+                    // only covers intent-carried preview apps.
+                    if (previewApp == null) {
+                        enableBackStatePreservation = app.webViewConfig.enableBackStatePreservation
+                        activeFollowSystemDarkMode = app.webViewConfig.followSystemDarkMode
+                        com.webtoapp.core.engine.GeckoViewEngine.applyEnterpriseRootsEnabled(
+                            app.apkExportConfig?.networkTrustConfig?.trustUserCa == true
+                        )
+                    }
+                },
+                onWebViewCreated = { wv, loadedApp ->
+                    webView = wv
+
+                    wv.onResume()
+                    wv.resumeTimers()
+
+                    // Download location config follows the same preview/intent-vs-appid
+                    // sourcing as the bridges below.
+                    val effectiveDownloadConfig = previewApp?.webViewConfig ?: loadedApp?.webViewConfig
+                    val downloadBridge = com.webtoapp.core.webview.DownloadBridge(
+                        this@WebViewActivity,
+                        lifecycleScope,
+                        effectiveDownloadConfig?.downloadLocationMode ?: com.webtoapp.data.model.DownloadLocationMode.SYSTEM_DOWNLOAD,
+                        effectiveDownloadConfig?.customDownloadDirUri ?: ""
+                    )
+                    wv.addJavascriptInterface(downloadBridge, com.webtoapp.core.webview.DownloadBridge.JS_INTERFACE_NAME)
+
+                    val previewWvConfig = previewApp?.webViewConfig
+                    if (previewWvConfig?.enablePrintBridge != false) {
+                        val printBridge = com.webtoapp.core.webview.PrintBridge(
+                            context = this@WebViewActivity,
+                            scope = lifecycleScope,
+                            webViewProvider = { wv }
+                        )
+                        wv.addJavascriptInterface(printBridge, com.webtoapp.core.webview.PrintBridge.JS_INTERFACE_NAME)
+                    }
+
+                    // App-id launches resolve the saved config before the WebView is
+                    // created (targetUrl gates the AndroidView on the loaded app);
+                    // preview launches carry it in the intent. Both paths must
+                    // install the media bridge, otherwise playback started from the
+                    // app list never publishes a media session.
+                    val effectiveMediaConfig = previewApp?.webViewConfig ?: loadedApp?.webViewConfig
+                    if (effectiveMediaConfig?.enableMediaSession == true) {
+                        val mediaBridge = com.webtoapp.core.webview.MediaSessionBridge(
+                            this@WebViewActivity,
+                            wv
+                        )
+                        mediaBridge.install()
+                        mediaSessionBridge = mediaBridge
+                    }
+
+                    if (previewApp?.translateEnabled == true || loadedApp?.translateEnabled == true) {
+                        val translateBridge = com.webtoapp.core.webview.TranslateBridge(wv, lifecycleScope)
+                        wv.addJavascriptInterface(
+                            translateBridge,
+                            com.webtoapp.core.webview.TranslateBridge.JS_INTERFACE_NAME
+                        )
+                    }
+                },
+                onFileChooser = { callback, params ->
+                    handleFileChooser(callback, params)
+                },
+                onShowCustomView = { view, callback ->
+                    customView = view
+                    customViewCallback = callback
+                    showCustomView(view)
+                },
+                onHideCustomView = {
+                    hideCustomView()
+                },
+                onFullscreenModeChanged = { enabled ->
+                    immersiveFullscreenEnabled = enabled
+                    if (customView == null) {
+                        applyImmersiveFullscreen(enabled)
+                    }
+                }
+                )
+            }
+        }
+
+        onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
+            override fun handleOnBackPressed() {
+                when {
+                    customView != null -> hideCustomView()
+                    else -> {
+
+                        val wv = webView
+                        // "Exit app" back behavior (#151): leave immediately instead of walking
+                        // web history (preview parity with the generated shell).
+                        val backBehaviorConfig = previewApp ?: resolvedSavedApp
+                        if (backBehaviorConfig?.webViewConfig?.backButtonBehavior == "EXIT") {
+                            finish()
+                            return
+                        }
+                        if (wv != null) {
+                            wv.evaluateJavascript("""
+                                (function() {
+                                    var evt = new KeyboardEvent('keydown', {
+                                        key: 'Escape', code: 'Escape',
+                                        keyCode: 27, which: 27,
+                                        bubbles: true, cancelable: true
+                                    });
+                                    return !document.dispatchEvent(evt);
+                                })();
+                            """.trimIndent()) { result ->
+                                if (result == "true") {
+
+                                    return@evaluateJavascript
+                                }
+
+                                ShellWebViewNavigation.goBackOrFinish(this@WebViewActivity, wv, useJsHistoryBack = enableBackStatePreservation)
+                            }
+                        } else {
+                            // GeckoView engine: no WebView handle — walk the engine's own
+                            // history through the surface. The Escape-key JS probe is skipped
+                            // (it needs an eval result, which Gecko's javascript: URI path
+                            // cannot return).
+                            ShellWebViewNavigation.goBackOrFinish(this@WebViewActivity, browserSurface)
+                        }
+                    }
+                }
+            }
+        })
+    }
+
+    private fun showCustomView(view: View) {
+        originalOrientationBeforeFullscreen = WindowHelper.showCustomView(this, view)
+        WindowHelper.applyFullscreenVideoOrientation(this, webView, fullscreenVideoOrientation)
+        applyImmersiveFullscreen(true)
+    }
+
+    private fun hideCustomView() {
+        customView?.let { view ->
+            WindowHelper.hideCustomView(this, view, customViewCallback, originalOrientationBeforeFullscreen)
+            customView = null
+            customViewCallback = null
+            originalOrientationBeforeFullscreen = ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
+            applyImmersiveFullscreen(immersiveFullscreenEnabled)
+        }
+    }
+
+    private fun shouldForwardKeyToWebView(event: KeyEvent): Boolean {
+        if (event.isSystem) {
+            return false
+        }
+        return when (event.keyCode) {
+            KeyEvent.KEYCODE_HOME,
+            KeyEvent.KEYCODE_APP_SWITCH,
+            KeyEvent.KEYCODE_VOLUME_UP,
+            KeyEvent.KEYCODE_VOLUME_DOWN,
+            KeyEvent.KEYCODE_VOLUME_MUTE,
+            KeyEvent.KEYCODE_POWER -> false
+            else -> true
+        }
+    }
+
+    /**
+     * Forward keys to the page only when focus actually belongs to the page (the WebView
+     * itself, or no app UI is focused — e.g. arrow/space scrolling right after launch).
+     * While a find session is active, Chromium's WebView consumes DEL unconditionally, so
+     * blindly forwarding ate the backspace of app UI like the find-in-page input.
+     */
+    private fun isFocusInsideWebView(): Boolean {
+        var view = currentFocus ?: return true
+        while (view is View) {
+            if (view is WebView) return true
+            view = view.parent as? View ?: return false
+        }
+        return false
+    }
+
+    override fun dispatchKeyEvent(event: KeyEvent): Boolean {
+        // Same Enter/modifier diagnostics as the shell path (#1032).
+        val isEnter = event.keyCode == KeyEvent.KEYCODE_ENTER ||
+            event.keyCode == KeyEvent.KEYCODE_NUMPAD_ENTER
+        if (shouldForwardKeyToWebView(event) && isFocusInsideWebView() && webView?.dispatchKeyEvent(event) == true) {
+            if (isEnter) {
+                AppLogger.d(
+                    "WebViewActivity",
+                    "Enter key delivered to page: meta=0x${Integer.toHexString(event.metaState)}"
+                )
+            }
+            return true
+        }
+        if (isEnter) {
+            AppLogger.d(
+                "WebViewActivity",
+                "Enter key fell back to default dispatch (IME/focus path): meta=0x${Integer.toHexString(event.metaState)}"
+            )
+        }
+        return super.dispatchKeyEvent(event)
+    }
+
+    override fun dispatchTouchEvent(ev: MotionEvent): Boolean {
+        mouseInputCompat.noteTouchEvent(ev.source, ev.getToolType(0), ev.actionMasked)
+        return super.dispatchTouchEvent(ev)
+    }
+
+    override fun dispatchGenericMotionEvent(ev: MotionEvent): Boolean {
+        val translated = mouseInputCompat.translateButtonAction(
+            ev.source, ev.getToolType(0), ev.actionMasked, ev.actionButton
+        )
+        if (translated != null) {
+            AppLogger.d(
+                "WebViewActivity",
+                "Mouse primary button arrived via generic-motion path; re-dispatching as touch action=$translated"
+            )
+            val converted = com.webtoapp.core.webview.MouseInputCompat.copyWithAction(ev, translated)
+            return try {
+                dispatchTouchEvent(converted)
+            } finally {
+                converted.recycle()
+            }
+        }
+        return super.dispatchGenericMotionEvent(ev)
+    }
+
+    override fun onWindowFocusChanged(hasFocus: Boolean) {
+        super.onWindowFocusChanged(hasFocus)
+        if (hasFocus) {
+            applyImmersiveFullscreen(customView != null || immersiveFullscreenEnabled)
+        }
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        if (shouldRecreateForNewIntent(intent, trackedAppId)) {
+            recreate()
+        }
+    }
+
+    /**
+     * A relaunch only rebuilds the preview when it carries a different launch
+     * target. Bare intents (task re-delivery, external bring-to-front with no
+     * extras) used to fall into `newAppId <= 0` and recreate(), destroying the
+     * live WebView session for no reason.
+     */
+    internal fun shouldRecreateForNewIntent(intent: Intent, trackedAppId: Long): Boolean {
+        val newAppId = intent.getLongExtra(EXTRA_APP_ID, -1)
+        if (newAppId > 0) {
+            return newAppId != trackedAppId
+        }
+        return intent.hasExtra(EXTRA_APP_ID) ||
+            intent.hasExtra(EXTRA_URL) ||
+            intent.hasExtra(EXTRA_TEST_URL) ||
+            intent.hasExtra(EXTRA_PREVIEW_APP_JSON)
+    }
+
+    override fun onConfigurationChanged(newConfig: android.content.res.Configuration) {
+        super.onConfigurationChanged(newConfig)
+        // The manifest declares uiMode in configChanges, so switching the system dark/light
+        // theme does NOT recreate this activity. The WebView's dark-mode switch must be
+        // re-derived explicitly (parity with ShellActivity / WebViewManager.refreshSystemDarkMode).
+        try {
+            val wv = webView
+            val follow = activeFollowSystemDarkMode
+            if (wv != null && follow != null) {
+                com.webtoapp.core.webview.WebViewManager.refreshSystemDarkMode(wv, follow)
+            }
+        } catch (e: Exception) {
+            AppLogger.w("WebViewActivity", "onConfigurationChanged: refresh dark mode failed", e)
+        }
+
+        // Rotating a classic-path window drops the hidden-bar flags (system
+        // re-evaluates bars for the new configuration); re-assert fullscreen.
+        if (customView != null || immersiveFullscreenEnabled) {
+            applyImmersiveFullscreen(true, isDarkTheme = currentIsDarkTheme)
+        }
+    }
+
+    override fun onResume() {
+        super.onResume()
+        webView?.onResume()
+        webView?.resumeTimers()
+        if (trackedAppId > 0) usageTracker?.trackResume(trackedAppId)
+    }
+
+    override fun onPause() {
+        if (trackedAppId > 0) usageTracker?.trackPause(trackedAppId)
+        persistResumeUrl()
+        webView?.onPause()
+        android.webkit.CookieManager.getInstance().flush()
+        super.onPause()
+    }
+
+    override fun onSaveInstanceState(outState: Bundle) {
+        super.onSaveInstanceState(outState)
+        browserSurface?.saveState(outState) ?: webView?.saveState(outState)
+        persistResumeUrl()
+    }
+
+    /** Configured start URL of the launch target; app-id launches resolve it lazily. */
+    private fun sessionBaseUrl(): String? = when {
+        sessionKey == null -> null
+        trackedAppId > 0 -> resolvedSavedApp?.url
+        !launchDirectUrl.isNullOrBlank() -> launchDirectUrl
+        launchPreviewApp != null -> launchPreviewApp?.url
+        else -> null
+    }
+
+    private fun persistResumeUrl() {
+        resumeStore.persist(
+            sessionKey,
+            sessionBaseUrl(),
+            browserSurface?.getCurrentUrl() ?: webView?.url
+        )
+    }
+
+    private var resumeConsumed = false
+
+    /** Consume the saved-instance-state WebView bundle once (AndroidView factory). */
+    internal fun consumeWebViewState(): Bundle? {
+        val bundle = webViewStateBundle
+        webViewStateBundle = null
+        return bundle
+    }
+
+    /**
+     * Stash a WebView state bundle for the next creation — the composable-side
+     * memory teardown (#1033) hands the saved navigation stack here so the
+     * restored view picks it up exactly like process-death recovery.
+     */
+    internal fun stashWebViewState(bundle: Bundle) {
+        webViewStateBundle = bundle
+    }
+
+    /** Drop activity-level view refs after a composable-side teardown. */
+    internal fun clearWebViewRefs() {
+        webView = null
+        browserSurface = null
+    }
+
+    /** Drop activity-level refs that still point at [surface] — release order vs. recreation is not guaranteed. */
+    internal fun releaseSurfaceRefs(surface: BrowserSurface?) {
+        if (surface != null && browserSurface === surface) browserSurface = null
+        val wv = surface?.webView
+        if (wv != null && webView === wv) webView = null
+    }
+
+    /**
+     * Mark the resume URL as used without reading it — after a successful bundle
+     * restore, a later recreation (render-process-gone) must reload the start URL
+     * rather than the page that may have crashed the renderer.
+     */
+    internal fun markResumeConsumed() {
+        resumeConsumed = true
+    }
+
+    /** Last visited URL for this launch target after a cold restart; consumed once. */
+    internal fun consumeResumeUrl(): String? {
+        if (resumeConsumed) return null
+        resumeConsumed = true
+        return resumeStore.resumeUrl(sessionKey, sessionBaseUrl())
+    }
+
+    /**
+     * The committed page that just handed off to an external app (#1030) — usually
+     * a one-shot OAuth/payment trampoline that must not become the restore target
+     * after process death.
+     */
+    internal fun persistExternalJump(sourceUrl: String?) {
+        resumeStore.persistExternalJump(sessionKey, sessionBaseUrl(), sourceUrl)
+    }
+
+    /** Read-and-clear the external-jump marker recorded by [persistExternalJump]. */
+    internal fun consumeExternalJump(): String? =
+        resumeStore.consumeExternalJump(sessionKey, sessionBaseUrl())
+
+    override fun onTrimMemory(level: Int) {
+        super.onTrimMemory(level)
+
+        if (level >= android.content.ComponentCallbacks2.TRIM_MEMORY_RUNNING_LOW) {
+            // The real work happens in the screen's ComponentCallbacks2 —
+            // it owns the recreation key needed to rebuild after a teardown.
+            com.webtoapp.core.logging.AppLogger.w("WebViewActivity", "Memory pressure (level=$level)")
+        }
+    }
+
+    override fun onLowMemory() {
+        super.onLowMemory()
+
+        com.webtoapp.core.logging.AppLogger.w("WebViewActivity", "Low memory, skipped manual GC")
+    }
+
+    override fun onDestroy() {
+
+        if (trackedAppId > 0) usageTracker?.trackClose(trackedAppId)
+
+        // Explicit close (back/finish): forget the last page so the next preview
+        // starts fresh. System-initiated destroys and process death keep the
+        // record so a cold restart can resume on the same page.
+        if (isFinishing) resumeStore.clear(sessionKey)
+
+        mediaSessionBridge?.release()
+        mediaSessionBridge = null
+        geckoMediaAdapter?.runCatching { release() }
+        geckoMediaAdapter = null
+
+        android.webkit.CookieManager.getInstance().flush()
+        webView?.let { wv ->
+            wv.stopLoading()
+
+            wv.onPause()
+            wv.webChromeClient = null
+            (wv.parent as? ViewGroup)?.removeView(wv)
+            wv.removeAllViews()
+            wv.destroy()
+        }
+        webView = null
+
+        try {
+            com.webtoapp.core.webview.PacProxyManager(this).clearProxy()
+        } catch (_: Exception) {}
+        com.webtoapp.core.engine.GeckoViewEngine.applyProxyConfig(
+            com.webtoapp.core.engine.ProxyConfig(mode = "NONE")
+        )
+
+        super.onDestroy()
+    }
+}
+
+@SuppressLint("SetJavaScriptEnabled", "JavascriptInterface")
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun WebViewScreen(
+    appId: Long,
+    directUrl: String?,
+    previewApp: com.webtoapp.data.model.WebApp? = null,
+    testUrl: String? = null,
+    testModuleIds: List<String>? = null,
+    onStatusBarConfigChanged: ((com.webtoapp.data.model.StatusBarColorMode, String?, Boolean?, Boolean, com.webtoapp.data.model.StatusBarBackgroundType, Float, com.webtoapp.data.model.StatusBarColorMode, String?, Boolean?, com.webtoapp.data.model.StatusBarBackgroundType, Float) -> Unit)? = null,
+    onStatusBarAutoColorChanged: ((String?) -> Unit)? = null,
+    onSavedAppLoaded: ((WebApp) -> Unit)? = null,
+    onWebViewCreated: (WebView, WebApp?) -> Unit,
+    onFileChooser: (ValueCallback<Array<Uri>>?, WebChromeClient.FileChooserParams?) -> Boolean,
+    onShowCustomView: (View, WebChromeClient.CustomViewCallback?) -> Unit,
+    onHideCustomView: () -> Unit,
+    onFullscreenModeChanged: (Boolean) -> Unit
+) {
+    val context = LocalContext.current
+    val activity = context as android.app.Activity
+    val repository = WebToAppApplication.repository
+    val activation = WebToAppApplication.activation
+    val announcement = WebToAppApplication.announcement
+    val adBlocker = WebToAppApplication.adBlock
+
+    val isTestMode = !testUrl.isNullOrBlank()
+
+    var webApp by remember { mutableStateOf<WebApp?>(null) }
+    var isLoading by remember { mutableStateOf(true) }
+    var loadProgress by remember { mutableIntStateOf(0) }
+    var currentUrl by remember { mutableStateOf("") }
+    var pageTitle by remember { mutableStateOf("") }
+    var errorMessage by remember { mutableStateOf<String?>(null) }
+    var showActivationDialog by remember { mutableStateOf(false) }
+    var showAnnouncementDialog by remember { mutableStateOf(false) }
+
+    // URL delivered by the remote activation server (dynamic URL mode). Takes precedence over
+    // the configured app URL for plain WEB apps, mirroring ShellScreen.dynamicUrl.
+    var remoteDeliveredUrl by remember { mutableStateOf<String?>(null) }
+
+    var isActivated by remember { mutableStateOf(false) }
+
+    var isActivationChecked by remember { mutableStateOf(false) }
+
+    var webViewRecreationKey by remember { mutableIntStateOf(0) }
+    // #1033: set when memory pressure tore the WebView down while backgrounded;
+    // the next ON_RESUME recreates it instead of probing a dead view.
+    var memoryTeardownPending by remember { mutableStateOf(false) }
+    var canGoBack by remember { mutableStateOf(false) }
+    var canGoForward by remember { mutableStateOf(false) }
+    var isRefreshing by remember { mutableStateOf(false) }
+    var adCapabilityNoticeShown by remember { mutableStateOf(false) }
+
+    var showSplash by remember { mutableStateOf(false) }
+    var splashCountdown by remember { mutableIntStateOf(0) }
+    var originalOrientation by remember { mutableIntStateOf(ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED) }
+
+    val bgmPlayer = remember { BgmPlayer(context) }
+
+    var webViewRef by remember { mutableStateOf<WebView?>(null) }
+    var browserSurfaceRef by remember { mutableStateOf<BrowserSurface?>(null) }
+
+    fun loadInBrowser(url: String) {
+        val surface = browserSurfaceRef
+        if (surface != null) surface.loadUrl(url) else webViewRef?.loadUrl(url)
+    }
+
+    fun reloadBrowser() {
+        val surface = browserSurfaceRef
+        if (surface != null) surface.reload() else webViewRef?.reload()
+    }
+
+
+    var showLongPressMenu by remember { mutableStateOf(false) }
+    var longPressResult by remember { mutableStateOf<LongPressHandler.LongPressResult?>(null) }
+    var longPressTouchX by remember { mutableFloatStateOf(0f) }
+    var longPressTouchY by remember { mutableFloatStateOf(0f) }
+    val scope = rememberCoroutineScope()
+    val longPressHandler = remember { LongPressHandler(context, scope) }
+
+    var showConsole by remember { mutableStateOf(false) }
+    var showFindBar by remember { mutableStateOf(false) }
+    var consoleMessages by remember { mutableStateOf<List<ConsoleLogEntry>>(emptyList()) }
+
+    var statusBarBackgroundType by remember { mutableStateOf("COLOR") }
+    var statusBarBackgroundColor by remember { mutableStateOf<String?>(null) }
+    var statusBarBackgroundImage by remember { mutableStateOf<String?>(null) }
+    var statusBarBackgroundAlpha by remember { mutableFloatStateOf(1.0f) }
+    var statusBarHeightDp by remember { mutableIntStateOf(0) }
+    var statusBarAutoColor by remember { mutableStateOf<String?>(null) }
+    var statusBarColorTracker by remember { mutableStateOf<com.webtoapp.core.webview.StatusBarPageColorTracker?>(null) }
+
+    var statusBarBackgroundTypeDarkLocal by remember { mutableStateOf("COLOR") }
+    var statusBarBackgroundColorDark by remember { mutableStateOf<String?>(null) }
+    var statusBarBackgroundImageDark by remember { mutableStateOf<String?>(null) }
+    var statusBarBackgroundAlphaDark by remember { mutableFloatStateOf(1.0f) }
+
+    var wordPressPreviewState by remember { mutableStateOf<WordPressPreviewState>(WordPressPreviewState.Idle) }
+    val phpRuntime = remember(webApp?.id) { WordPressPhpRuntime(context) }
+    val wpDownloadState by WordPressDependencyManager.downloadState.collectAsStateWithLifecycle()
+    var wpRetryTrigger by remember { mutableIntStateOf(0) }
+
+    var phpAppPreviewState by remember { mutableStateOf<PhpAppPreviewState>(PhpAppPreviewState.Idle) }
+    val phpAppRuntime = remember(webApp?.id) { PhpAppRuntime(context) }
+    val phpAppDownloadState by WordPressDependencyManager.downloadState.collectAsStateWithLifecycle()
+    var phpAppRetryTrigger by remember { mutableIntStateOf(0) }
+
+    var pythonAppPreviewState by remember { mutableStateOf<PythonAppPreviewState>(PythonAppPreviewState.Idle) }
+    val pythonRuntime = remember(webApp?.id) { com.webtoapp.core.python.PythonRuntime(context) }
+    val pythonHttpServer = remember(webApp?.id) { com.webtoapp.core.webview.LocalHttpServer(context) }
+    var pythonAppRetryTrigger by remember { mutableIntStateOf(0) }
+    var dismissedPythonFallbackBannerUrl by remember { mutableStateOf<String?>(null) }
+
+    var nodeJsAppPreviewState by remember { mutableStateOf<NodeJsAppPreviewState>(NodeJsAppPreviewState.Idle) }
+    val nodeRuntime = remember(webApp?.id) { com.webtoapp.core.nodejs.NodeRuntime(context) }
+    val nodeHttpServer = remember(webApp?.id) { com.webtoapp.core.webview.LocalHttpServer(context) }
+    var nodeJsAppRetryTrigger by remember { mutableIntStateOf(0) }
+
+    var goAppPreviewState by remember { mutableStateOf<GoAppPreviewState>(GoAppPreviewState.Idle) }
+    val goRuntime = remember(webApp?.id) { com.webtoapp.core.golang.GoRuntime(context) }
+    val goHttpServer = remember(webApp?.id) { com.webtoapp.core.webview.LocalHttpServer(context) }
+    var goAppRetryTrigger by remember { mutableIntStateOf(0) }
+
+    var autoRefreshController by remember { mutableStateOf<com.webtoapp.core.webview.AutoRefreshController?>(null) }
+    val autoRefreshRemaining = autoRefreshController?.remainingSeconds?.collectAsStateWithLifecycle()?.value ?: 0
+
+    fun usesPageTopStatusBarColor(app: WebApp?): Boolean {
+        val config = app?.webViewConfig ?: return false
+        return (config.statusBarBackgroundType == com.webtoapp.data.model.StatusBarBackgroundType.COLOR &&
+            config.statusBarColorMode == com.webtoapp.data.model.StatusBarColorMode.PAGE_TOP) ||
+            (config.statusBarBackgroundTypeDark == com.webtoapp.data.model.StatusBarBackgroundType.COLOR &&
+                config.statusBarColorModeDark == com.webtoapp.data.model.StatusBarColorMode.PAGE_TOP)
+    }
+
+    fun resolveStatusBarOverlayColor(isDark: Boolean): String? {
+        val app = webApp ?: previewApp
+        val mode = if (isDark) app?.webViewConfig?.statusBarColorModeDark else app?.webViewConfig?.statusBarColorMode
+        val configuredColor = if (isDark) statusBarBackgroundColorDark else statusBarBackgroundColor
+        return when (mode) {
+            com.webtoapp.data.model.StatusBarColorMode.PAGE_TOP -> statusBarAutoColor ?: configuredColor ?: if (isDark) "#1C1B1F" else "#FFFBFE"
+            com.webtoapp.data.model.StatusBarColorMode.CUSTOM -> configuredColor ?: if (isDark) "#1C1B1F" else "#FFFBFE"
+            com.webtoapp.data.model.StatusBarColorMode.THEME -> if (isDark) "#1C1B1F" else "#FFFBFE"
+            com.webtoapp.data.model.StatusBarColorMode.TRANSPARENT -> null
+            null -> configuredColor
+        }
+    }
+
+    LaunchedEffect(webApp) {
+        webApp?.let { app ->
+            onStatusBarConfigChanged?.invoke(
+                app.webViewConfig.statusBarColorMode,
+                app.webViewConfig.statusBarColor,
+                app.webViewConfig.statusBarDarkIcons,
+                app.webViewConfig.showStatusBarInFullscreen,
+                app.webViewConfig.statusBarBackgroundType,
+                app.webViewConfig.statusBarBackgroundAlpha,
+                app.webViewConfig.statusBarColorModeDark,
+                app.webViewConfig.statusBarColorDark,
+                app.webViewConfig.statusBarDarkIconsDark,
+                app.webViewConfig.statusBarBackgroundTypeDark,
+                app.webViewConfig.statusBarBackgroundAlphaDark
+            )
+
+            statusBarBackgroundType = app.webViewConfig.statusBarBackgroundType.name
+            statusBarBackgroundColor = app.webViewConfig.statusBarColor
+            statusBarBackgroundImage = app.webViewConfig.statusBarBackgroundImage
+            statusBarBackgroundAlpha = app.webViewConfig.statusBarBackgroundAlpha
+            statusBarHeightDp = app.webViewConfig.statusBarHeightDp
+
+            statusBarBackgroundTypeDarkLocal = app.webViewConfig.statusBarBackgroundTypeDark.name
+            statusBarBackgroundColorDark = app.webViewConfig.statusBarColorDark
+            statusBarBackgroundImageDark = app.webViewConfig.statusBarBackgroundImageDark
+            statusBarBackgroundAlphaDark = app.webViewConfig.statusBarBackgroundAlphaDark
+
+            (context as? WebViewActivity)?.let { activity ->
+                activity.showNavigationBarInFullscreen = app.webViewConfig.showNavigationBarInFullscreen
+                activity.hideStatusBarInVideoFullscreen = app.webViewConfig.hideStatusBarInVideoFullscreen
+                activity.keyboardAdjustMode = app.webViewConfig.keyboardAdjustMode
+                activity.geolocationPolicy = app.webViewConfig.geolocationPolicy.name
+                activity.geolocationAccuracy = app.webViewConfig.geolocationAccuracy.name
+
+                activity.refreshWindowConfig()
+            }
+
+            if (!adCapabilityNoticeShown && hasConfiguredAds(app)) {
+                adCapabilityNoticeShown = true
+                AppLogger.w(
+                    "WebViewActivity",
+                    "Ad config detected for appId=${app.id}, but AdManager is placeholder-only and no ad SDK is integrated"
+                )
+                Toast.makeText(context, Strings.adSdkNotIntegrated, Toast.LENGTH_LONG).show()
+            }
+            if (!usesPageTopStatusBarColor(app)) {
+                statusBarAutoColor = null
+                onStatusBarAutoColorChanged?.invoke(null)
+            } else {
+                statusBarColorTracker?.scheduleSample(80L)
+            }
+        }
+    }
+
+    LaunchedEffect(webApp?.id, webApp?.webViewConfig?.autoRefreshEnabled, webApp?.webViewConfig?.autoRefreshIntervalSec, webApp?.webViewConfig?.autoRefreshShowCountdown, isActivated) {
+        autoRefreshController?.stop()
+        autoRefreshController = null
+        val app = webApp ?: return@LaunchedEffect
+        if (!app.webViewConfig.autoRefreshEnabled) return@LaunchedEffect
+        if (app.activationEnabled && !isActivated) return@LaunchedEffect
+        val controller = com.webtoapp.core.webview.AutoRefreshController(
+            intervalSec = app.webViewConfig.autoRefreshIntervalSec.coerceAtLeast(1),
+            showCountdown = app.webViewConfig.autoRefreshShowCountdown,
+            onReload = { reloadBrowser() }
+        )
+        autoRefreshController = controller
+        controller.start()
+    }
+
+    DisposableEffect(Unit) {
+        onDispose {
+            autoRefreshController?.stop()
+            statusBarColorTracker?.detach()
+            statusBarColorTracker = null
+            onStatusBarAutoColorChanged?.invoke(null)
+        }
+    }
+
+    // MULTI_WEB preview: resolve EXISTING sites' source apps OFF the main thread. This
+    // used to runBlocking a Room query per site inside composition, freezing/ANR-ing the
+    // UI on every recomposition.
+    var sourceAppShellConfigs by remember { mutableStateOf<Map<Long, com.webtoapp.core.shell.ShellConfig>>(emptyMap()) }
+    LaunchedEffect(webApp?.id, webApp?.multiWebConfig?.sites) {
+        val app = webApp ?: return@LaunchedEffect
+        val sites = app.multiWebConfig?.sites ?: return@LaunchedEffect
+        val ids = sites.filter { it.sourceAppId > 0 }.mapNotNull { it.sourceAppId }.distinct()
+        if (ids.isEmpty()) {
+            sourceAppShellConfigs = emptyMap()
+            return@LaunchedEffect
+        }
+        val activityContext = activity
+        val resolved = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+            val repo = org.koin.java.KoinJavaComponent.get<com.webtoapp.data.repository.WebAppRepository>(
+                com.webtoapp.data.repository.WebAppRepository::class.java
+            )
+            ids.mapNotNull src@ { srcId ->
+                val source = try {
+                    repo.getWebApp(srcId)
+                } catch (_: Exception) { null } ?: return@src null
+                val site = sites.firstOrNull { it.sourceAppId == srcId } ?: return@src null
+                val shell = try {
+                    com.webtoapp.core.apkbuilder.buildSiteShellConfig(source, "preview", site.id, activityContext, isPreview = true)
+                } catch (_: Exception) { null } ?: return@src null
+                srcId to shell
+            }.toMap()
+        }
+        sourceAppShellConfigs = resolved
+    }
+
+    LaunchedEffect(appId, directUrl, testUrl, previewApp) {
+        if (isTestMode) {
+            isActivated = true
+            isActivationChecked = true
+            return@LaunchedEffect
+        }
+
+        if (previewApp != null) {
+            webApp = previewApp
+            isActivated = true
+            isActivationChecked = true
+
+            adBlocker.prepareRuntimeFilters(
+                context = context,
+                enabled = previewApp.adBlockEnabled,
+                customRules = previewApp.adBlockRules,
+                subscriptionUrls = previewApp.adBlockSubscriptions
+            )
+
+            (activity as? WebViewActivity)?.fullscreenVideoOrientation =
+                previewApp.webViewConfig.fullscreenVideoOrientation
+
+            when (previewApp.webViewConfig.orientationMode) {
+                com.webtoapp.data.model.OrientationMode.LANDSCAPE -> {
+                    activity.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
+                }
+                com.webtoapp.data.model.OrientationMode.REVERSE_PORTRAIT -> {
+                    activity.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_REVERSE_PORTRAIT
+                }
+                com.webtoapp.data.model.OrientationMode.REVERSE_LANDSCAPE -> {
+                    activity.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_REVERSE_LANDSCAPE
+                }
+                com.webtoapp.data.model.OrientationMode.SENSOR_PORTRAIT -> {
+                    activity.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_SENSOR_PORTRAIT
+                }
+                com.webtoapp.data.model.OrientationMode.SENSOR_LANDSCAPE -> {
+                    activity.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE
+                }
+                com.webtoapp.data.model.OrientationMode.AUTO -> {
+                    activity.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_USER
+                }
+                com.webtoapp.data.model.OrientationMode.PORTRAIT -> {
+                    if (com.webtoapp.util.TvUtils.isTv(context)) {
+                        activity.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
+                    } else {
+                        @android.annotation.SuppressLint("SourceLockedOrientationActivity")
+                        activity.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
+                    }
+                }
+            }
+
+            if (previewApp.webViewConfig.screenAwakeMode == com.webtoapp.data.model.ScreenAwakeMode.ALWAYS) {
+                activity.window.addFlags(android.view.WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+            }
+
+            return@LaunchedEffect
+        }
+
+        if (!directUrl.isNullOrBlank()) {
+            isActivated = true
+            isActivationChecked = true
+            return@LaunchedEffect
+        }
+
+        if (appId > 0) {
+            val app = repository.getWebApp(appId)
+            webApp = app
+            if (app != null) {
+
+                adBlocker.prepareRuntimeFilters(
+                    context = context,
+                    enabled = app.adBlockEnabled,
+                    customRules = app.adBlockRules,
+                    subscriptionUrls = app.adBlockSubscriptions
+                )
+
+                onSavedAppLoaded?.invoke(app)
+
+                if (app.activationEnabled) {
+
+                    // Same gate as the generated APK shell: remote re-verifies
+                    // the remembered code (always under "every launch", else only
+                    // when the cached result can't carry this launch); local codes
+                    // re-check the remembered card under "every launch".
+                    val remote = app.activationRemoteConfig?.takeIf { it.enabled }
+                    val activated = if (remote != null) {
+                        activation.resolveRemoteStartup(
+                            appId,
+                            activation.buildRemoteRequest(
+                                verifyUrl = remote.verifyUrl,
+                                publicKeyBase64 = remote.publicKeyBase64,
+                                offlinePolicy = remote.offlinePolicy,
+                                deliverUrl = remote.deliverUrl,
+                                encryptUrl = remote.encryptUrl,
+                                aesKeyBase64 = remote.aesKeyBase64,
+                                deviceBound = remote.deviceBound
+                            ),
+                            reverifyEveryLaunch = app.activationRequireEveryTime
+                        )
+                    } else if (app.activationRequireEveryTime) {
+                        activation.resolveRelaunchActivation(appId, app.activationCodeList)
+                    } else {
+                        activation.resolveStartupActivation(appId)
+                    }
+                    isActivated = activated
+                    isActivationChecked = true
+                    if (activated && remote != null && remote.deliverUrl) {
+                        remoteDeliveredUrl = activation.getCachedRemoteUrl(appId)
+                    }
+                    if (!activated) {
+                        showActivationDialog = true
+                    }
+                } else {
+
+                    isActivated = true
+                    isActivationChecked = true
+                }
+
+                if (app.announcementEnabled && isActivated && app.announcement?.triggerOnLaunch == true) {
+                    val shouldShow = announcement.shouldShowAnnouncementForTrigger(
+                        appId,
+                        app.announcement,
+                        isLaunch = true
+                    )
+                    showAnnouncementDialog = shouldShow
+                }
+
+                if (app.splashEnabled && app.splashConfig != null && isActivated) {
+                    val mediaPath = app.splashConfig.mediaPath
+                    if (mediaPath != null && File(mediaPath).exists()) {
+                        showSplash = true
+                        splashCountdown = app.splashConfig.duration
+
+                        if (app.splashConfig.orientation == SplashOrientation.LANDSCAPE) {
+                            originalOrientation = activity.requestedOrientation
+                            activity.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
+                        }
+                    }
+                }
+
+                if (app.bgmEnabled && app.bgmConfig != null && isActivated) {
+                    bgmPlayer.initialize(app.bgmConfig)
+                }
+
+                (activity as? WebViewActivity)?.fullscreenVideoOrientation =
+                    app.webViewConfig.fullscreenVideoOrientation
+
+                when (app.webViewConfig.orientationMode) {
+                    com.webtoapp.data.model.OrientationMode.LANDSCAPE -> {
+                        activity.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
+                    }
+                    com.webtoapp.data.model.OrientationMode.REVERSE_PORTRAIT -> {
+                        activity.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_REVERSE_PORTRAIT
+                    }
+                    com.webtoapp.data.model.OrientationMode.REVERSE_LANDSCAPE -> {
+                        activity.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_REVERSE_LANDSCAPE
+                    }
+                    com.webtoapp.data.model.OrientationMode.SENSOR_PORTRAIT -> {
+                        activity.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_SENSOR_PORTRAIT
+                    }
+                    com.webtoapp.data.model.OrientationMode.SENSOR_LANDSCAPE -> {
+                        activity.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE
+                    }
+                    com.webtoapp.data.model.OrientationMode.AUTO -> {
+
+                        // USER (not SENSOR) to match ShellScreen's AUTO handling.
+                        activity.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_USER
+                    }
+                    com.webtoapp.data.model.OrientationMode.PORTRAIT -> {
+                        if (com.webtoapp.util.TvUtils.isTv(context)) {
+
+                            activity.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
+                        } else {
+
+                            @android.annotation.SuppressLint("SourceLockedOrientationActivity")
+                            activity.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
+                        }
+                    }
+                }
+
+                val awakeMode = app.webViewConfig.screenAwakeMode
+                when (awakeMode) {
+                    com.webtoapp.data.model.ScreenAwakeMode.ALWAYS -> {
+                        activity.window.addFlags(android.view.WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+                    }
+                    com.webtoapp.data.model.ScreenAwakeMode.TIMED -> {
+                        activity.window.addFlags(android.view.WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+
+                        // Unset minutes fall back to 30 like the exported shell does.
+                        val timeoutMinutes = app.webViewConfig.screenAwakeTimeoutMinutes
+                        val timeoutMs = (if (timeoutMinutes > 0) timeoutMinutes else 30) * 60 * 1000L
+                        kotlinx.coroutines.MainScope().launch {
+                            kotlinx.coroutines.delay(timeoutMs)
+                            activity.window.clearFlags(android.view.WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+                        }
+                    }
+                    com.webtoapp.data.model.ScreenAwakeMode.OFF -> {
+
+                        if (app.webViewConfig.keepScreenOn) {
+                            activity.window.addFlags(android.view.WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+                        }
+                    }
+                }
+
+                val brightness = app.webViewConfig.screenBrightness
+                if (brightness in 0..100) {
+                    val lp = activity.window.attributes
+                    lp.screenBrightness = brightness / 100f
+                    activity.window.attributes = lp
+                }
+            } else {
+
+                isActivated = true
+                isActivationChecked = true
+            }
+        } else {
+
+            isActivated = true
+            isActivationChecked = true
+        }
+    }
+
+    DisposableEffect(Unit) {
+
+        if (webApp?.announcementEnabled == true && webApp?.announcement?.triggerOnNoNetwork == true) {
+            announcement.startNetworkMonitoring()
+        }
+
+        onDispose {
+            bgmPlayer.release()
+            announcement.stopNetworkMonitoring()
+        }
+    }
+
+    val networkAvailable by announcement.isNetworkAvailable.collectAsStateWithLifecycle()
+    var lastNetworkState by remember { mutableStateOf(true) }
+
+    LaunchedEffect(networkAvailable, webApp, isActivated) {
+
+        if (lastNetworkState && !networkAvailable && isActivated) {
+            val app = webApp
+            if (app != null && app.announcementEnabled && app.announcement?.triggerOnNoNetwork == true) {
+                val shouldShow = announcement.shouldShowAnnouncementForTrigger(
+                    appId,
+                    app.announcement,
+                    isNoNetwork = true
+                )
+                if (shouldShow && !showAnnouncementDialog) {
+                    showAnnouncementDialog = true
+                }
+            }
+        }
+        lastNetworkState = networkAvailable
+    }
+
+    LaunchedEffect(webApp, isActivated) {
+        val app = webApp ?: return@LaunchedEffect
+        if (!isActivated) return@LaunchedEffect
+
+        val intervalMinutes = app.announcement?.triggerIntervalMinutes ?: 0
+        if (!app.announcementEnabled || intervalMinutes <= 0) return@LaunchedEffect
+
+        if (app.announcement?.triggerIntervalIncludeLaunch == true) {
+            announcement.resetIntervalTrigger(appId)
+        }
+
+        while (true) {
+            val nextDelay = announcement.getMillisUntilNextIntervalAnnouncement(appId, app.announcement)
+            delay(nextDelay.coerceIn(1_000L, intervalMinutes * 60 * 1000L))
+
+            if (!isActivated || webApp != app) break
+
+            if (announcement.shouldTriggerIntervalAnnouncement(appId, app.announcement)) {
+                val shouldShow = announcement.shouldShowAnnouncementForTrigger(
+                    appId,
+                    app.announcement,
+                    isInterval = true
+                )
+                if (shouldShow && !showAnnouncementDialog) {
+                    showAnnouncementDialog = true
+                    announcement.markIntervalTrigger(appId)
+                }
+            }
+        }
+    }
+
+    LaunchedEffect(showSplash, splashCountdown) {
+
+        if (webApp?.splashConfig?.type == SplashType.VIDEO) return@LaunchedEffect
+
+        if (showSplash && splashCountdown > 0) {
+            delay(1000L)
+            splashCountdown--
+        } else if (showSplash && splashCountdown <= 0) {
+            showSplash = false
+
+            if (originalOrientation != ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED) {
+                activity.requestedOrientation = originalOrientation
+                originalOrientation = ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
+            }
+        }
+    }
+
+    LaunchedEffect(webApp, isActivated, isActivationChecked, wpRetryTrigger) {
+        val app = webApp ?: return@LaunchedEffect
+        if (app.appType != com.webtoapp.data.model.AppType.WORDPRESS) return@LaunchedEffect
+        if (!isActivated || !isActivationChecked) return@LaunchedEffect
+
+        wordPressPreviewState = WordPressPreviewState.CheckingDeps
+
+        if (!WordPressDependencyManager.isAllReady(context)) {
+            wordPressPreviewState = WordPressPreviewState.Downloading
+            val success = WordPressDependencyManager.downloadAllDependencies(context)
+            if (!success) {
+                wordPressPreviewState = WordPressPreviewState.Error(Strings.wpDownloadFailed)
+                return@LaunchedEffect
+            }
+        }
+
+        var projectId = app.wordpressConfig?.projectId ?: ""
+        val projectDir = if (projectId.isNotEmpty()) {
+            WordPressManager.getProjectDir(context, projectId)
+        } else null
+
+        val needsCreate = projectDir == null ||
+            !projectDir.exists() ||
+            !projectDir.isDirectory ||
+            !File(projectDir, "wp-includes/version.php").exists()
+
+        if (needsCreate) {
+            wordPressPreviewState = WordPressPreviewState.CreatingProject
+            val newId = WordPressManager.createProject(
+                context = context,
+                siteTitle = app.wordpressConfig?.siteTitle ?: "My Site",
+                adminUser = app.wordpressConfig?.adminUser ?: "admin",
+                adminEmail = app.wordpressConfig?.adminEmail ?: ""
+            )
+            if (newId == null) {
+                wordPressPreviewState = WordPressPreviewState.Error(Strings.wpProjectCreateFailed)
+                return@LaunchedEffect
+            }
+            projectId = newId
+
+            val updatedConfig = (app.wordpressConfig ?: WordPressConfig()).copy(projectId = newId)
+            repository.updateWebApp(app.copy(wordpressConfig = updatedConfig))
+            webApp = app.copy(wordpressConfig = updatedConfig)
+        }
+
+        wordPressPreviewState = WordPressPreviewState.StartingServer
+        val wpDir = WordPressManager.getProjectDir(context, projectId)
+
+        if (!wpDir.exists() || !wpDir.isDirectory) {
+            wordPressPreviewState = WordPressPreviewState.Error(
+                Strings.wpProjectDirMissing(wpDir.absolutePath)
+            )
+            return@LaunchedEffect
+        }
+        WordPressManager.ensureDbPhpExists(context, wpDir)
+        val port = phpRuntime.startServer(wpDir.absolutePath, app.wordpressConfig?.phpPort ?: 0, app.wordpressConfig?.portConflictMode ?: com.webtoapp.data.model.PortConflictMode.AUTO_KILL)
+
+        if (port > 0) {
+            val url = "http://127.0.0.1:$port/"
+
+            WordPressManager.autoInstallIfNeeded(
+                baseUrl = "http://127.0.0.1:$port",
+                siteTitle = app.wordpressConfig?.siteTitle?.takeIf { it.isNotBlank() } ?: "My Site",
+                adminUser = app.wordpressConfig?.adminUser?.takeIf { it.isNotBlank() } ?: "admin",
+                adminPassword = app.wordpressConfig?.adminPassword?.takeIf { it.isNotBlank() } ?: "admin",
+                adminEmail = app.wordpressConfig?.adminEmail?.takeIf { it.isNotBlank() } ?: "admin@localhost.local",
+                siteLanguage = app.wordpressConfig?.siteLanguage?.takeIf { it.isNotBlank() } ?: "en_US"
+            )
+            WordPressManager.applyRuntimeConfig(
+                context = context,
+                phpBinary = phpRuntime.getPhpBinaryPath(),
+                projectDir = wpDir,
+                siteTitle = app.wordpressConfig?.siteTitle?.takeIf { it.isNotBlank() } ?: "My Site",
+                permalinkStructure = app.wordpressConfig?.permalinkStructure ?: "/%postname%/",
+                siteLanguage = app.wordpressConfig?.siteLanguage?.takeIf { it.isNotBlank() } ?: "en_US",
+                themeName = app.wordpressConfig?.themeName ?: "",
+                activePlugins = app.wordpressConfig?.activePlugins ?: emptyList()
+            )
+            wordPressPreviewState = WordPressPreviewState.Ready(url)
+            delay(200)
+            loadInBrowser(url)
+        } else {
+            wordPressPreviewState = WordPressPreviewState.Error(Strings.wpServerError)
+        }
+    }
+
+    DisposableEffect(phpRuntime) {
+        onDispose {
+            phpRuntime.stopServer()
+        }
+    }
+
+    LaunchedEffect(webApp, isActivated, isActivationChecked, phpAppRetryTrigger) {
+        val app = webApp ?: return@LaunchedEffect
+        if (app.appType != com.webtoapp.data.model.AppType.PHP_APP) return@LaunchedEffect
+        if (!isActivated || !isActivationChecked) return@LaunchedEffect
+
+        AppLogger.i("PhpAppPreview", "Starting PHP app preview flow, appId=$appId, phpAppConfig=${app.phpAppConfig}")
+
+        val config = app.phpAppConfig
+        if (config == null) {
+            AppLogger.e("PhpAppPreview", "phpAppConfig is null, can't start preview")
+            phpAppPreviewState = PhpAppPreviewState.Error(Strings.phpAppProjectNotFound)
+            return@LaunchedEffect
+        }
+
+        phpAppPreviewState = PhpAppPreviewState.CheckingDeps
+        AppLogger.i("PhpAppPreview", "Checking PHP runtime, isPhpReady=${WordPressDependencyManager.isPhpReady(context)}")
+
+        if (!WordPressDependencyManager.isPhpReady(context)) {
+            phpAppPreviewState = PhpAppPreviewState.Downloading
+            val success = WordPressDependencyManager.downloadPhpDependency(context)
+            if (!success) {
+                phpAppPreviewState = PhpAppPreviewState.Error(Strings.phpAppDownloadFailed)
+                return@LaunchedEffect
+            }
+        }
+
+        val projectId = config.projectId
+        AppLogger.i("PhpAppPreview", "projectId='$projectId', docRoot='${config.documentRoot}', entry='${config.entryFile}'")
+        if (projectId.isBlank()) {
+            AppLogger.e("PhpAppPreview", "projectId is empty")
+            phpAppPreviewState = PhpAppPreviewState.Error(Strings.phpAppProjectNotFound)
+            return@LaunchedEffect
+        }
+        val projectDir = phpAppRuntime.getProjectDir(projectId)
+        AppLogger.i("PhpAppPreview", "Project directory: ${projectDir.absolutePath}, exists=${projectDir.exists()}")
+        if (!projectDir.exists()) {
+            phpAppPreviewState = PhpAppPreviewState.Error(Strings.phpAppProjectNotFound)
+            return@LaunchedEffect
+        }
+
+        projectDir.listFiles()?.take(20)?.forEach { file ->
+            AppLogger.d("PhpAppPreview", "  - ${file.name} (${if (file.isDirectory) "dir" else "${file.length()} bytes"})")
+        }
+
+        var actualDocRoot = config.documentRoot
+        var actualEntryFile = config.entryFile
+
+        var actualProjectDir = projectDir
+        val docRootDir = if (actualDocRoot.isNotBlank()) File(projectDir, actualDocRoot) else projectDir
+        if (!File(docRootDir, actualEntryFile).exists()) {
+            AppLogger.i("PhpAppPreview", "Entry file missing, attempting auto-detection...")
+
+            var detectedFramework = phpAppRuntime.detectFramework(projectDir)
+            var detectedDocRoot = phpAppRuntime.detectDocumentRoot(projectDir, detectedFramework)
+            var detectedEntry = phpAppRuntime.detectEntryFile(projectDir, detectedDocRoot)
+
+            val detectedDocRootDir = if (detectedDocRoot.isNotBlank()) File(projectDir, detectedDocRoot) else projectDir
+            if (!File(detectedDocRootDir, detectedEntry).exists()) {
+                AppLogger.i("PhpAppPreview", "No entry file at root, scanning subdirectories...")
+                val phpSubDir = projectDir.listFiles()
+                    ?.filter { it.isDirectory && it.name != "__MACOSX" && !it.name.startsWith("._") }
+                    ?.firstOrNull { sub -> sub.listFiles()?.any { it.isFile && it.extension == "php" } == true }
+
+                if (phpSubDir != null) {
+                    AppLogger.i("PhpAppPreview", "Found PHP subdirectory: ${phpSubDir.name}")
+                    actualProjectDir = phpSubDir
+                    detectedFramework = phpAppRuntime.detectFramework(phpSubDir)
+                    detectedDocRoot = phpAppRuntime.detectDocumentRoot(phpSubDir, detectedFramework)
+                    detectedEntry = phpAppRuntime.detectEntryFile(phpSubDir, detectedDocRoot)
+                }
+            }
+
+            AppLogger.i("PhpAppPreview", "Auto-detected: framework=$detectedFramework, docRoot='$detectedDocRoot', entry='$detectedEntry', projectDir=${actualProjectDir.name}")
+            actualDocRoot = detectedDocRoot
+            actualEntryFile = detectedEntry
+        }
+
+        phpAppPreviewState = PhpAppPreviewState.StartingServer
+        AppLogger.i("PhpAppPreview", "Starting PHP server: docRoot='$actualDocRoot', entry='$actualEntryFile'")
+        val port = phpAppRuntime.startServer(
+            projectDir = actualProjectDir.absolutePath,
+            documentRoot = actualDocRoot,
+            entryFile = actualEntryFile,
+            port = config.phpPort,
+            portConflictMode = config.portConflictMode,
+            envVars = config.envVars,
+            phpExtensions = config.phpExtensions
+        )
+
+        if (port > 0) {
+            val url = "http://127.0.0.1:$port/"
+            AppLogger.i("PhpAppPreview", "PHP server started: $url")
+            phpAppPreviewState = PhpAppPreviewState.Ready(url)
+            delay(200)
+            loadInBrowser(url)
+        } else {
+            AppLogger.e("PhpAppPreview", "PHP server failed to start, port=$port, serverState=${phpAppRuntime.serverState.value}")
+            val errorDetail = when (val state = phpAppRuntime.serverState.value) {
+                is PhpAppRuntime.ServerState.Error -> state.message
+                else -> Strings.phpAppServerError
+            }
+            phpAppPreviewState = PhpAppPreviewState.Error(errorDetail)
+        }
+    }
+
+    DisposableEffect(phpAppRuntime) {
+        onDispose {
+            phpAppRuntime.stopServer()
+        }
+    }
+
+    LaunchedEffect(webApp, isActivated, isActivationChecked, pythonAppRetryTrigger) {
+        val app = webApp ?: return@LaunchedEffect
+        if (app.appType != com.webtoapp.data.model.AppType.PYTHON_APP) return@LaunchedEffect
+        if (!isActivated || !isActivationChecked) return@LaunchedEffect
+
+        val config = app.pythonAppConfig
+        if (config == null) {
+            AppLogger.e("PythonAppPreview", "pythonAppConfig is null")
+            pythonAppPreviewState = PythonAppPreviewState.Error(Strings.pyProjectNotFound)
+            return@LaunchedEffect
+        }
+
+        AppLogger.i("PythonAppPreview", "Starting Python app preview flow, appId=$appId, config=$config")
+        pythonAppPreviewState = PythonAppPreviewState.Starting
+
+        val projectId = config.projectId
+        AppLogger.i("PythonAppPreview", "projectId='$projectId', framework='${config.framework}', entry='${config.entryFile}'")
+        if (projectId.isBlank()) {
+            AppLogger.e("PythonAppPreview", "projectId is empty")
+            pythonAppPreviewState = PythonAppPreviewState.Error(Strings.pyProjectNotFound)
+            return@LaunchedEffect
+        }
+
+        config.sourceProjectPath
+            .takeIf { it.isNotBlank() }
+            ?.let { srcPath ->
+                val sampleRoot = File(context.filesDir, "sample_projects")
+                val srcFile = File(srcPath)
+                if (srcFile.absolutePath.startsWith(sampleRoot.absolutePath + File.separator)) {
+                    val sampleId = srcFile.name
+                    try {
+                        com.webtoapp.core.sample.SampleProjectExtractor
+                            .extractSampleProject(context, sampleId)
+                        AppLogger.d(
+                            "PythonAppPreview",
+                            "Re-extracted sample $sampleId before sync (cache key checked)"
+                        )
+                    } catch (e: Exception) {
+                        AppLogger.w("PythonAppPreview", "Sample re-extract failed for $sampleId", e)
+                    }
+                }
+            }
+        config.sourceProjectPath
+            .takeIf { it.isNotBlank() }
+            ?.let(pythonRuntime::resolveSourceProjectDir)
+            ?.takeIf { it.absolutePath != pythonRuntime.getProjectDir(projectId).absolutePath }
+            ?.let { sourceDir ->
+                try {
+                    pythonRuntime.syncProjectFromSource(projectId, sourceDir)
+                    AppLogger.i("PythonAppPreview", "Synced Python project from source: ${sourceDir.absolutePath}")
+                } catch (e: Exception) {
+                    AppLogger.w("PythonAppPreview", "Sync source failed: ${sourceDir.absolutePath}", e)
+                }
+            }
+
+        val projectDir = pythonRuntime.getProjectDir(projectId)
+        AppLogger.i("PythonAppPreview", "Project directory: ${projectDir.absolutePath}, exists=${projectDir.exists()}")
+        if (!projectDir.exists()) {
+            pythonAppPreviewState = PythonAppPreviewState.Error(Strings.pyProjectNotFound)
+            return@LaunchedEffect
+        }
+
+        projectDir.listFiles()?.take(20)?.forEach { file ->
+            AppLogger.d("PythonAppPreview", "  - ${file.name} (${if (file.isDirectory) "dir" else "${file.length()} bytes"})")
+        }
+
+        var actualProjectDir = projectDir
+        var actualEntryFile = config.entryFile.ifBlank { "app.py" }
+        var actualFramework = config.framework.ifBlank { "raw" }
+
+        if (!File(actualProjectDir, actualEntryFile).exists()) {
+            AppLogger.i("PythonAppPreview", "Entry file missing: $actualEntryFile, attempting auto-detection...")
+
+            val detectedFramework = pythonRuntime.detectFramework(projectDir)
+            val detectedEntry = pythonRuntime.detectEntryFile(projectDir, detectedFramework)
+
+            if (File(projectDir, detectedEntry).exists()) {
+                AppLogger.i("PythonAppPreview", "Auto-detected: framework=$detectedFramework, entry=$detectedEntry")
+                actualFramework = detectedFramework
+                actualEntryFile = detectedEntry
+            } else {
+
+                AppLogger.i("PythonAppPreview", "No entry file at root, scanning subdirectories...")
+                val pySubDir = projectDir.listFiles()
+                    ?.filter { it.isDirectory && it.name != "__MACOSX" && it.name != "__pycache__" && !it.name.startsWith("._") && it.name != "venv" && it.name != ".venv" && it.name != ".git" }
+                    ?.firstOrNull { sub ->
+                        sub.listFiles()?.any { it.isFile && it.extension == "py" } == true
+                    }
+
+                if (pySubDir != null) {
+                    AppLogger.i("PythonAppPreview", "Found Python subdirectory: ${pySubDir.name}")
+                    actualProjectDir = pySubDir
+                    actualFramework = pythonRuntime.detectFramework(pySubDir)
+                    actualEntryFile = pythonRuntime.detectEntryFile(pySubDir, actualFramework)
+                    AppLogger.i("PythonAppPreview", "Subdirectory detection: framework=$actualFramework, entry=$actualEntryFile")
+                }
+            }
+        }
+
+        AppLogger.i("PythonAppPreview", "Final configuration: projectDir=${actualProjectDir.absolutePath}, framework=$actualFramework, entry=$actualEntryFile")
+
+        try {
+            val entryFileExists = File(actualProjectDir, actualEntryFile).exists()
+
+            if (pythonRuntime.isPythonAvailable() && entryFileExists) {
+
+                AppLogger.i("PythonAppPreview", "Python runtime available, starting backend server")
+                pythonAppPreviewState = PythonAppPreviewState.StartingServer
+
+                val serverPort = pythonRuntime.startServer(
+                    projectDir = actualProjectDir.absolutePath,
+                    entryFile = actualEntryFile,
+                    framework = actualFramework,
+                    port = config.serverPort,
+                    portConflictMode = config.portConflictMode,
+                    envVars = config.envVars,
+                    installDeps = config.hasPipDeps
+                )
+
+                if (serverPort > 0) {
+                    val serverUrl = "http://127.0.0.1:$serverPort"
+                    AppLogger.i("PythonAppPreview", "Python server started: $serverUrl")
+                    pythonAppPreviewState = PythonAppPreviewState.Ready(serverUrl)
+                    delay(200)
+                    loadInBrowser(serverUrl)
+                } else {
+
+                    val errMsg = (pythonRuntime.serverState.value as? com.webtoapp.core.python.PythonRuntime.ServerState.Error)
+                        ?.message
+                        ?: "Python server failed to start"
+                    AppLogger.e("PythonAppPreview", "Python server failed: $errMsg")
+
+                    val url = pythonHttpServer.start(actualProjectDir)
+                    File(actualProjectDir, "_preview_.html").delete()
+                    val previewHtml = pythonRuntime.generatePreviewHtml(
+                        projectDir = actualProjectDir,
+                        framework = actualFramework,
+                        entryFile = actualEntryFile,
+                        startupError = errMsg,
+                    )
+                    val previewFile = File(actualProjectDir, "_preview_.html")
+                    previewFile.writeText(previewHtml)
+                    val targetUrl = "$url/_preview_.html"
+                    pythonAppPreviewState = PythonAppPreviewState.Ready(targetUrl)
+                    delay(200)
+                    loadInBrowser(targetUrl)
+                }
+            } else {
+
+                AppLogger.w(
+                    "PythonAppPreview",
+                    "Static fallback preview: pythonAvailable=${pythonRuntime.isPythonAvailable()}, entryExists=$entryFileExists"
+                )
+                val url = pythonHttpServer.start(actualProjectDir)
+                File(actualProjectDir, "_preview_.html").delete()
+
+                val htmlFiles = actualProjectDir.walkTopDown().filter { it.extension == "html" && it.name != "_preview_.html" }.take(1).toList()
+                if (htmlFiles.isNotEmpty()) {
+                    val relPath = htmlFiles.first().relativeTo(actualProjectDir).path
+                    val targetUrl = "$url/$relPath"
+                    pythonAppPreviewState = PythonAppPreviewState.Ready(targetUrl, staticFallback = true)
+                    delay(200)
+                    loadInBrowser(targetUrl)
+                } else {
+                    val previewHtml = pythonRuntime.generatePreviewHtml(
+                        projectDir = actualProjectDir,
+                        framework = actualFramework,
+                        entryFile = actualEntryFile
+                    )
+                    val previewFile = File(actualProjectDir, "_preview_.html")
+                    previewFile.writeText(previewHtml)
+                    val targetUrl = "$url/_preview_.html"
+                    pythonAppPreviewState = PythonAppPreviewState.Ready(targetUrl, staticFallback = true)
+                    delay(200)
+                    loadInBrowser(targetUrl)
+                }
+            }
+        } catch (e: Exception) {
+            AppLogger.e("PythonAppPreview", "Failed to start preview", e)
+            pythonAppPreviewState = PythonAppPreviewState.Error(e.message ?: Strings.pyPreviewFailed, e)
+        }
+    }
+
+    DisposableEffect(pythonHttpServer) {
+        onDispose {
+            pythonHttpServer.stop()
+            pythonRuntime.stopServer()
+        }
+    }
+
+    LaunchedEffect(webApp, isActivated, isActivationChecked, nodeJsAppRetryTrigger) {
+        val app = webApp ?: return@LaunchedEffect
+        if (app.appType != com.webtoapp.data.model.AppType.NODEJS_APP) return@LaunchedEffect
+        if (!isActivated || !isActivationChecked) return@LaunchedEffect
+
+        val config = app.nodejsConfig
+        if (config == null) {
+            AppLogger.e("NodeJsAppPreview", "nodejsConfig is null")
+            nodeJsAppPreviewState = NodeJsAppPreviewState.Error(Strings.nodeProjectNotFound)
+            return@LaunchedEffect
+        }
+
+        AppLogger.i("NodeJsAppPreview", "Starting Node.js app preview flow, appId=$appId, config=$config")
+        nodeJsAppPreviewState = NodeJsAppPreviewState.Starting
+
+        val projectId = config.projectId
+        AppLogger.i("NodeJsAppPreview", "projectId='$projectId', framework='${config.framework}', entry='${config.entryFile}'")
+        if (projectId.isBlank()) {
+            AppLogger.e("NodeJsAppPreview", "projectId is empty")
+            nodeJsAppPreviewState = NodeJsAppPreviewState.Error(Strings.nodeProjectNotFound)
+            return@LaunchedEffect
+        }
+        val internalProjectPath = nodeRuntime.getProjectDir(projectId).absolutePath
+
+        config.sourceProjectPath
+            .takeIf { it.isNotBlank() }
+            ?.let { srcPath ->
+                val sampleRoot = File(context.filesDir, "sample_projects")
+                val srcFile = File(srcPath)
+                if (srcFile.absolutePath.startsWith(sampleRoot.absolutePath + File.separator)) {
+                    val sampleId = srcFile.name
+                    try {
+                        com.webtoapp.core.sample.SampleProjectExtractor
+                            .extractSampleProject(context, sampleId)
+                        AppLogger.d(
+                            "NodeJsAppPreview",
+                            "Re-extracted sample $sampleId before sync (cache key checked)"
+                        )
+                    } catch (e: Exception) {
+                        AppLogger.w("NodeJsAppPreview", "Sample re-extract failed for $sampleId", e)
+                    }
+                }
+            }
+        config.sourceProjectPath
+            .takeIf { it.isNotBlank() }
+            ?.let(nodeRuntime::resolveSourceProjectDir)
+            ?.takeIf { it.absolutePath != internalProjectPath }
+            ?.let { sourceDir ->
+                try {
+                    nodeRuntime.syncProjectFromSource(projectId, sourceDir)
+                    AppLogger.i("NodeJsAppPreview", "Synced Node.js project from source directory: ${sourceDir.absolutePath}")
+                } catch (e: Exception) {
+                    AppLogger.w("NodeJsAppPreview", "Failed to sync source project: ${sourceDir.absolutePath}", e)
+                }
+            }
+
+        val projectDir = nodeRuntime.getProjectDir(projectId)
+        AppLogger.i("NodeJsAppPreview", "Project directory: ${projectDir.absolutePath}, exists=${projectDir.exists()}")
+        if (!projectDir.exists()) {
+            nodeJsAppPreviewState = NodeJsAppPreviewState.Error(Strings.nodeProjectNotFound)
+            return@LaunchedEffect
+        }
+
+        projectDir.listFiles()?.take(20)?.forEach { file ->
+            AppLogger.d("NodeJsAppPreview", "  - ${file.name} (${if (file.isDirectory) "dir" else "${file.length()} bytes"})")
+        }
+
+        try {
+            // Honor the configured build mode the way the exported shell does
+            // (ShellContentRouter branches on nodejsConfig.mode): only STATIC projects get the
+            // doc-root sniff; API_BACKEND always goes to the Node runtime.
+            val staticMode = config.buildMode == com.webtoapp.data.model.NodeJsBuildMode.STATIC
+            var foundDocRoot: File? = null
+            if (staticMode) {
+                val candidates = listOf("dist", "build", "public", "static", "www", "")
+                for (dir in candidates) {
+                    val candidate = if (dir.isEmpty()) projectDir else File(projectDir, dir)
+                    val hasIndex = File(candidate, "index.html").exists()
+                    AppLogger.d("NodeJsAppPreview", "Checking candidate: '$dir' -> ${candidate.absolutePath}, isDir=${candidate.isDirectory}, hasIndex=$hasIndex")
+                    if (candidate.isDirectory && hasIndex) {
+                        foundDocRoot = candidate
+                        AppLogger.i("NodeJsAppPreview", "Found docRoot: ${candidate.absolutePath}")
+                        break
+                    }
+                }
+            }
+
+            val docRoot = foundDocRoot
+            if (docRoot != null) {
+                val url = nodeHttpServer.start(docRoot)
+                AppLogger.i("NodeJsAppPreview", "LocalHttpServer started: $url")
+                nodeJsAppPreviewState = NodeJsAppPreviewState.Ready(url)
+                delay(200)
+                loadInBrowser(url)
+            } else if (!staticMode && nodeRuntime.isNodeAvailable()) {
+
+                AppLogger.i("NodeJsAppPreview", "Node.js runtime available, starting backend server")
+                nodeJsAppPreviewState = NodeJsAppPreviewState.StartingServer
+
+                val serverPort = nodeRuntime.startServer(
+                    projectDir = projectDir.absolutePath,
+                    entryFile = config.entryFile.ifBlank { "index.js" },
+                    port = config.serverPort,
+                    portConflictMode = config.portConflictMode,
+                    envVars = config.envVars,
+                )
+
+                if (serverPort > 0) {
+                    val serverUrl = "http://127.0.0.1:$serverPort"
+                    AppLogger.i("NodeJsAppPreview", "Node server started: $serverUrl")
+                    nodeJsAppPreviewState = NodeJsAppPreviewState.Ready(serverUrl)
+                    delay(200)
+                    loadInBrowser(serverUrl)
+                } else {
+                    AppLogger.e("NodeJsAppPreview", "Node server failed to start, falling back to preview mode")
+
+                    val url = nodeHttpServer.start(projectDir)
+                    File(projectDir, "_preview_.html").delete()
+                    val previewHtml = nodeRuntime.generatePreviewHtml(
+                        projectDir = projectDir,
+                        framework = config.framework,
+                        entryFile = config.entryFile,
+                    )
+                    val previewFile = File(projectDir, "_preview_.html")
+                    previewFile.writeText(previewHtml)
+                    val targetUrl = "$url/_preview_.html"
+                    nodeJsAppPreviewState = NodeJsAppPreviewState.Ready(targetUrl)
+                    delay(200)
+                    loadInBrowser(targetUrl)
+                }
+            } else {
+
+                AppLogger.w("NodeJsAppPreview", "index.html not found, trying HTTP server at project root")
+                val url = nodeHttpServer.start(projectDir)
+                AppLogger.i("NodeJsAppPreview", "LocalHttpServer started at project root: $url")
+
+                File(projectDir, "_preview_.html").delete()
+
+                val htmlFiles = projectDir.walkTopDown().filter { it.extension == "html" && it.name != "_preview_.html" }.take(1).toList()
+                if (htmlFiles.isNotEmpty()) {
+                    val relPath = htmlFiles.first().relativeTo(projectDir).path
+                    val targetUrl = "$url/$relPath"
+                    AppLogger.i("NodeJsAppPreview", "Found HTML file: $relPath, URL=$targetUrl")
+                    nodeJsAppPreviewState = NodeJsAppPreviewState.Ready(targetUrl)
+                    delay(200)
+                    loadInBrowser(targetUrl)
+                } else {
+
+                    AppLogger.i("NodeJsAppPreview", "No static HTML, generating project preview page")
+                    val previewHtml = nodeRuntime.generatePreviewHtml(
+                        projectDir = projectDir,
+                        framework = config.framework,
+                        entryFile = config.entryFile
+                    )
+                    val previewFile = File(projectDir, "_preview_.html")
+                    previewFile.writeText(previewHtml)
+                    val targetUrl = "$url/_preview_.html"
+                    AppLogger.i("NodeJsAppPreview", "Preview page generated: $targetUrl")
+                    nodeJsAppPreviewState = NodeJsAppPreviewState.Ready(targetUrl)
+                    delay(200)
+                    loadInBrowser(targetUrl)
+                }
+            }
+        } catch (e: Exception) {
+            AppLogger.e("NodeJsAppPreview", "Failed to start preview", e)
+            nodeJsAppPreviewState = NodeJsAppPreviewState.Error(e.message ?: Strings.nodePreviewFailed, e)
+        }
+    }
+
+    DisposableEffect(nodeHttpServer) {
+        onDispose {
+            nodeHttpServer.stop()
+        }
+    }
+
+    DisposableEffect(nodeRuntime) {
+        onDispose {
+            nodeRuntime.stopServer()
+        }
+    }
+
+    LaunchedEffect(webApp, isActivated, isActivationChecked, goAppRetryTrigger) {
+        val app = webApp ?: return@LaunchedEffect
+        if (app.appType != com.webtoapp.data.model.AppType.GO_APP) return@LaunchedEffect
+        if (!isActivated || !isActivationChecked) return@LaunchedEffect
+
+        val config = app.goAppConfig
+        if (config == null) {
+            AppLogger.e("GoAppPreview", "goAppConfig is null")
+            goAppPreviewState = GoAppPreviewState.Error(Strings.goProjectNotFound)
+            return@LaunchedEffect
+        }
+
+        AppLogger.i("GoAppPreview", "Starting Go app preview flow, appId=$appId, config=$config")
+        goAppPreviewState = GoAppPreviewState.Starting
+
+        val projectId = config.projectId
+        AppLogger.i("GoAppPreview", "projectId='$projectId', framework='${config.framework}', binary='${config.binaryName}'")
+        if (projectId.isBlank()) {
+            AppLogger.e("GoAppPreview", "projectId is empty")
+            goAppPreviewState = GoAppPreviewState.Error(Strings.goProjectNotFound)
+            return@LaunchedEffect
+        }
+        val projectDir = goRuntime.getProjectDir(projectId)
+        AppLogger.i("GoAppPreview", "Project directory: ${projectDir.absolutePath}, exists=${projectDir.exists()}")
+        if (!projectDir.exists()) {
+            goAppPreviewState = GoAppPreviewState.Error(Strings.goProjectNotFound)
+            return@LaunchedEffect
+        }
+
+        projectDir.listFiles()?.take(20)?.forEach { file ->
+            AppLogger.d("GoAppPreview", "  - ${file.name} (${if (file.isDirectory) "dir" else "${file.length()} bytes"})")
+        }
+
+        try {
+            val candidates = listOf("dist", "build", "public", "static", "web", "www", "")
+            var foundDocRoot: File? = null
+            for (dir in candidates) {
+                val candidate = if (dir.isEmpty()) projectDir else File(projectDir, dir)
+                val hasIndex = File(candidate, "index.html").exists()
+                AppLogger.d("GoAppPreview", "Checking candidate: '$dir' -> ${candidate.absolutePath}, isDir=${candidate.isDirectory}, hasIndex=$hasIndex")
+                if (candidate.isDirectory && hasIndex) {
+                    foundDocRoot = candidate
+                    AppLogger.i("GoAppPreview", "Found docRoot: ${candidate.absolutePath}")
+                    break
+                }
+            }
+
+            val docRoot = foundDocRoot
+            if (docRoot != null) {
+                val url = goHttpServer.start(docRoot)
+                AppLogger.i("GoAppPreview", "LocalHttpServer started: $url")
+                goAppPreviewState = GoAppPreviewState.Ready(url)
+                delay(200)
+                loadInBrowser(url)
+            } else {
+
+                val goMod = File(projectDir, "go.mod")
+                val toolchainReady = com.webtoapp.core.golang.GoDependencyManager.isGoToolchainReady(context)
+                val needsBuild = config.binaryName.isBlank()
+                    && goRuntime.detectBinary(projectDir) == null
+                    && goMod.exists()
+                    && toolchainReady
+
+                if (needsBuild) {
+                    AppLogger.i("GoAppPreview", "No binary, but go.mod + 工具链就绪 → 自动应用内 build")
+                    goAppPreviewState = GoAppPreviewState.StartingServer
+                    val targetName = config.binaryName.ifBlank { projectDir.name }
+                    val produced = try {
+                        com.webtoapp.core.golang.GoBuildEnvironment.buildProject(
+                            context = context,
+                            projectDir = projectDir,
+                            binaryName = targetName,
+                            onOutput = { line -> AppLogger.d("GoAppPreview", "[build] $line") },
+                        )
+                    } catch (e: Exception) {
+                        AppLogger.e("GoAppPreview", "应用内 build 异常", e)
+                        null
+                    }
+                    if (produced != null) {
+                        AppLogger.i("GoAppPreview", "Build 成功 → ${produced.absolutePath}")
+                    } else {
+                        AppLogger.w("GoAppPreview", "Build 失败 / 工具链网络受限，回退到预览页")
+                    }
+                }
+
+                val hasBinary = config.binaryName.isNotBlank() || goRuntime.detectBinary(projectDir) != null
+                if (hasBinary) {
+                    AppLogger.i("GoAppPreview", "Starting Go backend server")
+                    goAppPreviewState = GoAppPreviewState.StartingServer
+
+                    val serverPort = goRuntime.startServer(
+                        projectDir = projectDir.absolutePath,
+                        binaryName = config.binaryName,
+                        port = config.serverPort,
+                        portConflictMode = config.portConflictMode,
+                        envVars = config.envVars
+                    )
+
+                    if (serverPort > 0) {
+                        val serverUrl = "http://127.0.0.1:$serverPort"
+                        AppLogger.i("GoAppPreview", "Go server started: $serverUrl")
+                        goAppPreviewState = GoAppPreviewState.Ready(serverUrl)
+                        delay(200)
+                        loadInBrowser(serverUrl)
+                    } else {
+                        AppLogger.e("GoAppPreview", "Go server failed to start, falling back to preview mode")
+                        val url = goHttpServer.start(projectDir)
+                        File(projectDir, "_preview_.html").delete()
+                        val previewHtml = goRuntime.generatePreviewHtml(
+                            projectDir = projectDir,
+                            framework = config.framework,
+                            binaryName = config.binaryName
+                        )
+                        val previewFile = File(projectDir, "_preview_.html")
+                        previewFile.writeText(previewHtml)
+                        val targetUrl = "$url/_preview_.html"
+                        goAppPreviewState = GoAppPreviewState.Ready(targetUrl)
+                        delay(200)
+                        loadInBrowser(targetUrl)
+                    }
+                } else {
+                    AppLogger.w("GoAppPreview", "No executable binary, generating project preview page")
+                    val url = goHttpServer.start(projectDir)
+                    File(projectDir, "_preview_.html").delete()
+
+                    val htmlFiles = projectDir.walkTopDown().filter { it.extension == "html" && it.name != "_preview_.html" }.take(1).toList()
+                    if (htmlFiles.isNotEmpty()) {
+                        val relPath = htmlFiles.first().relativeTo(projectDir).path
+                        val targetUrl = "$url/$relPath"
+                        goAppPreviewState = GoAppPreviewState.Ready(targetUrl)
+                        delay(200)
+                        loadInBrowser(targetUrl)
+                    } else {
+                        val previewHtml = goRuntime.generatePreviewHtml(
+                            projectDir = projectDir,
+                            framework = config.framework,
+                            binaryName = config.binaryName
+                        )
+                        val previewFile = File(projectDir, "_preview_.html")
+                        previewFile.writeText(previewHtml)
+                        val targetUrl = "$url/_preview_.html"
+                        goAppPreviewState = GoAppPreviewState.Ready(targetUrl)
+                        delay(200)
+                        loadInBrowser(targetUrl)
+                    }
+                }
+            }
+        } catch (e: Exception) {
+            AppLogger.e("GoAppPreview", "Failed to start preview", e)
+            goAppPreviewState = GoAppPreviewState.Error(e.message ?: Strings.goPreviewFailed, e)
+        }
+    }
+
+    DisposableEffect(goHttpServer) {
+        onDispose {
+            goHttpServer.stop()
+            goRuntime.stopServer()
+        }
+    }
+
+    val webViewCallbacks = remember {
+        object : WebViewCallbacks {
+            override fun onPageStarted(url: String?) {
+
+                if (url == "about:blank") return
+                isLoading = true
+                currentUrl = url ?: ""
+                errorMessage = null
+                webViewRef?.let { WebScrollTracker.reset(it) }
+                if (usesPageTopStatusBarColor(webApp ?: previewApp)) {
+                    statusBarColorTracker?.reset()
+                    statusBarAutoColor = null
+                    onStatusBarAutoColorChanged?.invoke(null)
+                }
+                if (!false) {
+                } else {
+                }
+            }
+
+            override fun onPageCommitVisible(url: String?) {
+                statusBarColorTracker?.scheduleSample(48L)
+            }
+
+            override fun onUrlChanged(webView: WebView?, url: String?) {
+
+                webView?.let {
+                    canGoBack = it.canGoBack()
+                    canGoForward = it.canGoForward()
+                }
+                if (url != null) currentUrl = url
+                statusBarColorTracker?.scheduleSample(48L)
+            }
+
+            override fun onNavigationStateChanged(newCanGoBack: Boolean, newCanGoForward: Boolean) {
+                // GeckoView engine path: history state arrives as events (the WebView path
+                // derives it from onUrlChanged). Without this the toolbar/floating back
+                // affordances never enable on Gecko.
+                canGoBack = newCanGoBack
+                canGoForward = newCanGoForward
+            }
+
+            override fun onAndroidPermissionsRequest(permissions: Array<String>, onResult: (Boolean) -> Unit) {
+                (context as? WebViewActivity)?.handleAndroidPermissionsRequest(permissions, onResult)
+                    ?: onResult(true)
+            }
+
+            override fun onPageFinished(url: String?) {
+                if (url == "about:blank") return
+                isLoading = false
+                isRefreshing = false
+                if (url != null && !url.startsWith("file:///")) {
+                    errorMessage = null
+                }
+                currentUrl = url ?: ""
+                webViewRef?.let {
+                    canGoBack = it.canGoBack()
+                    canGoForward = it.canGoForward()
+                    WebScrollTracker.injectScript(it)
+                    VideoPosterCompat.injectScript(it)
+
+                    if (webApp?.webViewConfig?.longPressMenuEnabled ?: true) {
+                        longPressHandler.injectLongPressEnhancer(it)
+                    } else {
+                        AppLogger.d("WebViewActivity", "Skip long-press enhancer: long-press menu disabled for $url")
+                    }
+
+                    val tc = webApp?.translateConfig
+                    if (webApp?.translateEnabled == true && tc != null) {
+                        com.webtoapp.ui.shell.injectTranslateScript(
+                            it,
+                            tc.targetLanguage.code,
+                            tc.showFloatingButton
+                        )
+                    }
+                    statusBarColorTracker?.scheduleSample(80L)
+                }
+                // WebViews without document-start script support lose the
+                // polyfill on every navigation; re-inject it (idempotent).
+                (context as? WebViewActivity)?.mediaSessionBridge?.onPageFinishedFallback()
+            }
+
+            override fun onProgressChanged(progress: Int) {
+                loadProgress = progress
+            }
+
+            override fun onTitleChanged(title: String?) {
+                if (title == "about:blank" || title.isNullOrBlank()) return
+                pageTitle = title
+            }
+
+            override fun onIconReceived(icon: Bitmap?) {}
+
+            override fun onError(errorCode: Int, description: String) {
+                errorMessage = description
+                isLoading = false
+                isRefreshing = false
+            }
+
+            override fun onSslError(error: String) {
+                errorMessage = Strings.sslError
+            }
+
+            override fun onExternalAppLaunch(url: String, sourceUrl: String?) {
+                (context as? WebViewActivity)?.persistExternalJump(sourceUrl)
+            }
+
+            override fun onExternalLink(url: String) {
+                try {
+                    val safeUrl = normalizeExternalUrlForIntent(url)
+                    val intent = Intent(Intent.ACTION_VIEW, Uri.parse(safeUrl))
+                    intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                    context.startActivity(intent)
+                } catch (e: Exception) {
+                    AppLogger.w("WebViewActivity", "No app to handle external link: $url", e)
+                    android.widget.Toast.makeText(
+                        context,
+                        Strings.cannotOpenLink,
+                        android.widget.Toast.LENGTH_SHORT
+                    ).show()
+                }
+            }
+
+            override fun onShowCustomView(view: View?, callback: WebChromeClient.CustomViewCallback?) {
+                view?.let { onShowCustomView(it, callback) }
+            }
+
+            override fun onHideCustomView() {
+                onHideCustomView()
+            }
+
+            override fun onGeolocationPermission(
+                origin: String?,
+                callback: GeolocationPermissions.Callback?
+            ) {
+
+                (activity as? WebViewActivity)?.handleGeolocationPermission(origin, callback)
+                    ?: callback?.invoke(origin, false, false)
+            }
+
+            override fun requestGeolocationAccess(onResult: (Boolean) -> Unit) {
+                (activity as? WebViewActivity)?.requestGeolocationAccess(onResult)
+                    ?: onResult(false)
+            }
+
+            override fun onPermissionRequest(request: PermissionRequest?) {
+
+                request?.let { req ->
+                    (activity as? WebViewActivity)?.handlePermissionRequest(req)
+                        ?: req.grant(req.resources)
+                }
+            }
+
+            override fun onShowFileChooser(
+                filePathCallback: ValueCallback<Array<Uri>>?,
+                fileChooserParams: WebChromeClient.FileChooserParams?
+            ): Boolean {
+                return onFileChooser(filePathCallback, fileChooserParams)
+            }
+
+            override fun onDownloadStart(
+                url: String,
+                userAgent: String,
+                contentDisposition: String,
+                mimeType: String,
+                contentLength: Long
+            ) {
+
+                val effectiveApp = webApp ?: previewApp
+                DownloadHelper.handleDownload(
+                    context = context,
+                    url = url,
+                    userAgent = userAgent,
+                    contentDisposition = contentDisposition,
+                    mimeType = mimeType,
+                    contentLength = contentLength,
+                    scope = scope,
+                    downloadLocationMode = effectiveApp?.webViewConfig?.downloadLocationMode
+                        ?: com.webtoapp.data.model.DownloadLocationMode.SYSTEM_DOWNLOAD,
+                    customDownloadDirUri = effectiveApp?.webViewConfig?.customDownloadDirUri ?: "",
+                    onBlobDownload = { blobUrl, filename ->
+                        val safeBlobUrl = org.json.JSONObject.quote(blobUrl)
+                        val safeFilename = org.json.JSONObject.quote(filename)
+
+                        webViewRef?.evaluateJavascript("""
+                            (function() {
+                                try {
+                                    const blobUrl = $safeBlobUrl;
+                                    const filename = $safeFilename;
+                                    const LARGE_FILE_THRESHOLD = 10 * 1024 * 1024;
+                                    const CHUNK_SIZE = 512 * 1024;
+
+                                    function uint8ToBase64(u8) {
+                                        const S = 8192; const p = [];
+                                        for (let i = 0; i < u8.length; i += S) p.push(String.fromCharCode.apply(null, u8.subarray(i, i + S)));
+                                        return btoa(p.join(''));
+                                    }
+
+                                    function processChunked(blob, fname) {
+                                        const mimeType = blob.type || 'application/octet-stream';
+                                        if (!window.AndroidDownload || !window.AndroidDownload.startChunkedDownload) {
+                                            processSmall(blob, fname); return;
+                                        }
+                                        const did = window.AndroidDownload.startChunkedDownload(fname, mimeType, blob.size);
+                                        let off = 0, ci = 0; const tc = Math.ceil(blob.size / CHUNK_SIZE);
+                                        function next() {
+                                            if (off >= blob.size) { window.AndroidDownload.finishChunkedDownload(did); return; }
+                                            blob.slice(off, off + CHUNK_SIZE).arrayBuffer().then(function(ab) {
+                                                window.AndroidDownload.appendChunk(did, uint8ToBase64(new Uint8Array(ab)), ci, tc);
+                                                off += CHUNK_SIZE; ci++;
+                                                setTimeout(next, 0);
+                                            });
+                                        }
+                                        next();
+                                    }
+
+                                    function processSmall(blob, fname) {
+                                        const reader = new FileReader();
+                                        reader.onloadend = function() {
+                                            const base64Data = reader.result.split(',')[1];
+                                            const mimeType = blob.type || 'application/octet-stream';
+                                            if (window.AndroidDownload && window.AndroidDownload.saveBase64File) {
+                                                window.AndroidDownload.saveBase64File(base64Data, fname, mimeType);
+                                            }
+                                        };
+                                        reader.readAsDataURL(blob);
+                                    }
+
+                                    if (blobUrl.startsWith('data:')) {
+                                        const parts = blobUrl.split(',');
+                                        const meta = parts[0];
+                                        const base64Data = parts[1];
+                                        const mimeMatch = meta.match(/data:([^;]+)/);
+                                        const mimeType = mimeMatch ? mimeMatch[1] : 'application/octet-stream';
+                                        if (window.AndroidDownload && window.AndroidDownload.saveBase64File) {
+                                            window.AndroidDownload.saveBase64File(base64Data, filename, mimeType);
+                                        }
+                                    } else if (blobUrl.startsWith('blob:')) {
+                                        // 优先从 DownloadBridge 的缓存里拿 Blob（页面可能已同步 revoke URL）
+                                        const cachedBlob = window.__wtaBlobMap && window.__wtaBlobMap.get(blobUrl);
+                                        function dispatch(blob) {
+                                            if (blob.size > LARGE_FILE_THRESHOLD) {
+                                                processChunked(blob, filename);
+                                            } else {
+                                                processSmall(blob, filename);
+                                            }
+                                        }
+                                        function reportFailure(err) {
+                                            console.error('[DownloadHelper] Blob fetch failed:', err);
+                                            if (window.AndroidDownload && window.AndroidDownload.showToast) {
+                                                window.AndroidDownload.showToast('${Strings.downloadFailedWithReason}' + (err && err.message ? err.message : 'blob unavailable'));
+                                            }
+                                        }
+                                        if (cachedBlob) {
+                                            dispatch(cachedBlob);
+                                        } else if (window.__wtaResolveBlob) {
+                                            // 跨上下文解析（sandboxed iframe / worker 里创建的 blob:null 等）
+                                            window.__wtaResolveBlob(blobUrl)
+                                                .then(function(blob) {
+                                                    if (blob) dispatch(blob);
+                                                    else reportFailure(new Error('blob not resolvable'));
+                                                })
+                                                .catch(reportFailure);
+                                        } else {
+                                            fetch(blobUrl)
+                                                .then(function(r) { return r.blob(); })
+                                                .then(dispatch)
+                                                .catch(reportFailure);
+                                        }
+                                    }
+                                } catch(e) {
+                                    console.error('[DownloadHelper] Error:', e);
+                                }
+                            })();
+                        """.trimIndent(), null)
+                    }
+                )
+            }
+
+            override fun onLongPress(webView: WebView, x: Float, y: Float): Boolean {
+
+                val hitResult = webView.hitTestResult
+                val hitType = hitResult.type
+                val isLink = hitType == WebView.HitTestResult.SRC_ANCHOR_TYPE ||
+                             hitType == WebView.HitTestResult.ANCHOR_TYPE
+
+                val menuEnabled = webApp?.webViewConfig?.longPressMenuEnabled ?: true
+                if (!menuEnabled) {
+                    return isLink
+                }
+
+                if (hitType == WebView.HitTestResult.EDIT_TEXT_TYPE ||
+                    hitType == WebView.HitTestResult.UNKNOWN_TYPE) {
+                    return false
+                }
+
+                longPressHandler.getLongPressDetails(webView, x, y) { result ->
+                    when (result) {
+                        is LongPressHandler.LongPressResult.Image,
+                        is LongPressHandler.LongPressResult.Video,
+                        is LongPressHandler.LongPressResult.Link,
+                        is LongPressHandler.LongPressResult.ImageLink -> {
+                            longPressResult = result
+                            longPressTouchX = x
+                            longPressTouchY = y
+                            showLongPressMenu = true
+                        }
+                        is LongPressHandler.LongPressResult.Text,
+                        is LongPressHandler.LongPressResult.None -> {
+
+                        }
+                    }
+                }
+
+                return when (hitType) {
+                    WebView.HitTestResult.IMAGE_TYPE,
+                    WebView.HitTestResult.SRC_IMAGE_ANCHOR_TYPE,
+                    WebView.HitTestResult.SRC_ANCHOR_TYPE,
+                    WebView.HitTestResult.ANCHOR_TYPE -> true
+                    else -> false
+                }
+            }
+
+            override fun onConsoleMessage(level: Int, message: String, sourceId: String, lineNumber: Int) {
+                val consoleLevel = when (level) {
+                    0 -> ConsoleLevel.DEBUG
+                    1 -> ConsoleLevel.LOG
+                    2 -> ConsoleLevel.INFO
+                    3 -> ConsoleLevel.WARNING
+                    4 -> ConsoleLevel.ERROR
+                    else -> ConsoleLevel.LOG
+                }
+                AppLogger.d("WebViewConsole", "[$consoleLevel] $message ($sourceId:$lineNumber)")
+                // Marker-prefixed messages come from our injected wrappers (userscripts,
+                // modules, bridges) — without this they are only page-console noise.
+                if (level >= 3 && isOwnInjectionMarker(message)) {
+                    val line = "[$consoleLevel] $message ($sourceId:$lineNumber)"
+                    if (level >= 4) AppLogger.e("WebViewConsole", line) else AppLogger.w("WebViewConsole", line)
+                }
+                consoleMessages = (consoleMessages + ConsoleLogEntry(
+                    level = consoleLevel,
+                    message = message,
+                    source = sourceId,
+                    lineNumber = lineNumber,
+                    timestamp = System.currentTimeMillis()
+                )).takeLast(CONSOLE_LOG_CAP)
+            }
+
+            override fun onRenderProcessGone(didCrash: Boolean) {
+                AppLogger.w("WebViewActivity", "Render process gone (crash=$didCrash), triggering WebView recreation")
+                webViewRef = null
+                errorMessage = null
+
+                webViewRecreationKey++
+
+                val app = webApp
+                when (app?.appType) {
+                    com.webtoapp.data.model.AppType.PHP_APP -> phpAppRetryTrigger++
+                    com.webtoapp.data.model.AppType.NODEJS_APP -> nodeJsAppRetryTrigger++
+                    com.webtoapp.data.model.AppType.PYTHON_APP -> pythonAppRetryTrigger++
+                    com.webtoapp.data.model.AppType.GO_APP -> goAppRetryTrigger++
+                    com.webtoapp.data.model.AppType.WORDPRESS -> wpRetryTrigger++
+                    else -> {  }
+                }
+            }
+        }
+    }
+
+    val webViewManager = remember { WebViewManager(context, adBlocker) }
+
+    // Issue #1030 backstop: same renderer liveness probe as the shell — some OEM
+    // WebView builds never deliver onRenderProcessGone for a background kill,
+    // leaving a dead WebView that shows a permanent white page.
+    val lifecycleOwner = androidx.compose.ui.platform.LocalLifecycleOwner.current
+    DisposableEffect(lifecycleOwner) {
+        val observer = androidx.lifecycle.LifecycleEventObserver { _, event ->
+            if (event == androidx.lifecycle.Lifecycle.Event.ON_RESUME) {
+                if (memoryTeardownPending) {
+                    memoryTeardownPending = false
+                    webViewRecreationKey++
+                    return@LifecycleEventObserver
+                }
+                val wv = webViewRef
+                if (wv != null && !isLoading) {
+                    com.webtoapp.core.webview.RendererLivenessProbe.probe(
+                        wv,
+                        stillCurrent = { webViewRef === wv }
+                    ) {
+                        AppLogger.w("WebViewActivity", "Renderer unresponsive after resume — recreating WebView")
+                        runCatching {
+                            wv.stopLoading()
+                            (wv.parent as? android.view.ViewGroup)?.removeView(wv)
+                            wv.destroy()
+                        }
+                        webViewManager.discardWebView(wv)
+                        webViewCallbacks.onRenderProcessGone(false)
+                    }
+                }
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
+    }
+
+    // Issue #1033: TRIM_MEMORY_COMPLETE means the process is next in line for
+    // LMK — and on a WebView app the renderer IS the memory. Shed it ourselves
+    // (navigation state stashed, recreated on resume) instead of letting the
+    // system starve lower-priority processes like the Launcher.
+    DisposableEffect(lifecycleOwner) {
+        val componentCallbacks = object : android.content.ComponentCallbacks2 {
+            override fun onConfigurationChanged(newConfig: android.content.res.Configuration) {}
+            override fun onLowMemory() {}
+            override fun onTrimMemory(level: Int) {
+                if (!com.webtoapp.core.webview.WebViewMemoryTrimmer.onTrimMemory(level, context)) return
+                val wv = webViewRef ?: return
+                if (memoryTeardownPending) return
+                val bundle = android.os.Bundle()
+                runCatching { wv.saveState(bundle) }
+                if (!bundle.isEmpty) {
+                    (context as? WebViewActivity)?.stashWebViewState(bundle)
+                }
+                AppLogger.w("WebViewActivity", "TRIM_MEMORY_COMPLETE — tearing down WebView, will rebuild on resume")
+                runCatching {
+                    wv.stopLoading()
+                    wv.onPause()
+                    (wv.parent as? android.view.ViewGroup)?.removeView(wv)
+                    wv.destroy()
+                }
+                webViewManager.discardWebView(wv)
+                webViewRef = null
+                browserSurfaceRef = null
+                (context as? WebViewActivity)?.clearWebViewRefs()
+                memoryTeardownPending = true
+            }
+        }
+        context.registerComponentCallbacks(componentCallbacks)
+        onDispose { context.unregisterComponentCallbacks(componentCallbacks) }
+    }
+
+    val localHttpServer = remember { LocalHttpServer.getInstance(context) }
+
+    val targetResolution = remember(directUrl, webApp, testUrl, remoteDeliveredUrl) {
+        val app = webApp
+        when {
+
+            !testUrl.isNullOrBlank() -> normalizeWebUrlForSecurity(testUrl) to null
+            !directUrl.isNullOrBlank() -> normalizeWebUrlForSecurity(directUrl) to null
+            app?.appType == com.webtoapp.data.model.AppType.WORDPRESS -> {
+
+                "about:blank" to null
+            }
+            app?.appType == com.webtoapp.data.model.AppType.PHP_APP -> {
+
+                "about:blank" to null
+            }
+            app?.appType == com.webtoapp.data.model.AppType.PYTHON_APP -> {
+
+                "about:blank" to null
+            }
+            app?.appType == com.webtoapp.data.model.AppType.NODEJS_APP -> {
+
+                "about:blank" to null
+            }
+            app?.appType == com.webtoapp.data.model.AppType.GO_APP -> {
+
+                "about:blank" to null
+            }
+            app?.appType == com.webtoapp.data.model.AppType.MULTI_WEB -> {
+
+                val firstSite = app.multiWebConfig?.sites?.firstOrNull { it.enabled && (it.url.isNotBlank() || it.localFilePath.isNotBlank()) }
+                (firstSite?.getEffectiveUrl() ?: "about:blank") to null
+            }
+            app?.appType == com.webtoapp.data.model.AppType.HTML ||
+            app?.appType == com.webtoapp.data.model.AppType.FRONTEND -> {
+
+                val projectId = app.htmlConfig?.projectId ?: ""
+                val entryFile = app.htmlConfig?.getValidEntryFile() ?: "index.html"
+                val htmlDir = File(context.filesDir, "html_projects/$projectId")
+
+                AppLogger.d("WebViewActivity", "========== HTML App Debug Info ==========")
+                AppLogger.d("WebViewActivity", "projectId: '$projectId'")
+                AppLogger.d("WebViewActivity", "entryFile: '$entryFile'")
+                AppLogger.d("WebViewActivity", "htmlDir: ${htmlDir.absolutePath}")
+                AppLogger.d("WebViewActivity", "htmlDir.exists(): ${htmlDir.exists()}")
+                AppLogger.d("WebViewActivity", "htmlConfig: ${app.htmlConfig}")
+                AppLogger.d("WebViewActivity", "htmlConfig.files: ${app.htmlConfig?.files}")
+
+                if (htmlDir.exists()) {
+                    val files = htmlDir.listFiles()
+                    AppLogger.d("WebViewActivity", "Directory file list (${files?.size ?: 0}):")
+                    files?.forEach { file ->
+                        AppLogger.d("WebViewActivity", "  - ${file.name} (${file.length()} bytes)")
+                    }
+
+                    val entryFilePath = File(htmlDir, entryFile)
+                    AppLogger.d("WebViewActivity", "Entry file path: ${entryFilePath.absolutePath}")
+                    AppLogger.d("WebViewActivity", "Entry file exists: ${entryFilePath.exists()}")
+                }
+                AppLogger.d("WebViewActivity", "=========================================")
+
+                if (htmlDir.exists()) {
+                    try {
+
+                        val usesFileScheme = when (app.htmlConfig?.loadMode ?: HtmlLoadMode.AUTO) {
+                            HtmlLoadMode.FILE -> true
+                            HtmlLoadMode.LOCAL_HTTP -> false
+                            HtmlLoadMode.AUTO -> !app.webViewConfig.enableCrossOriginIsolation &&
+                                HtmlRuntimeLoadInspector.prefersFileScheme(htmlDir)
+                        }
+                        if (usesFileScheme) {
+                            localHttpServer.stop()
+                            val normalizedEntry = entryFile.removePrefix("/").ifBlank { "index.html" }
+                            val targetUrl = Uri.fromFile(File(htmlDir, normalizedEntry)).toString()
+                            AppLogger.d("WebViewActivity", "Target URL (file compatibility): $targetUrl")
+                            targetUrl to null
+                        } else {
+                            val enableLocalIsolation = app.webViewConfig.enableCrossOriginIsolation ||
+                                LocalHttpServer.shouldEnableCrossOriginIsolation(htmlDir)
+                            val preferredPort = app.htmlConfig?.port?.takeIf { it > 0 }
+                                ?: LocalHttpServer.stablePortForPackageName(
+                                    if (projectId.isNotBlank()) "html:$projectId" else "html:preview"
+                                )
+                            val conflictPolicy = PortManager.ConflictPolicy.fromName(
+                                app.htmlConfig?.portConflictMode?.name
+                            )
+                            val baseUrl = localHttpServer.start(
+                                rootDir = htmlDir,
+                                enableCrossOriginIsolation = enableLocalIsolation,
+                                owner = if (projectId.isNotBlank()) projectId else "html-preview",
+                                conflictPolicy = conflictPolicy,
+                                preferredPort = preferredPort
+                            )
+                            val cacheBust = "_wta_v=" + projectId.takeIf { it.isNotBlank() }?.hashCode()
+                            val targetUrl = "$baseUrl/${Uri.encode(entryFile.removePrefix("/").ifBlank { "index.html" }, "/")}?$cacheBust"
+                            AppLogger.d("WebViewActivity", "Target URL: $targetUrl, crossOriginIsolation=$enableLocalIsolation")
+                            targetUrl to null
+                        }
+                    } catch (e: Exception) {
+                        AppLogger.e("WebViewActivity", "Failed to start local server", e)
+                        val msg = when (e) {
+                            is PortConflictException -> "${Strings.portConflictTitle}: ${e.port}"
+                            else -> e.message ?: Strings.serverStartFailed
+                        }
+                        "" to msg
+                    }
+                } else {
+                    AppLogger.w("WebViewActivity", "HTML project directory does not exist: ${htmlDir.absolutePath}")
+                    "" to null
+                }
+            }
+            else -> normalizeWebUrlForSecurity(remoteDeliveredUrl ?: app?.url) to null
+        }
+    }
+    val targetUrl = targetResolution.first
+    LaunchedEffect(targetResolution.second) {
+        targetResolution.second?.let { errorMessage = it }
+    }
+
+    DisposableEffect(Unit) {
+        onDispose {
+
+        }
+    }
+
+    val hideToolbar = !isTestMode && webApp?.webViewConfig?.hideToolbar == true
+
+    val toolbarEnabled = !isTestMode && webApp?.webViewConfig?.browserToolbarEnabled == true
+
+    val showToolbarInPreview = !hideToolbar || webApp?.webViewConfig?.showToolbarInFullscreen == true
+
+    val toolbarCfg = webApp?.webViewConfig
+    // Find-in-page runs on both kernels now (WebView findAllAsync; GeckoView SessionFinder
+    // through BrowserSurface.findInPage), so no engine gate remains here or in the shell.
+    val hasAnyToolbarItem = toolbarCfg?.let {
+        hasAnyToolbarItem(
+            toolbarShowTitle = it.toolbarShowTitle,
+            toolbarShowUrl = it.toolbarShowUrl,
+            toolbarShowBack = it.toolbarShowBack,
+            toolbarShowForward = it.toolbarShowForward,
+            toolbarShowRefresh = it.toolbarShowRefresh,
+            toolbarShowConsole = it.toolbarShowConsole,
+            toolbarShowFind = it.toolbarShowFind
+        )
+    } == true
+    val shouldShowTopBar = showToolbarInPreview && toolbarEnabled && hasAnyToolbarItem
+
+    // Every button requires both the master switch and its own flag
+    // (mirrors the shell/export layout).
+    val browserToolbarVisibility = toolbarCfg?.let {
+        resolveToolbarButtons(
+            toolbarEnabled = toolbarEnabled,
+            toolbarShowTitle = it.toolbarShowTitle,
+            toolbarShowUrl = it.toolbarShowUrl,
+            toolbarShowBack = it.toolbarShowBack,
+            toolbarShowForward = it.toolbarShowForward,
+            toolbarShowRefresh = it.toolbarShowRefresh,
+            toolbarShowConsole = it.toolbarShowConsole,
+            toolbarShowFind = it.toolbarShowFind
+        )
+    }
+
+    // Plugin host surface: per-plugin styles ride on each plugin record; these
+    // are only the app-level fallbacks for plugins without their own choice.
+    val previewPluginEntryStyle = com.webtoapp.core.plugin.PluginEntryStyle.TOOLBAR
+    val previewPluginPanelStyle = com.webtoapp.core.plugin.PluginPanelStyle.BOTTOM_SHEET
+    val previewPluginsEnabled = webApp?.pluginsEnabled == true ||
+        (isTestMode && !testModuleIds.isNullOrEmpty())
+
+    LaunchedEffect(hideToolbar) {
+
+        onFullscreenModeChanged(hideToolbar)
+    }
+
+    Box(modifier = Modifier.fillMaxSize()) {
+    Scaffold(
+
+        // #1075: exclude the IME-covered region — WindowHelper's manual IME
+        // padding already lifts the layout, and the nav-bar inset must not
+        // double-stack above the keyboard (same contract as ShellScaffoldLayout).
+        contentWindowInsets = if (hideToolbar && !showToolbarInPreview) WindowInsets(0) else if (hideToolbar && showToolbarInPreview) WindowInsets(0) else ScaffoldDefaults.contentWindowInsets.exclude(WindowInsets.ime),
+        modifier = if (hideToolbar && !showToolbarInPreview) Modifier.fillMaxSize() else if (hideToolbar) Modifier.fillMaxSize() else Modifier,
+        topBar = {
+            if (shouldShowTopBar) {
+                TopAppBar(
+                    title = {
+                        Column {
+                            if (isTestMode || browserToolbarVisibility?.showTitle == true) {
+                                Text(
+                                    text = if (isTestMode) Strings.moduleTestMode else pageTitle.ifEmpty { webApp?.name ?: "WebApp" },
+                                    style = MaterialTheme.typography.titleMedium,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis
+                                )
+                            }
+                            if (isTestMode && !testModuleIds.isNullOrEmpty()) {
+                                Text(
+                                    text = Strings.testingModules.format(testModuleIds.size),
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.primary,
+                                    maxLines = 1
+                                )
+                            } else if (currentUrl.isNotEmpty() && (isTestMode || browserToolbarVisibility?.showUrl == true)) {
+                                Text(
+                                    text = currentUrl,
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis
+                                )
+                            }
+                        }
+                    },
+                    actions = {
+                        if (isTestMode || browserToolbarVisibility?.showBack == true) {
+                            com.webtoapp.ui.design.WtaIconButton(
+                                onClick = {
+                                    (context as? AppCompatActivity)?.let { activity ->
+                                        // Surface-first: on the GeckoView kernel webViewRef is
+                                        // null and the engine's own history drives back.
+                                        if (browserSurfaceRef != null) {
+                                            ShellWebViewNavigation.goBackOrFinish(activity, browserSurfaceRef)
+                                        } else {
+                                            ShellWebViewNavigation.goBackOrFinish(activity, webViewRef)
+                                        }
+                                    }
+                                },
+                                icon = Icons.AutoMirrored.Filled.ArrowBack,
+                                contentDescription = "Back",
+                                enabled = canGoBack
+                            )
+                        }
+                        if (isTestMode || browserToolbarVisibility?.showForward == true) {
+                            com.webtoapp.ui.design.WtaIconButton(
+                                onClick = { browserSurfaceRef?.goForward() ?: webViewRef?.goForward() },
+                                icon = Icons.AutoMirrored.Filled.ArrowForward,
+                                contentDescription = "Forward",
+                                enabled = canGoForward
+                            )
+                        }
+                        if (isTestMode || browserToolbarVisibility?.showRefresh == true) {
+                            com.webtoapp.ui.design.WtaIconButton(
+                                onClick = { reloadBrowser() },
+                                icon = Icons.Default.Refresh,
+                                contentDescription = "Refresh"
+                            )
+                        }
+
+                        if (isTestMode || browserToolbarVisibility?.showConsoleButton == true) {
+                            val errorCount = consoleMessages.count { it.level == ConsoleLevel.ERROR }
+                            BadgedBox(
+                                badge = {
+                                    if (errorCount > 0) {
+                                        Badge { Text("$errorCount") }
+                                    }
+                                }
+                            ) {
+                                com.webtoapp.ui.design.WtaIconButton(
+                                    onClick = { showConsole = !showConsole },
+                                    icon = if (showConsole) Icons.Filled.Terminal else Icons.Outlined.Terminal,
+                                    contentDescription = Strings.console
+                                )
+                            }
+                        }
+                        // Find-in-page button: opens the native bottom find bar (both
+                        // kernels — WebView findAllAsync and GeckoView SessionFinder).
+                        if (isTestMode || browserToolbarVisibility?.showFind == true) {
+                            com.webtoapp.ui.design.WtaIconButton(
+                                onClick = { showFindBar = !showFindBar },
+                                icon = if (showFindBar) Icons.Filled.Search else Icons.Outlined.Search,
+                                contentDescription = Strings.nativeBridgeCapsFindInPage
+                            )
+                        }
+                        // Plugin slot — per-plugin toolbar icons plus the sheet
+                        // entry for menu/handle-style plugins.
+                        if (previewPluginsEnabled) {
+                            com.webtoapp.ui.plugin.PluginToolbarEntries(
+                                onOpenSheet = { com.webtoapp.core.plugin.PluginHostState.openPluginSheet() }
+                            )
+                        }
+                    },
+                    colors = TopAppBarDefaults.topAppBarColors(
+                        containerColor = MaterialTheme.colorScheme.surface,
+                        titleContentColor = MaterialTheme.colorScheme.onSurface,
+                        navigationIconContentColor = MaterialTheme.colorScheme.onSurface,
+                        actionIconContentColor = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                )
+            }
+        }
+    ) { padding ->
+
+        val density = LocalDensity.current
+
+        // On the classic pre-API-30 resize path the decor fits system windows: the status-bar
+        // inset is 0 whether or not a bar is drawn, and nothing renders behind the bar area
+        // (issue #683). Never pad the content by a guessed status-bar band there — only the
+        // user's explicit statusBarHeightDp override may reserve space.
+        val classicSystemBars = com.webtoapp.ui.shared.WindowHelper.isClassicSystemBarsWindow(activity)
+
+        val systemStatusBarHeightDp = if (classicSystemBars) {
+            0.dp
+        } else {
+            val topInsetPx = WindowInsets.statusBars.getTop(density)
+            if (topInsetPx > 0) {
+                with(density) { topInsetPx.toDp() }
+            } else {
+                0.dp
+            }
+        }
+
+        val actualStatusBarPadding = if (statusBarHeightDp >= 0) statusBarHeightDp.dp else systemStatusBarHeightDp
+
+        // Issue #771: transparent/image bars overlay the content instead of
+        // reserving a strip (WeChat-style persistent bar); solid bars keep the
+        // reservation so page controls stay clear of the status icons.
+        val previewDark = com.webtoapp.ui.theme.LocalIsDarkTheme.current
+        val effBgType = if (previewDark) statusBarBackgroundTypeDarkLocal else statusBarBackgroundType
+        val effMode = if (previewDark) webApp?.webViewConfig?.statusBarColorModeDark else webApp?.webViewConfig?.statusBarColorMode
+        val barOverlaysContent = effBgType == "IMAGE" ||
+            effMode == com.webtoapp.data.model.StatusBarColorMode.TRANSPARENT
+
+        // Fullscreen content padding mirrors the exported shell (ShellScaffoldLayout):
+        // reserve the status-bar height on top when the bar is shown, pad the
+        // remaining edges so corner controls stay tappable. Preview used to ignore
+        // this setting entirely, so the slider appeared dead until export.
+        val padTop = (webApp?.webViewConfig?.fullscreenPadTop ?: 0).dp
+        val padStart = (webApp?.webViewConfig?.fullscreenPadStart ?: 0).dp
+        val padEnd = (webApp?.webViewConfig?.fullscreenPadEnd ?: 0).dp
+        val padBottom = (webApp?.webViewConfig?.fullscreenPadBottom ?: 0).dp
+
+        val contentModifier = when {
+            hideToolbar && showToolbarInPreview -> {
+
+                Modifier.fillMaxSize().padding(padding)
+            }
+            hideToolbar && webApp?.webViewConfig?.showStatusBarInFullscreen == true -> {
+
+                Modifier.fillMaxSize().padding(
+                    top = (if (barOverlaysContent) 0.dp else actualStatusBarPadding) + padTop,
+                    start = padStart,
+                    end = padEnd,
+                    bottom = padBottom
+                )
+            }
+            hideToolbar -> {
+
+                Modifier.fillMaxSize().padding(
+                    top = padTop,
+                    start = padStart,
+                    end = padEnd,
+                    bottom = padBottom
+                )
+            }
+            else -> {
+
+                Modifier.fillMaxSize().padding(padding)
+            }
+        }
+
+        Box(modifier = contentModifier) {
+
+            if (autoRefreshRemaining > 0 && autoRefreshController?.countdownVisible == true) {
+                AutoRefreshCountdownChip(
+                    remainingSeconds = autoRefreshRemaining,
+                    onClick = { autoRefreshController?.pauseBriefly() },
+                    modifier = Modifier
+                        .align(Alignment.TopEnd)
+                        .padding(10.dp)
+                )
+            }
+
+            AnimatedVisibility(
+                visible = isLoading,
+                enter = fadeIn(),
+                exit = fadeOut()
+            ) {
+                LinearProgressIndicator(
+                    progress = { loadProgress / 100f },
+                    modifier = Modifier.fillMaxWidth()
+                )
+            }
+
+            if (!isActivationChecked && webApp?.activationEnabled == true) {
+                Box(
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    CircularProgressIndicator()
+                }
+            }
+
+            else if (!isActivated && webApp?.activationEnabled == true) {
+                Box(
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Icon(
+                            Icons.Default.Lock,
+                            contentDescription = null,
+                            modifier = Modifier.size(64.dp),
+                            tint = MaterialTheme.colorScheme.outline
+                        )
+                        Spacer(modifier = Modifier.height(16.dp))
+                        Text(Strings.pleaseActivateApp)
+                        Spacer(modifier = Modifier.height(16.dp))
+                        PremiumButton(onClick = { showActivationDialog = true }) {
+                            Text(Strings.enterActivationCode)
+                        }
+                    }
+                }
+            } else if (webApp?.appType == com.webtoapp.data.model.AppType.MULTI_WEB && isActivationChecked) {
+
+                val mwApp = webApp
+                val multiWebConfig = mwApp?.multiWebConfig
+                if (mwApp != null && multiWebConfig != null && multiWebConfig.sites.isNotEmpty()) {
+                    // App-level plugins: resolve the multi-web app's attached
+                    // set into embedded records so site configs consume the same
+                    // payload shape as a generated APK.
+                    val mwEmbeddedPlugins by androidx.compose.runtime.produceState<List<com.webtoapp.core.shell.EmbeddedShellPlugin>?>(
+                        initialValue = null,
+                        mwApp.pluginIds
+                    ) {
+                        value = if (mwApp.pluginIds.isEmpty() || !mwApp.pluginsEnabled) {
+                            emptyList()
+                        } else {
+                            kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+                                val store = com.webtoapp.core.plugin.PluginStore.getInstance(context)
+                                store.awaitLoaded()
+                                store.resolveForInjection(mwApp.pluginIds)
+                                    .map { com.webtoapp.core.shell.EmbeddedShellPlugin.fromResolved(it) }
+                            }
+                        }
+                    }
+                    val readyEmbeddedPlugins = mwEmbeddedPlugins
+                    if (readyEmbeddedPlugins != null) {
+                    val shellConfig = com.webtoapp.core.shell.ShellConfig(
+                        appName = mwApp.name,
+                        appType = "MULTI_WEB",
+                        engineType = mwApp.apkExportConfig?.engineType ?: "SYSTEM_WEBVIEW",
+                        multiWebConfig = com.webtoapp.core.shell.MultiWebShellConfig(
+                            sites = multiWebConfig.sites.map { site ->
+                                val siteShellConfig = sourceAppShellConfigs[site.sourceAppId]
+                                com.webtoapp.core.shell.MultiWebSiteShellConfig(
+                                    id = site.id,
+                                    name = site.name,
+                                    url = site.url,
+                                    type = site.type,
+                                    localFilePath = site.localFilePath,
+                                    iconEmoji = site.iconEmoji,
+                                    category = site.category,
+                                    cssSelector = site.cssSelector,
+                                    linkSelector = site.linkSelector,
+                                    enabled = site.enabled,
+                                    sourceAppId = site.sourceAppId,
+                                    sourceProjectId = site.sourceProjectId,
+                                    faviconUrl = site.faviconUrl,
+                                    themeColor = site.themeColor,
+                                    sortIndex = site.sortIndex,
+                                    appType = site.appType,
+                                    siteProjectId = site.siteProjectId,
+                                    siteShellConfig = siteShellConfig
+                                )
+                            },
+                            displayMode = multiWebConfig.displayMode,
+                            refreshInterval = multiWebConfig.refreshInterval,
+                            showSiteIcons = multiWebConfig.showSiteIcons,
+                            sitesUseOwnConfig = multiWebConfig.sitesUseOwnConfig,
+                            projectId = multiWebConfig.projectId
+                        ),
+                        // App-level userscripts: MultiWebShellMode merges them into
+                        // every site's effective config (site-level scripts win on
+                        // a name collision), same as the exported shell does.
+                        webViewConfig = com.webtoapp.core.shell.WebViewShellConfig(
+                            injectScripts = mwApp.webViewConfig.injectScripts.map { s ->
+                                com.webtoapp.core.shell.ShellUserScript(
+                                    name = s.name,
+                                    code = s.code,
+                                    enabled = s.enabled,
+                                    runAt = s.runAt.name
+                                )
+                            }
+                        ),
+                        pluginsEnabled = mwApp.pluginsEnabled,
+                        pluginIds = mwApp.pluginIds,
+                        embeddedPlugins = readyEmbeddedPlugins,
+                        pluginEntryStyle = previewPluginEntryStyle.name,
+                        pluginPanelStyle = previewPluginPanelStyle.name,
+                        browserDisguiseConfig = mwApp.browserDisguiseConfig,
+                        deviceDisguiseConfig = mwApp.deviceDisguiseConfig
+                    )
+                    com.webtoapp.ui.shell.MultiWebShellMode(
+                        config = shellConfig,
+                        webViewConfig = mwApp.webViewConfig,
+                        webViewCallbacks = webViewCallbacks,
+                        webViewManager = webViewManager,
+                        onWebViewCreated = { wv ->
+                            statusBarColorTracker?.detach()
+                            val tracker = com.webtoapp.core.webview.StatusBarPageColorTracker(
+                                webView = wv,
+                                shouldSample = { usesPageTopStatusBarColor(webApp ?: previewApp) },
+                                onColorChanged = { color ->
+                                    if (statusBarAutoColor != color) {
+                                        statusBarAutoColor = color
+                                        onStatusBarAutoColorChanged?.invoke(color)
+                                    }
+                                }
+                            )
+                            tracker.attach()
+                            statusBarColorTracker = tracker
+                            webViewRef = wv
+                            onWebViewCreated(wv, null)
+                            tracker.scheduleSample(80L)
+                        },
+                        swipeRefreshEnabled = mwApp.webViewConfig.swipeRefreshEnabled,
+                        isRefreshing = isRefreshing,
+                        onRefresh = {
+                            isRefreshing = true
+                            reloadBrowser()
+                        },
+                        onBrowserSurfaceCreated = { surface ->
+                            // Mirror the single-app preview wiring: keep the compose-level
+                            // and activity-level surface refs (back/forward/find/console) and
+                            // attach the Gecko media-session adapter for engine sites (#593
+                            // parity — MULTI_WEB previously never saw per-site surfaces).
+                            browserSurfaceRef = surface
+                            (context as? WebViewActivity)?.browserSurface = surface
+                            if (surface.webView == null && mwApp.webViewConfig.enableMediaSession) {
+                                val geckoEngine = surface.engine as? com.webtoapp.core.engine.GeckoViewEngine
+                                if (geckoEngine != null) {
+                                    (context as? WebViewActivity)?.let { host ->
+                                        host.geckoMediaAdapter?.runCatching { release() }
+                                        host.geckoMediaAdapter = com.webtoapp.core.engine.GeckoMediaSessionAdapter(host, geckoEngine)
+                                    }
+                                }
+                            }
+                        }
+                    )
+                    }
+                } else {
+
+                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            Icon(
+                                Icons.Filled.Language, null,
+                                modifier = Modifier.size(64.dp),
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
+                            )
+                            Spacer(modifier = Modifier.height(16.dp))
+                            Text(
+                                Strings.multiWebNoSites,
+                                style = MaterialTheme.typography.titleMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    }
+                }
+            } else if (targetUrl.isNotEmpty() && isActivationChecked) {
+
+                key(webViewRecreationKey) {
+
+                var isConsoleExpanded by remember { mutableStateOf(false) }
+                val swipeRefreshEnabled = webApp?.webViewConfig?.swipeRefreshEnabled != false
+
+                Column(modifier = Modifier.fillMaxSize()) {
+
+                    AndroidView(
+                        factory = { ctx ->
+                            WebSwipeRefreshLayout(ctx).apply {
+                                layoutParams = ViewGroup.LayoutParams(
+                                    ViewGroup.LayoutParams.MATCH_PARENT,
+                                    ViewGroup.LayoutParams.MATCH_PARENT
+                                )
+                                setColorSchemeColors(
+                                    android.graphics.Color.parseColor("#6750A4"),
+                                    android.graphics.Color.parseColor("#7F67BE")
+                                )
+                                gestureZone = webApp?.webViewConfig?.swipeRefreshZone
+                                    ?: com.webtoapp.data.model.SwipeRefreshZone.TOP_EDGE
+                                isEnabled = swipeRefreshEnabled
+                                setOnRefreshListener {
+                                    isRefreshing = true
+                                    val surface = tag as? BrowserSurface
+                                    if (surface != null) surface.reload() else reloadBrowser()
+                                }
+
+                                var swipeChildWebView: WebView? = null
+                                setOnChildScrollUpCallback { _, _ ->
+                                    val wv = swipeChildWebView ?: return@setOnChildScrollUpCallback false
+                                    WebScrollTracker.scrollUpBlocked(wv, wv.scrollY)
+                                }
+
+                                val pluginIds = if (isTestMode && !testModuleIds.isNullOrEmpty()) {
+                                    testModuleIds
+                                } else {
+                                    webApp?.pluginIds ?: emptyList()
+                                }
+
+                                val pluginsEnabled = if (isTestMode && !testModuleIds.isNullOrEmpty()) {
+                                    true
+                                } else {
+                                    webApp?.pluginsEnabled == true
+                                }
+
+                                val previewEngineType = webApp?.apkExportConfig?.engineType
+                                    ?: if (webApp?.webViewConfig?.dnsConfig?.echEffective == true) "GECKOVIEW" else "SYSTEM_WEBVIEW"
+                                val surface = EngineViewFactory.create(
+                                    context = ctx,
+                                    engineTypeName = previewEngineType,
+                                    config = webApp?.webViewConfig ?: com.webtoapp.data.model.WebViewConfig(),
+                                    webViewManager = webViewManager,
+                                    callbacks = webViewCallbacks,
+                                    adBlocker = com.webtoapp.WebToAppApplication.adBlock,
+                                    pluginsEnabled = pluginsEnabled,
+                                    pluginEntryStyle = previewPluginEntryStyle,
+                                    pluginPanelStyle = previewPluginPanelStyle,
+                                    expectLatePluginPayloads = pluginsEnabled,
+                                    browserDisguiseConfig = webApp?.browserDisguiseConfig,
+                                    deviceDisguiseConfig = webApp?.deviceDisguiseConfig,
+                                    appOriginUrl = webApp?.url.orEmpty()
+                                )
+                                // Plugin code resolution does package IO; resolve off the main
+                                // thread and push payloads into the session once ready. The
+                                // session is already attached so late payloads still inject.
+                                val previewWebView = surface.webView
+                                if (pluginsEnabled && pluginIds.isNotEmpty() && previewWebView != null) {
+                                    kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.IO).launch {
+                                        com.webtoapp.core.plugin.PluginStore.getInstance(ctx).awaitLoaded()
+                                        val payloads = com.webtoapp.core.plugin.PluginStore.getInstance(ctx)
+                                            .resolveForInjection(pluginIds)
+                                        kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Main) {
+                                            webViewManager.updatePluginPayloads(previewWebView, payloads)
+                                        }
+                                    }
+                                }
+                                tag = surface
+                                browserSurfaceRef = surface
+                                (context as? WebViewActivity)?.browserSurface = surface
+                                val createdWebView = surface.webView
+                                if (createdWebView == null &&
+                                    webApp?.webViewConfig?.enableMediaSession == true
+                                ) {
+                                    // Gecko engine preview: bridge Gecko's own media
+                                    // session events into the shared native core (#593).
+                                    val geckoEngine = surface.engine as? com.webtoapp.core.engine.GeckoViewEngine
+                                    if (geckoEngine != null) {
+                                        (context as? WebViewActivity)?.let { host ->
+                                            host.geckoMediaAdapter?.runCatching { release() }
+                                            host.geckoMediaAdapter = com.webtoapp.core.engine.GeckoMediaSessionAdapter(host, geckoEngine)
+                                        }
+                                    }
+                                }
+                                if (createdWebView != null) {
+                                    createdWebView.apply {
+                                    layoutParams = ViewGroup.LayoutParams(
+                                        ViewGroup.LayoutParams.MATCH_PARENT,
+                                        ViewGroup.LayoutParams.MATCH_PARENT
+                                    )
+                                    val effectiveWebApp = webApp
+                                    if (effectiveWebApp != null) {
+                                        if (effectiveWebApp.webViewConfig.enableNativeBridge) {
+                                            val nb = com.webtoapp.core.webview.NativeBridge(
+                                                context = context,
+                                                scope = scope,
+                                                webViewProvider = { this },
+                                                capabilities = effectiveWebApp.webViewConfig.nativeBridgeCapabilities,
+                                                corsBypass = effectiveWebApp.webViewConfig.enableCorsBypass,
+                                                downloadLocationMode = effectiveWebApp.webViewConfig.downloadLocationMode,
+                                                customDownloadDirUri = effectiveWebApp.webViewConfig.customDownloadDirUri,
+                                                appOriginUrl = effectiveWebApp.url
+                                            )
+                                            addJavascriptInterface(
+                                                nb,
+                                                com.webtoapp.core.webview.NativeBridge.JS_INTERFACE_NAME
+                                            )
+                                        } else if (effectiveWebApp.webViewConfig.enablePrivateNetworkBridge || effectiveWebApp.webViewConfig.enableCorsBypass) {
+                                            val privateNetworkBridge = com.webtoapp.core.webview.PrivateNetworkNativeBridgeAdapter(
+                                                context = context,
+                                                scope = scope,
+                                                webViewProvider = { this },
+                                                corsBypass = effectiveWebApp.webViewConfig.enableCorsBypass,
+                                                appOriginUrl = effectiveWebApp.url
+                                            )
+                                            addJavascriptInterface(
+                                                privateNetworkBridge,
+                                                com.webtoapp.core.webview.NativeBridge.JS_INTERFACE_NAME
+                                            )
+                                        } else {
+                                            removeJavascriptInterface(
+                                                com.webtoapp.core.webview.NativeBridge.JS_INTERFACE_NAME
+                                            )
+                                        }
+                                    }
+
+                                    val currentApp = webApp
+                                    if (currentApp?.appType == com.webtoapp.data.model.AppType.HTML ||
+                                        currentApp?.appType == com.webtoapp.data.model.AppType.FRONTEND) {
+                                        settings.apply {
+                                            allowFileAccess = true
+                                            allowContentAccess = true
+                                            @Suppress("DEPRECATION")
+                                            allowFileAccessFromFileURLs = true
+                                            @Suppress("DEPRECATION")
+                                            allowUniversalAccessFromFileURLs = true
+                                            javaScriptEnabled = currentApp.htmlConfig?.enableJavaScript ?: true
+                                            domStorageEnabled = currentApp.htmlConfig?.enableLocalStorage ?: true
+                                            mediaPlaybackRequiresUserGesture = false
+                                        }
+                                    }
+
+                                    var lastTouchX = 0f
+                                    var lastTouchY = 0f
+                                    var downFromFinger = false
+                                    setOnTouchListener { view, event ->
+                                        when (event.actionMasked) {
+                                            MotionEvent.ACTION_DOWN -> {
+                                                lastTouchX = event.x
+                                                lastTouchY = event.y
+                                                downFromFinger =
+                                                    event.getToolType(0) == MotionEvent.TOOL_TYPE_FINGER
+                                                if (event.isFromSource(android.view.InputDevice.SOURCE_MOUSE)) {
+                                                    // See ShellBrowserView: force the focus
+                                                    // transfer a mouse click may skip (#1031).
+                                                    view.requestFocus()
+                                                }
+                                            }
+                                            MotionEvent.ACTION_MOVE -> {
+                                                lastTouchX = event.x
+                                                lastTouchY = event.y
+                                            }
+                                            MotionEvent.ACTION_UP -> {
+                                                view.performClick()
+                                                downFromFinger = false
+                                            }
+                                            MotionEvent.ACTION_CANCEL -> downFromFinger = false
+                                        }
+                                        false
+                                    }
+                                    setOnLongClickListener {
+                                        if (downFromFinger) {
+                                            webViewCallbacks.onLongPress(this, lastTouchX, lastTouchY)
+                                        } else {
+                                            false
+                                        }
+                                    }
+
+                                    statusBarColorTracker?.detach()
+                                    val tracker = com.webtoapp.core.webview.StatusBarPageColorTracker(
+                                        webView = this,
+                                        shouldSample = { usesPageTopStatusBarColor(webApp ?: previewApp) },
+                                        onColorChanged = { color ->
+                                            if (statusBarAutoColor != color) {
+                                                statusBarAutoColor = color
+                                                onStatusBarAutoColorChanged?.invoke(color)
+                                            }
+                                        }
+                                    )
+                                    tracker.attach()
+                                    statusBarColorTracker = tracker
+                                    onWebViewCreated(this, webApp)
+                                    WebScrollTracker.install(this)
+
+                                    webViewRef = this
+
+                                    tracker.scheduleSample(80L)
+                                    val host = context as? WebViewActivity
+                                    val savedState = host?.consumeWebViewState()
+                                    val restored = savedState?.let { restoreState(it) }
+                                    val externalJumpUrl = if (restored != null) host?.consumeExternalJump() else null
+                                    if (restored != null &&
+                                        com.webtoapp.core.webview.WebViewRestoreGuard
+                                            .isUsableRestoredUrl(restored.currentItem?.url, externalJumpUrl)
+                                    ) {
+                                        // Bundle path: back-forward list restored — load the
+                                        // current entry instead of the configured start URL
+                                        // (same contract as ShellBrowserView's state_restored tag).
+                                        host?.markResumeConsumed()
+                                        reload()
+                                    } else {
+                                        // Cold-start path: resume the last visited page after
+                                        // process death when the store still matches this target.
+                                        loadUrl(host?.consumeResumeUrl() ?: targetUrl)
+                                    }
+                                    }
+                                    swipeChildWebView = createdWebView
+                                    addView(createdWebView)
+                                } else {
+                                    swipeChildWebView = null
+                                    webViewRef = null
+                                    setOnChildScrollUpCallback { _, child ->
+                                        child?.canScrollVertically(-1) == true
+                                    }
+                                    addView(
+                                        surface.view,
+                                        ViewGroup.LayoutParams(
+                                            ViewGroup.LayoutParams.MATCH_PARENT,
+                                            ViewGroup.LayoutParams.MATCH_PARENT
+                                        )
+                                    )
+                                    // Gecko engine preview: the WebView branch above ends with
+                                    // loadUrl(targetUrl); this branch never navigated at all, so
+                                    // plain WEB/HTML previews on Gecko/ECH showed a blank view.
+                                    if (targetUrl.isNotEmpty()) {
+                                        loadInBrowser((context as? WebViewActivity)?.consumeResumeUrl() ?: targetUrl)
+                                    }
+                                }
+                            }
+                        },
+                        update = { swipeLayout ->
+                            swipeLayout.isEnabled = swipeRefreshEnabled
+                            if (swipeLayout.isRefreshing != isRefreshing) {
+                                swipeLayout.isRefreshing = isRefreshing
+                            }
+                        },
+                        // Any drop of this composable (key bump, teardown,
+                        // disposal) must destroy the surface's WebView too —
+                        // otherwise the renderer outlives its view (#1033).
+                        onRelease = { swipeLayout ->
+                            val surface = swipeLayout.tag as? BrowserSurface
+                            surface?.webView?.let { webViewManager.discardWebView(it) }
+                            surface?.destroy()
+                            if (browserSurfaceRef === surface) browserSurfaceRef = null
+                            (context as? WebViewActivity)?.releaseSurfaceRefs(surface)
+                            swipeLayout.removeAllViews()
+                        },
+                        modifier = Modifier.weight(weight = 1f, fill = true)
+                    )
+
+                    AnimatedVisibility(
+                        visible = showConsole,
+                        enter = slideInVertically(initialOffsetY = { it }) + fadeIn(),
+                        exit = slideOutVertically(targetOffsetY = { it }) + fadeOut()
+                    ) {
+                        ConsolePanel(
+                            consoleMessages = consoleMessages,
+                            isExpanded = isConsoleExpanded,
+                            onExpandToggle = { isConsoleExpanded = !isConsoleExpanded },
+                            onClear = { consoleMessages = emptyList() },
+                            onRunScript = { script ->
+                                // Surface-first so eval also runs on the GeckoView kernel
+                                // (webViewRef stays null there; Gecko cannot return the eval
+                                // result, so the entry shows "=> null" but the script runs).
+                                val appendResult: (String?) -> Unit = { result ->
+                                    consoleMessages = (consoleMessages + ConsoleLogEntry(
+                                        level = ConsoleLevel.LOG,
+                                        message = "=> $result",
+                                        source = "eval",
+                                        lineNumber = 0,
+                                        timestamp = System.currentTimeMillis()
+                                    )).takeLast(CONSOLE_LOG_CAP)
+                                }
+                                val surface = browserSurfaceRef
+                                if (surface != null) {
+                                    surface.evaluateJavascript(script, appendResult)
+                                } else {
+                                    webViewRef?.evaluateJavascript(script, appendResult)
+                                }
+                            },
+                            onClose = { showConsole = false }
+                        )
+                    }
+
+                    AnimatedVisibility(
+                        visible = showFindBar,
+                        enter = slideInVertically(initialOffsetY = { it }) + fadeIn(),
+                        exit = slideOutVertically(targetOffsetY = { it }) + fadeOut()
+                    ) {
+                        com.webtoapp.ui.shell.FindInPageBar(
+                            surface = browserSurfaceRef ?: webViewRef?.let {
+                                com.webtoapp.core.engine.BrowserSurface.fromWebView(it)
+                            },
+                            onClose = { showFindBar = false }
+                        )
+                    }
+                }
+                }
+            } else if (webApp == null) {
+
+                Box(
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    CircularProgressIndicator()
+                }
+            }
+
+            val isWordPressLoading = webApp?.appType == com.webtoapp.data.model.AppType.WORDPRESS &&
+                wordPressPreviewState !is WordPressPreviewState.Ready &&
+                wordPressPreviewState !is WordPressPreviewState.Idle
+            if (isWordPressLoading) {
+                WordPressLoadingOverlay(
+                    state = wordPressPreviewState,
+                    downloadState = wpDownloadState,
+                    onRetry = { wpRetryTrigger++ }
+                )
+            }
+
+            val isPhpAppLoading = webApp?.appType == com.webtoapp.data.model.AppType.PHP_APP &&
+                phpAppPreviewState !is PhpAppPreviewState.Ready &&
+                phpAppPreviewState !is PhpAppPreviewState.Idle
+            if (isPhpAppLoading) {
+                PhpAppLoadingOverlay(
+                    state = phpAppPreviewState,
+                    downloadState = phpAppDownloadState,
+                    onRetry = { phpAppRetryTrigger++ }
+                )
+            }
+
+            val isPythonAppLoading = webApp?.appType == com.webtoapp.data.model.AppType.PYTHON_APP &&
+                pythonAppPreviewState !is PythonAppPreviewState.Ready &&
+                pythonAppPreviewState !is PythonAppPreviewState.Idle
+            if (isPythonAppLoading) {
+                PythonAppLoadingOverlay(
+                    state = pythonAppPreviewState,
+                    onRetry = { pythonAppRetryTrigger++ }
+                )
+            }
+
+            val pythonReadyState = pythonAppPreviewState as? PythonAppPreviewState.Ready
+            if (webApp?.appType == com.webtoapp.data.model.AppType.PYTHON_APP &&
+                pythonReadyState?.staticFallback == true &&
+                pythonReadyState.url != dismissedPythonFallbackBannerUrl
+            ) {
+                PythonStaticFallbackBanner(
+                    onDismiss = { dismissedPythonFallbackBannerUrl = pythonReadyState.url },
+                    modifier = Modifier.align(Alignment.TopCenter)
+                )
+            }
+
+            val isGoAppLoading = webApp?.appType == com.webtoapp.data.model.AppType.GO_APP &&
+                goAppPreviewState !is GoAppPreviewState.Ready &&
+                goAppPreviewState !is GoAppPreviewState.Idle
+            if (isGoAppLoading) {
+                SimpleAppLoadingOverlay(
+                    isStarting = goAppPreviewState is GoAppPreviewState.Starting || goAppPreviewState is GoAppPreviewState.StartingServer,
+                    startingText = Strings.goStartingPreview,
+                    errorMessage = (goAppPreviewState as? GoAppPreviewState.Error)?.message,
+                    onRetry = { goAppRetryTrigger++ },
+                    errorScope = "Go preview",
+                    errorThrowable = (goAppPreviewState as? GoAppPreviewState.Error)?.throwable
+                )
+            }
+
+            if (webApp?.webViewConfig?.showFloatingBackButton == true &&
+                ((hideToolbar && !showToolbarInPreview) || !toolbarEnabled) &&
+                canGoBack
+            ) {
+                var fabAlpha by remember { mutableFloatStateOf(0.9f) }
+                var fadeKey by remember { mutableIntStateOf(0) }
+
+                LaunchedEffect(canGoBack, fadeKey) {
+                    fabAlpha = 0.9f
+                    delay(3000L)
+
+                    val steps = 20
+                    val stepDelay = 30L
+                    for (i in 1..steps) {
+                        fabAlpha = 0.9f - (0.65f * i / steps)
+                        delay(stepDelay)
+                    }
+                }
+
+                androidx.compose.material3.SmallFloatingActionButton(
+                    onClick = {
+                        fadeKey++
+                        (context as? AppCompatActivity)?.let { activity ->
+                            // Surface-first: the floating back button must walk Gecko
+                            // history too (webViewRef is null on that kernel).
+                            if (browserSurfaceRef != null) {
+                                ShellWebViewNavigation.goBackOrFinish(activity, browserSurfaceRef)
+                            } else {
+                                ShellWebViewNavigation.goBackOrFinish(activity, webViewRef)
+                            }
+                        }
+                    },
+                    modifier = Modifier
+                        .align(Alignment.TopStart)
+                        .padding(start = 12.dp, top = actualStatusBarPadding + 8.dp)
+                        .graphicsLayer { alpha = fabAlpha },
+                    elevation = androidx.compose.material3.FloatingActionButtonDefaults.elevation(
+                        defaultElevation = 0.dp,
+                        pressedElevation = 0.dp,
+                        focusedElevation = 0.dp,
+                        hoveredElevation = 0.dp
+                    ),
+                    containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.85f),
+                    contentColor = MaterialTheme.colorScheme.onSurface
+                ) {
+                    Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = Strings.cdBack)
+                }
+            }
+
+            errorMessage?.let { error ->
+                Card(
+                    modifier = Modifier
+                        .align(Alignment.BottomCenter)
+                        .padding(16.dp),
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.errorContainer
+                    )
+                ) {
+                    Row(
+                        modifier = Modifier.padding(16.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            Icons.Default.Error,
+                            null,
+                            tint = MaterialTheme.colorScheme.error
+                        )
+                        Spacer(modifier = Modifier.width(12.dp))
+                        Text(error, modifier = Modifier.weight(weight = 1f, fill = true))
+                        TextButton(onClick = {
+                            val report = com.webtoapp.ui.components.buildErrorReport(
+                                scope = "WebView load error",
+                                message = error,
+                                contextLines = listOf("url=${webApp?.url ?: directUrl ?: testUrl ?: "-"}")
+                            )
+                            val cm = context.getSystemService(android.content.Context.CLIPBOARD_SERVICE) as? android.content.ClipboardManager
+                            cm?.setPrimaryClip(android.content.ClipData.newPlainText("WebToApp Error", report))
+                            android.widget.Toast.makeText(context, Strings.errorCopied, android.widget.Toast.LENGTH_SHORT).show()
+                        }) {
+                            Text(Strings.errorCopyDetails)
+                        }
+                        TextButton(onClick = { errorMessage = null }) {
+                            Text(Strings.close)
+                        }
+                    }
+                }
+            }
+
+            // Unified plugin surface: sheet, panel host, floating handle.
+            // TOOLBAR/MENU entries live in the top app bar; FLOATING_HANDLE
+            // renders the draggable launcher here.
+            if (previewPluginsEnabled || webApp?.appType == com.webtoapp.data.model.AppType.MULTI_WEB) {
+                com.webtoapp.ui.plugin.PluginSurfaceHost(
+                    entryStyle = previewPluginEntryStyle,
+                    toolbarVisible = shouldShowTopBar,
+                    floatingHandleModifier = Modifier
+                        .align(Alignment.BottomEnd)
+                        .padding(bottom = 24.dp)
+                )
+            }
+
+        }
+    }
+
+    // On the classic pre-API-30 resize path nothing draws behind the status bar and the bar
+    // itself is chrome-owned, so a Compose overlay would only paint a floating band over the
+    // web content (issue #683); the window-level bar color comes from WindowHelper instead.
+    if (!com.webtoapp.ui.shared.WindowHelper.isClassicSystemBarsWindow(activity) &&
+        hideToolbar && webApp?.webViewConfig?.showStatusBarInFullscreen == true
+    ) {
+        val overlayIsDark = com.webtoapp.ui.theme.LocalIsDarkTheme.current
+        com.webtoapp.ui.components.StatusBarOverlay(
+            show = true,
+            backgroundType = if (overlayIsDark) statusBarBackgroundTypeDarkLocal else statusBarBackgroundType,
+            backgroundColor = resolveStatusBarOverlayColor(overlayIsDark),
+            backgroundImagePath = if (overlayIsDark) statusBarBackgroundImageDark else statusBarBackgroundImage,
+            alpha = if (overlayIsDark) statusBarBackgroundAlphaDark else statusBarBackgroundAlpha,
+            heightDp = statusBarHeightDp,
+            modifier = Modifier.align(Alignment.TopStart)
+        )
+    }
+
+    }
+
+    if (showActivationDialog) {
+        val activationStatus by androidx.compose.runtime.produceState<com.webtoapp.core.activation.ActivationStatus?>(initialValue = null) {
+            value = try {
+                activation.getActivationStatus(appId)
+            } catch (e: Exception) {
+                null
+            }
+        }
+
+        com.webtoapp.ui.components.EnhancedActivationDialog(
+            onDismiss = { showActivationDialog = false },
+            onActivate = { code ->
+                val remote = webApp?.activationRemoteConfig?.takeIf { it.enabled }
+                if (remote != null) {
+                    val result = activation.verifyRemoteActivation(
+                        appId,
+                        code,
+                        activation.buildRemoteRequest(
+                            verifyUrl = remote.verifyUrl,
+                            publicKeyBase64 = remote.publicKeyBase64,
+                            offlinePolicy = remote.offlinePolicy,
+                            deliverUrl = remote.deliverUrl,
+                            encryptUrl = remote.encryptUrl,
+                            aesKeyBase64 = remote.aesKeyBase64,
+                            deviceBound = remote.deviceBound
+                        )
+                    )
+                    if (result is com.webtoapp.core.activation.ActivationResult.Success && remote.deliverUrl) {
+                        remoteDeliveredUrl = result.url
+                    }
+                    return@EnhancedActivationDialog result
+                }
+                val allCodes = webApp?.activationCodeList ?: emptyList()
+                return@EnhancedActivationDialog activation.verifyActivationCodeWithObjects(appId, code, allCodes)
+            },
+            activationStatus = activationStatus,
+            customTitle = webApp?.activationDialogConfig?.title ?: "",
+            customSubtitle = webApp?.activationDialogConfig?.subtitle ?: "",
+            customInputLabel = webApp?.activationDialogConfig?.inputLabel ?: "",
+            customButtonText = webApp?.activationDialogConfig?.buttonText ?: ""
+        )
+
+        LaunchedEffect(Unit) {
+            activation.isActivated(appId).collect { activated ->
+                if (activated) {
+                    isActivated = true
+                    showActivationDialog = false
+
+                    if (webApp?.announcementEnabled == true) {
+                        val shouldShow = announcement.shouldShowAnnouncement(appId, webApp?.announcement)
+                        showAnnouncementDialog = shouldShow
+                    }
+                }
+            }
+        }
+    }
+
+    if (showAnnouncementDialog && webApp?.announcement != null) {
+        val ann = webApp!!.announcement!!
+com.webtoapp.ui.components.announcement.AnnouncementDialog(
+            config = com.webtoapp.ui.components.announcement.AnnouncementConfig(
+                announcement = ann,
+                template = ann.template.toUiTemplate(),
+                customIconBitmap = ann.customIconPath?.let { p ->
+                    try { com.webtoapp.util.BoundedBitmaps.decodeBoundedBitmapFile(p) } catch (e: Exception) { null }
+                }
+            ),
+            onDismiss = {
+                showAnnouncementDialog = false
+                val scope = (context as? AppCompatActivity)?.lifecycleScope
+                scope?.launch {
+                    announcement.markAnnouncementShown(appId, ann.version)
+                }
+            },
+            onLinkClick = { url ->
+                try {
+                    val safeUrl = normalizeExternalUrlForIntent(url)
+                    if (safeUrl.isBlank()) {
+                        Toast.makeText(context, Strings.cannotOpenLink, Toast.LENGTH_SHORT).show()
+                    } else {
+                        val intent = Intent(Intent.ACTION_VIEW, Uri.parse(safeUrl))
+                        context.startActivity(intent)
+                    }
+                } catch (e: Exception) {
+                    Toast.makeText(context, Strings.cannotOpenLink, Toast.LENGTH_SHORT).show()
+                }
+            },
+            onNeverShowChecked = { checked ->
+                if (checked) {
+                    val scope = (context as? AppCompatActivity)?.lifecycleScope
+                    scope?.launch {
+                        announcement.markNeverShow(appId)
+                    }
+                }
+            }
+        )
+    }
+
+    val closeSplash = {
+        showSplash = false
+
+        if (originalOrientation != ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED) {
+            activity.requestedOrientation = originalOrientation
+            originalOrientation = ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
+        }
+    }
+
+    AnimatedVisibility(
+        visible = showSplash,
+        enter = fadeIn(animationSpec = tween(300)),
+        exit = fadeOut(animationSpec = tween(300))
+    ) {
+        webApp?.splashConfig?.let { splashConfig ->
+            SplashOverlay(
+                splashConfig = splashConfig,
+                countdown = splashCountdown,
+
+                onSkip = if (splashConfig.clickToSkip) { closeSplash } else null,
+
+                onComplete = closeSplash
+            )
+        }
+    }
+
+    if (showLongPressMenu && longPressResult != null) {
+        WebViewLongPressMenu(
+            menuStyle = webApp?.webViewConfig?.longPressMenuStyle ?: LongPressMenuStyle.FULL,
+            result = longPressResult!!,
+            touchX = longPressTouchX,
+            touchY = longPressTouchY,
+            longPressHandler = longPressHandler,
+            onDismiss = {
+                showLongPressMenu = false
+                longPressResult = null
+            }
+        )
+    }
+}

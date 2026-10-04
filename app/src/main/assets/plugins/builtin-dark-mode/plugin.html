@@ -1,0 +1,129 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: system-ui, -apple-system, sans-serif; padding: 8px 16px 16px; color: var(--wta-on-surface, #1f2937); }
+  .row { display: flex; align-items: center; gap: 12px; padding: 12px 2px; }
+  .row-text { flex: 1; min-width: 0; }
+  .status { font-size: 15px; font-weight: 500; }
+  .desc { font-size: 12px; color: var(--wta-on-surface-variant, #9ca3af); margin-top: 2px; }
+  .switch { position: relative; width: 46px; height: 28px; flex-shrink: 0; border: none; background: none; cursor: pointer; padding: 0; }
+  .switch .track { position: absolute; inset: 0; border-radius: 14px; background: var(--wta-outline, #d1d5db); transition: background .2s; }
+  .switch .thumb { position: absolute; top: 3px; left: 3px; width: 22px; height: 22px; border-radius: 50%; background: #fff; box-shadow: 0 1px 3px rgba(0,0,0,.25); transition: left .2s; }
+  .switch[data-state="on"] .track { background: var(--wta-accent, #6366f1); }
+  .switch[data-state="on"] .thumb { left: 21px; }
+</style>
+<script type="hcj/page">
+(function () {
+  'use strict';
+
+  var rawLang = (hcj.lang || 'zh').toLowerCase();
+  var LANG = rawLang.indexOf('ar') === 0 ? 'ar' : (rawLang.indexOf('zh') === 0 ? 'zh' : 'en');
+  var T = ({
+    zh: { on: '深色模式已开启', off: '深色模式已关闭', desc: '智能反色，保护眼睛' },
+    en: { on: 'Dark Mode On', off: 'Dark Mode Off', desc: 'Smart inversion, protect your eyes' },
+    ar: { on: 'الوضع الداكن مفعل', off: 'الوضع الداكن موقف', desc: 'عكس ذكي، حماية العين' }
+  })[LANG] || {};
+
+  var enabled = hcj.config.get('enabled', false);
+  var styleEl = null;
+
+  // Single inversion on <html> only — the old `html, html body` selector
+  // double-inverted body content back to light while the unfiltered canvas
+  // background stayed #111, which is the "pure black page" bug.
+  // The canvas background IS inside the root filter, so the base color must
+  // be specified PRE-inversion: #eee inverts to ~#111 (dark, not pure black).
+  // Do NOT set color-scheme:dark here — it pre-lightens the UA default text
+  // color, which then inverts back to dark text (and UA controls would end
+  // up light). Media and inline background images are re-inverted back to
+  // natural colors. svg ELEMENTS are deliberately NOT re-inverted (icons
+  // follow text color); only raster <image> inside svg is.
+  var darkCSS =
+    'html{background:#eee!important;' +
+    'filter:invert(1) hue-rotate(180deg) contrast(.92)!important;' +
+    '-webkit-filter:invert(1) hue-rotate(180deg) contrast(.92)!important}' +
+    'img,video,picture,canvas,svg image,embed,object,[style*="url("]{' +
+    'filter:invert(1) hue-rotate(180deg)!important;' +
+    '-webkit-filter:invert(1) hue-rotate(180deg)!important}';
+
+  function apply() {
+    if (enabled) {
+      if (!styleEl) {
+        styleEl = document.createElement('style');
+        styleEl.id = 'wta-dark-mode';
+        styleEl.textContent = darkCSS;
+      }
+      if (!styleEl.parentNode) {
+        (document.head || document.documentElement).appendChild(styleEl);
+      }
+      hcj.badge('ON', '#6366f1');
+    } else {
+      if (styleEl) { styleEl.remove(); styleEl = null; }
+      // WebView quirk: dropping a root filter does not always invalidate the
+      // composited layer — force a full reflow so the page repaints light.
+      var de = document.documentElement;
+      de.style.display = 'none';
+      void de.offsetHeight;
+      de.style.display = '';
+      hcj.badge('', '#6366f1');
+    }
+  }
+
+  function pushState() {
+    hcj.panel.send({ type: 'state', enabled: enabled, t: T });
+  }
+
+  function toggle() {
+    enabled = !enabled;
+    hcj.config.set('enabled', enabled);
+    apply();
+    pushState();
+  }
+
+  hcj.on('action', function () { toggle(); });
+  hcj.panel.onMessage(function (m) {
+    if (!m) return;
+    if (m.cmd === 'toggle') toggle();
+    if (m.cmd === 'getState') pushState();
+  });
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', apply);
+  } else {
+    apply();
+  }
+})();
+</script>
+</head>
+<body>
+  <div class="row">
+    <div class="row-text">
+      <div class="status" id="status"></div>
+      <div class="desc" id="desc"></div>
+    </div>
+    <button class="switch" id="btn" data-state="off" aria-label="toggle">
+      <span class="track"></span><span class="thumb"></span>
+    </button>
+  </div>
+<script>
+  var statusEl = document.getElementById('status');
+  var descEl = document.getElementById('desc');
+  var btn = document.getElementById('btn');
+
+  function render(s) {
+    statusEl.textContent = s.enabled ? s.t.on : s.t.off;
+    descEl.textContent = s.t.desc;
+    btn.setAttribute('data-state', s.enabled ? 'on' : 'off');
+  }
+
+  hcjPanel.onMessage(function (m) {
+    if (m && m.type === 'state') render(m);
+  });
+  btn.addEventListener('click', function () { hcjPanel.send({ cmd: 'toggle' }); });
+  hcjPanel.send({ cmd: 'getState' });
+</script>
+</body>
+</html>
