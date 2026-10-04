@@ -32,6 +32,7 @@ import com.webtoapp.data.model.PhpAppConfig
 import com.webtoapp.data.model.PythonAppConfig
 import com.webtoapp.data.model.GoAppConfig
 import com.webtoapp.data.model.MultiWebConfig
+import com.webtoapp.data.model.CodeToAppConfig
 import com.webtoapp.core.activation.ActivationCode
 
 class Converters {
@@ -358,5 +359,15 @@ class Converters {
 
     @TypeConverter
     fun toMultiWebConfig(value: String): MultiWebConfig? = fromJson(value)
+
+    // CodeToApp 通用源码项目配置（AppType.CODETOAPP）。
+    // 没有这两个 converter，Room 在编译期就会报
+    // "Cannot figure out how to save this field into database"，
+    // 因为 WebApp 实体多了一个非原始类型的列 codeToAppConfig。
+    @TypeConverter
+    fun fromCodeToAppConfig(value: CodeToAppConfig?): String = toJson(value)
+
+    @TypeConverter
+    fun toCodeToAppConfig(value: String): CodeToAppConfig? = fromJson(value)
 
 }
