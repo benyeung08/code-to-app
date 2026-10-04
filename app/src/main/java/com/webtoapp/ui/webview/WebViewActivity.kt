@@ -70,6 +70,7 @@ import com.webtoapp.data.model.SplashType
 import com.webtoapp.data.model.WebApp
 import com.webtoapp.data.model.hasAnyToolbarItem
 import com.webtoapp.data.model.resolveToolbarButtons
+import com.webtoapp.data.model.AppType
 import android.content.pm.ActivityInfo
 import com.webtoapp.ui.theme.WebToAppTheme
 import com.webtoapp.util.DownloadHelper
@@ -3075,7 +3076,8 @@ fun WebViewScreen(
                 (firstSite?.getEffectiveUrl() ?: "about:blank") to null
             }
             app?.appType == com.webtoapp.data.model.AppType.HTML ||
-            app?.appType == com.webtoapp.data.model.AppType.FRONTEND, AppType.CODETOAPP -> {
+            app?.appType == com.webtoapp.data.model.AppType.FRONTEND ||
+            app?.appType == AppType.CODETOAPP -> {
 
                 val projectId = app.htmlConfig?.projectId ?: ""
                 val entryFile = app.htmlConfig?.getValidEntryFile() ?: "index.html"
