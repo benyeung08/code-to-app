@@ -21,6 +21,7 @@ import androidx.navigation.navArgument
 import com.webtoapp.WebToAppApplication
 import com.webtoapp.core.i18n.InitializeLanguage
 import com.webtoapp.data.model.HtmlLoadMode
+import com.webtoapp.data.model.AppType
 import com.webtoapp.ui.agent.AgentScreen
 import com.webtoapp.ui.screens.AboutScreen
 import com.webtoapp.ui.screens.SettingsScreen
