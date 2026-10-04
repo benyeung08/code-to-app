@@ -1430,6 +1430,18 @@ object StringsA {
     }
 
     val appTypeGo: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "Go"
+        AppLanguage.ENGLISH -> "Go"
+        AppLanguage.ARABIC -> "Go"
+        AppLanguage.PORTUGUESE -> "Go"
+        AppLanguage.SPANISH -> "Go"
+        AppLanguage.FRENCH -> "Go"
+        AppLanguage.GERMAN -> "Go"
+        AppLanguage.RUSSIAN -> "Go"
+        AppLanguage.JAPANESE -> "Go"
+        AppLanguage.KOREAN -> "Go"
+    }
+
     val appTypeCodeToApp: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "CodeToApp"
         AppLanguage.ENGLISH -> "CodeToApp"
@@ -1441,18 +1453,6 @@ object StringsA {
         AppLanguage.RUSSIAN -> "CodeToApp"
         AppLanguage.JAPANESE -> "CodeToApp"
         AppLanguage.KOREAN -> "CodeToApp"
-    }
-
-        AppLanguage.CHINESE -> "Go"
-        AppLanguage.ENGLISH -> "Go"
-        AppLanguage.ARABIC -> "Go"
-        AppLanguage.PORTUGUESE -> "Go"
-        AppLanguage.SPANISH -> "Go"
-        AppLanguage.FRENCH -> "Go"
-        AppLanguage.GERMAN -> "Go"
-        AppLanguage.RUSSIAN -> "Go"
-        AppLanguage.JAPANESE -> "Go"
-        AppLanguage.KOREAN -> "Go"
     }
 
     val dirNotExists: String get() = when (Strings.lang) {
