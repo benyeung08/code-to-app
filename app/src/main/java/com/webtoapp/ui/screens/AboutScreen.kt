@@ -304,7 +304,7 @@ private fun AuthorHeroCard(
             Spacer(Modifier.height(18.dp))
 
             Text(
-                text = "WebToApp",
+                text = "CodeToApp",
                 style = MaterialTheme.typography.headlineSmall,
                 color = MaterialTheme.colorScheme.onSurface,
                 textAlign = TextAlign.Center
@@ -351,8 +351,8 @@ private fun AuthorHeroCard(
                     }
                 },
                 onCopy = {
-                    val label = "WebToApp version"
-                    val text = "WebToApp v$versionName ($versionCode)"
+                    val label = "CodeToApp version"
+                    val text = "CodeToApp v$versionName ($versionCode)"
                     context.copyToClipboard(label, text)
                     Toast.makeText(
                         context,
@@ -1198,16 +1198,16 @@ private fun Context.openUrl(url: String) {
 
 @Composable
 private fun aboutAuthorByLine(): String = when (Strings.currentLanguage.value) {
-    AppLanguage.CHINESE -> "开发者 Shiaho"
-    AppLanguage.ENGLISH -> "by Shiaho"
-    AppLanguage.ARABIC -> "بواسطة Shiaho"
-    AppLanguage.PORTUGUESE -> "by Shiaho"
-    AppLanguage.SPANISH -> "by Shiaho"
-    AppLanguage.FRENCH -> "by Shiaho"
-    AppLanguage.GERMAN -> "by Shiaho"
-    AppLanguage.RUSSIAN -> "by Shiaho"
-    AppLanguage.JAPANESE -> "by Shiaho"
-    AppLanguage.KOREAN -> "by Shiaho"
+    AppLanguage.CHINESE -> "开发者 benyeung08"
+    AppLanguage.ENGLISH -> "by benyeung08"
+    AppLanguage.ARABIC -> "بواسطة benyeung08"
+    AppLanguage.PORTUGUESE -> "by benyeung08"
+    AppLanguage.SPANISH -> "by benyeung08"
+    AppLanguage.FRENCH -> "by benyeung08"
+    AppLanguage.GERMAN -> "by benyeung08"
+    AppLanguage.RUSSIAN -> "by benyeung08"
+    AppLanguage.JAPANESE -> "by benyeung08"
+    AppLanguage.KOREAN -> "by benyeung08"
 }
 
 @Composable
