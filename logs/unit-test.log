@@ -104,10 +104,10 @@ To suppress this warning, add android.generateSyncIssueWhenLibraryConstraintsAre
 WARNING: The property android.dependency.excludeLibraryComponentsFromConstraints improves project import performance for very large projects. It should be enabled to improve performance.
 To suppress this warning, add android.generateSyncIssueWhenLibraryConstraintsAreEnabled=false to gradle.properties
 
-> Task :clone-host:preBuild UP-TO-DATE
 > Task :app:checkKotlinGradlePluginConfigurationErrors SKIPPED
-> Task :app:protobufDummy UP-TO-DATE
+> Task :clone-host:preBuild UP-TO-DATE
 > Task :clone-host:preReleaseBuild UP-TO-DATE
+> Task :app:protobufDummy UP-TO-DATE
 > Task :app:extractDebugProto UP-TO-DATE
 > Task :clone-host:checkReleaseAarMetadata UP-TO-DATE
 > Task :clone-host:mergeReleaseJniLibFolders UP-TO-DATE
@@ -168,11 +168,11 @@ To suppress this warning, add android.generateSyncIssueWhenLibraryConstraintsAre
 > Task :app:processStandardDebugResources UP-TO-DATE
 > Task :app:kspStandardDebugKotlin UP-TO-DATE
 > Task :app:extractTestDebugProto
-> Task :app:javaPreCompileStandardDebug
 > Task :app:extractTestProto
 > Task :app:extractTestStandardDebugProto
 > Task :app:extractTestStandardProto
 > Task :app:preStandardDebugUnitTestBuild UP-TO-DATE
+> Task :app:javaPreCompileStandardDebug
 > Task :app:javaPreCompileStandardDebugUnitTest FROM-CACHE
 > Task :app:generateStandardDebugAssets UP-TO-DATE
 > Task :app:mergeStandardDebugAssets
@@ -180,8 +180,6 @@ To suppress this warning, add android.generateSyncIssueWhenLibraryConstraintsAre
 > Task :app:processStandardDebugUnitTestManifest
 > Task :app:generateStandardDebugUnitTestConfig
 > Task :app:compileStandardDebugKotlin
-e: file:///home/runner/work/code-to-app/code-to-app/app/src/main/java/com/webtoapp/core/apkbuilder/ApkBuilder.kt:4211:47 Unresolved reference 'AppType'.
-e: file:///home/runner/work/code-to-app/code-to-app/app/src/main/java/com/webtoapp/core/apkbuilder/ApkBuilder.kt:5108:89 Unresolved reference 'AppType'.
 e: file:///home/runner/work/code-to-app/code-to-app/app/src/main/java/com/webtoapp/core/i18n/Strings.kt:166:51 Unresolved reference 'appTypeCodeToApp'.
 e: file:///home/runner/work/code-to-app/code-to-app/app/src/main/java/com/webtoapp/core/i18n/StringsA.kt:1432:35 Return type mismatch: expected 'String', actual 'Any'.
 e: file:///home/runner/work/code-to-app/code-to-app/app/src/main/java/com/webtoapp/core/i18n/StringsA.kt:1433:5 Syntax error: Expecting an expression.
@@ -231,5 +229,5 @@ Execution failed for task ':app:compileStandardDebugKotlin'.
 > Run with --scan to get full insights from a Build Scan (powered by Develocity).
 > Get more help at https://help.gradle.org.
 
-BUILD FAILED in 1m 17s
+BUILD FAILED in 1m 11s
 61 actionable tasks: 10 executed, 1 from cache, 50 up-to-date

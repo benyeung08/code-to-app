@@ -140,10 +140,10 @@ To suppress this warning, add android.generateSyncIssueWhenLibraryConstraintsAre
 WARNING: The property android.dependency.excludeLibraryComponentsFromConstraints improves project import performance for very large projects. It should be enabled to improve performance.
 To suppress this warning, add android.generateSyncIssueWhenLibraryConstraintsAreEnabled=false to gradle.properties
 
-> Task :clone-host:preBuild UP-TO-DATE
 > Task :app:checkKotlinGradlePluginConfigurationErrors SKIPPED
-> Task :app:protobufDummy UP-TO-DATE
+> Task :clone-host:preBuild UP-TO-DATE
 > Task :clone-host:preReleaseBuild UP-TO-DATE
+> Task :app:protobufDummy UP-TO-DATE
 > Task :app:extractDebugProto
 > Task :clone-host:checkReleaseAarMetadata
 > Task :clone-host:mergeReleaseJniLibFolders
@@ -158,14 +158,14 @@ To suppress this warning, add android.generateSyncIssueWhenLibraryConstraintsAre
 > Task :clone-host:processReleaseNavigationResources
 > Task :clone-host:generateReleaseAssets UP-TO-DATE
 > Task :clone-host:mergeReleaseAssets
-> Task :clone-host:javaPreCompileRelease
 > Task :clone-host:prepareLintJarForPublish
+> Task :clone-host:javaPreCompileRelease
 > Task :clone-host:prepareReleaseArtProfile
 > Task :clone-host:parseReleaseLocalResources
 > Task :clone-host:writeReleaseAarMetadata
 > Task :clone-host:mapReleaseSourceSetPaths
-> Task :clone-host:generateReleaseRFile
 > Task :clone-host:mergeReleaseResources
+> Task :clone-host:generateReleaseRFile
 > Task :clone-host:processReleaseManifest
 > Task :clone-host:verifyReleaseResources
 > Task :clone-host:compileReleaseKotlin
@@ -187,12 +187,12 @@ To suppress this warning, add android.generateSyncIssueWhenLibraryConstraintsAre
 > Task :app:extractStandardDebugProto
 > Task :app:extractStandardProto
 > Task :app:generateStandardDebugProto
-> Task :app:generateStandardDebugResValues FROM-CACHE
 > Task :app:checkStandardDebugAarMetadata
+> Task :app:generateStandardDebugResValues FROM-CACHE
 > Task :app:mapStandardDebugSourceSetPaths
 > Task :app:processStandardDebugNavigationResources
-> Task :app:compileStandardDebugNavigationResources
 > Task :app:generateStandardDebugResources
+> Task :app:compileStandardDebugNavigationResources
 > Task :app:packageStandardDebugResources
 > Task :app:createStandardDebugCompatibleScreenManifests
 > Task :app:extractDeepLinksStandardDebug
@@ -204,8 +204,6 @@ To suppress this warning, add android.generateSyncIssueWhenLibraryConstraintsAre
 > Task :app:processStandardDebugResources
 > Task :app:kspStandardDebugKotlin
 > Task :app:compileStandardDebugKotlin
-e: file:///home/runner/work/code-to-app/code-to-app/app/src/main/java/com/webtoapp/core/apkbuilder/ApkBuilder.kt:4211:47 Unresolved reference 'AppType'.
-e: file:///home/runner/work/code-to-app/code-to-app/app/src/main/java/com/webtoapp/core/apkbuilder/ApkBuilder.kt:5108:89 Unresolved reference 'AppType'.
 e: file:///home/runner/work/code-to-app/code-to-app/app/src/main/java/com/webtoapp/core/i18n/Strings.kt:166:51 Unresolved reference 'appTypeCodeToApp'.
 e: file:///home/runner/work/code-to-app/code-to-app/app/src/main/java/com/webtoapp/core/i18n/StringsA.kt:1432:35 Return type mismatch: expected 'String', actual 'Any'.
 e: file:///home/runner/work/code-to-app/code-to-app/app/src/main/java/com/webtoapp/core/i18n/StringsA.kt:1433:5 Syntax error: Expecting an expression.
@@ -255,5 +253,5 @@ Execution failed for task ':app:compileStandardDebugKotlin'.
 > Run with --scan to get full insights from a Build Scan (powered by Develocity).
 > Get more help at https://help.gradle.org.
 
-BUILD FAILED in 2m 57s
+BUILD FAILED in 3m 30s
 51 actionable tasks: 50 executed, 1 from cache

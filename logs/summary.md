@@ -16,13 +16,11 @@ Execution failed for task ':app:compileStandardDebugKotlin'.
 > Run with --scan to get full insights from a Build Scan (powered by Develocity).
 > Get more help at https://help.gradle.org.
 
-BUILD FAILED in 2m 57s
+BUILD FAILED in 3m 30s
 51 actionable tasks: 50 executed, 1 from cache
 ```
-**编译错误 (35)**
+**编译错误 (33)**
 ```
-e: file:///home/runner/work/code-to-app/code-to-app/app/src/main/java/com/webtoapp/core/apkbuilder/ApkBuilder.kt:4211:47 Unresolved reference 'AppType'.
-e: file:///home/runner/work/code-to-app/code-to-app/app/src/main/java/com/webtoapp/core/apkbuilder/ApkBuilder.kt:5108:89 Unresolved reference 'AppType'.
 e: file:///home/runner/work/code-to-app/code-to-app/app/src/main/java/com/webtoapp/core/i18n/Strings.kt:166:51 Unresolved reference 'appTypeCodeToApp'.
 e: file:///home/runner/work/code-to-app/code-to-app/app/src/main/java/com/webtoapp/core/i18n/StringsA.kt:1432:35 Return type mismatch: expected 'String', actual 'Any'.
 e: file:///home/runner/work/code-to-app/code-to-app/app/src/main/java/com/webtoapp/core/i18n/StringsA.kt:1433:5 Syntax error: Expecting an expression.
@@ -61,7 +59,7 @@ e: file:///home/runner/work/code-to-app/code-to-app/app/src/main/java/com/webtoa
 ```
 > Task :app:compileStandardDebugKotlin FAILED
 Execution failed for task ':app:compileStandardDebugKotlin'.
-BUILD FAILED in 2m 57s
+BUILD FAILED in 3m 30s
 ```
 
 ### compile-shell.log
@@ -91,13 +89,11 @@ Execution failed for task ':app:compileStandardDebugKotlin'.
 > Run with --scan to get full insights from a Build Scan (powered by Develocity).
 > Get more help at https://help.gradle.org.
 
-BUILD FAILED in 1m 17s
+BUILD FAILED in 1m 11s
 61 actionable tasks: 10 executed, 1 from cache, 50 up-to-date
 ```
-**编译错误 (35)**
+**编译错误 (33)**
 ```
-e: file:///home/runner/work/code-to-app/code-to-app/app/src/main/java/com/webtoapp/core/apkbuilder/ApkBuilder.kt:4211:47 Unresolved reference 'AppType'.
-e: file:///home/runner/work/code-to-app/code-to-app/app/src/main/java/com/webtoapp/core/apkbuilder/ApkBuilder.kt:5108:89 Unresolved reference 'AppType'.
 e: file:///home/runner/work/code-to-app/code-to-app/app/src/main/java/com/webtoapp/core/i18n/Strings.kt:166:51 Unresolved reference 'appTypeCodeToApp'.
 e: file:///home/runner/work/code-to-app/code-to-app/app/src/main/java/com/webtoapp/core/i18n/StringsA.kt:1432:35 Return type mismatch: expected 'String', actual 'Any'.
 e: file:///home/runner/work/code-to-app/code-to-app/app/src/main/java/com/webtoapp/core/i18n/StringsA.kt:1433:5 Syntax error: Expecting an expression.
@@ -136,5 +132,5 @@ e: file:///home/runner/work/code-to-app/code-to-app/app/src/main/java/com/webtoa
 ```
 > Task :app:compileStandardDebugKotlin FAILED
 Execution failed for task ':app:compileStandardDebugKotlin'.
-BUILD FAILED in 1m 17s
+BUILD FAILED in 1m 11s
 ```
