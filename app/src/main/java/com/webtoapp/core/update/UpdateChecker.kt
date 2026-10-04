@@ -72,24 +72,58 @@ object UpdateChecker {
         }
     }
 
-    data class Version(val major: Int, val minor: Int, val patch: Int) : Comparable<Version> {
-        override fun toString(): String = "$major.$minor.$patch"
+    /**
+     * Semantic version with optional pre-release suffix (e.g. `1.0.0-beta1`).
+     *
+     * 旧实现会把第一个 `-` 之后的内容全部丢掉，于是 `v1.0.0-beta1` 被压成 `1.0.0`：
+     * 界面显示成 "v1.0.0"、和正式版撞名、并且两条都会被打上「当前版本」标签。
+     * 现在保留后缀，并按 semver 规则排序：正式版 > 预发布版，且 beta1 < beta2。
+     */
+    data class Version(
+        val major: Int,
+        val minor: Int,
+        val patch: Int,
+        val pre: String = ""
+    ) : Comparable<Version> {
+        override fun toString(): String =
+            "$major.$minor.$patch" + if (pre.isNotBlank()) "-$pre" else ""
 
         override fun compareTo(other: Version): Int {
             if (major != other.major) return major - other.major
             if (minor != other.minor) return minor - other.minor
-            return patch - other.patch
+            if (patch != other.patch) return patch - other.patch
+            if (pre == other.pre) return 0
+            // 同一核心版本下，正式版永远排在任何预发布版之上。
+            if (pre.isBlank()) return 1
+            if (other.pre.isBlank()) return -1
+            val (n1, x1) = splitPre(pre)
+            val (n2, x2) = splitPre(other.pre)
+            if (n1 != n2) return n1.compareTo(n2)
+            return x1.compareTo(x2)
         }
 
         companion object {
+            /** 把 `beta2` 拆成 ("beta", 2)，让带数字的预发布版按数值排序。 */
+            private fun splitPre(pre: String): Pair<String, Int> {
+                val m = Regex("^(.*?)(\\d+)$").find(pre)
+                return if (m != null) {
+                    m.groupValues[1] to (m.groupValues[2].toIntOrNull() ?: 0)
+                } else {
+                    pre to 0
+                }
+            }
+
             fun parse(raw: String): Version? {
-                val core = raw.trim().removePrefix("v").removePrefix("V")
-                    .substringBefore('-').substringBefore('+')
+                val trimmed = raw.trim().removePrefix("v").removePrefix("V")
+                    .substringBefore('+')
+                // 只剥掉核心版本号后面的部分作为 pre-release 后缀
+                val core = trimmed.substringBefore('-')
+                val pre = trimmed.substringAfter('-', "")
                 val parts = core.split('.')
                 val major = parts.getOrNull(0)?.toIntOrNull() ?: return null
                 val minor = parts.getOrNull(1)?.toIntOrNull() ?: 0
                 val patch = parts.getOrNull(2)?.toIntOrNull() ?: 0
-                return Version(major, minor, patch)
+                return Version(major, minor, patch, pre)
             }
         }
     }
