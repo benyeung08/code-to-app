@@ -6,5 +6,7 @@
         resources (manifest labels etc.); AppStringsResourceConsistencyTest rejects
         localized keys here and any values-* locale directory.
     -->
-    <string name="app_name" translatable="false">WebToApp</string>
+    <!-- 已由 WebToApp 改为 CodeToApp：这是 launcher 上显示的名字（AndroidManifest 第 235 行引用）。
+     注意：它跟 applicationId（com.codetoapp.app）无关，改这个不会变成另一个 app。 -->
+    <string name="app_name" translatable="false">CodeToApp</string>
 </resources>
