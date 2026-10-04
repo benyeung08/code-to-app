@@ -19,8 +19,11 @@ object UpdateChecker {
 
     private const val TAG = "UpdateChecker"
 
-    private const val OWNER = "shiaho777"
-    private const val REPO = "web-to-app"
+    // ⚠️ 原本指向上游 shiaho777/web-to-app —— 版本历史会列出原作者的全部历史版本
+    // （v2.7.5 / v2.7.4 …）。改指自己的仓库后，版本历史只显示你在
+    // benyeung08/code-to-app 上发布的 Release（旧版本自动消失）。
+    private const val OWNER = "benyeung08"
+    private const val REPO = "code-to-app"
     private const val LATEST_RELEASE_API =
         "https://api.github.com/repos/$OWNER/$REPO/releases/latest"
     private const val ALL_RELEASES_API =
