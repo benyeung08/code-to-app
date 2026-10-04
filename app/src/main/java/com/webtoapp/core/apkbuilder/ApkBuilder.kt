@@ -26,6 +26,7 @@ import com.webtoapp.data.model.HtmlLoadMode
 import com.webtoapp.data.model.WebApp
 import com.webtoapp.data.model.withRuntimePermissionsSyncedFromFeatures
 import com.webtoapp.data.model.getActivationCodeStrings
+import com.webtoapp.data.model.AppType
 import com.webtoapp.ui.components.announcement.toUiTemplate
 import com.webtoapp.ui.shell.buildPackagedHtmlShellEntryUrl
 import com.webtoapp.ui.theme.ThemeManager
