@@ -129,6 +129,8 @@ fun AboutScreen(onBack: () -> Unit) {
                 versionCode = versionCode
             )
 
+            GitHubRepoCard(onClick = { context.openUrl("https://github.com/benyeung08/code-to-app") })
+
             DescriptionsToggleCard()
 
             LegalTabContent()
@@ -1129,6 +1131,79 @@ private fun formatBytes(bytes: Long): String {
         unit++
     }
     return if (unit == 0) "${bytes} B" else "%.1f %s".format(value, units[unit])
+}
+
+@Composable
+private fun GitHubRepoCard(onClick: () -> Unit) {
+    val isDark = LocalIsDarkTheme.current
+    // GitHub brand mark: keep it recognizable in both themes by inverting the badge.
+    val badgeColor = if (isDark) Color(0xFFE6EDF3) else Color(0xFF24292F)
+    val markColor = if (isDark) Color(0xFF24292F) else Color.White
+
+    WtaCard(
+        onClick = onClick,
+        modifier = Modifier.fillMaxWidth(),
+        tone = WtaCardTone.Elevated,
+        contentPadding = androidx.compose.foundation.layout.PaddingValues(18.dp)
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(48.dp)
+                    .clip(RoundedCornerShape(14.dp))
+                    .background(badgeColor),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    painter = painterResource(R.drawable.ic_github_mark),
+                    contentDescription = null,
+                    modifier = Modifier.size(30.dp),
+                    tint = markColor
+                )
+            }
+            Spacer(Modifier.width(14.dp))
+            Column(
+                modifier = Modifier.weight(1f),
+                verticalArrangement = Arrangement.spacedBy(2.dp)
+            ) {
+                Text(
+                    text = "benyeung08 / code-to-app",
+                    style = MaterialTheme.typography.titleSmall,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+                AnimatedVisibility(visible = LocalShowDescriptions.current) {
+                    Text(
+                        text = "github.com/benyeung08/code-to-app",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        fontFamily = FontFamily.Monospace,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                }
+            }
+            Spacer(Modifier.width(8.dp))
+            Box(
+                modifier = Modifier
+                    .size(30.dp)
+                    .clip(CircleShape)
+                    .background(MaterialTheme.colorScheme.surfaceContainerHigh),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    Icons.Outlined.NorthEast,
+                    contentDescription = null,
+                    modifier = Modifier.size(16.dp),
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+        }
+    }
 }
 
 @Composable
