@@ -106,11 +106,42 @@ jobs:
               out.append(f"**编译错误 ({len(ks)})**"); out.append("```"); out += ks; out.append("```")
               out.append(f"**失败任务 ({len(ft)})**"); out.append("```"); out += ft; out.append("```")
               out.append("")
+              # 关键改动：即使没有 `e: ` 开头的 Kotlin 错误（KSP / Room / 配置阶段失败
+              # 常常不产生这种行），也要把 "What went wrong" 打成 annotation ——
+              # 否则外部只能看到一句 "Process completed with exit code 1."。
+              announced = 0
               for l in ks[:15]:
-                  print("::error::" + l[:200])
+                  print("::error::[kotlin] " + l[:200]); announced += 1
+              for l in wgw[:15]:
+                  if announced >= 25: break
+                  t = l.strip()
+                  if not t or t.startswith("```"): continue
+                  print("::error::[gradle] " + t[:200]); announced += 1
+              for l in ft[:10]:
+                  if announced >= 30: break
+                  print("::error::[task] " + l.strip()[:200]); announced += 1
           open("/tmp/summary.md", "w").write("\n".join(out))
           PY
           echo "--- 摘要已写入 Job Summary ---"
+
+      # 把完整日志推到 ci-logs 分支（外部可以直接读取，不受 GitHub 登录/截断限制）。
+      # 只是诊断用途，失败绝不能让 job 标红。
+      - name: Push logs to ci-logs branch
+        if: always()
+        continue-on-error: true
+        run: |
+          git config user.name "ci-bot"
+          git config user.email "ci-bot@users.noreply.github.com"
+          git fetch origin ci-logs || true
+          git checkout -B ci-logs origin/ci-logs 2>/dev/null || git checkout --orphan ci-logs
+          mkdir -p logs
+          cp compile-app.log logs/compile-app.log 2>/dev/null || true
+          cp compile-shell.log logs/compile-shell.log 2>/dev/null || true
+          cp unit-test.log logs/unit-test.log 2>/dev/null || true
+          cp /tmp/summary.md logs/summary.md 2>/dev/null || true
+          git add -f logs
+          git commit -m "CI logs run ${{ github.run_number }} (${{ github.sha }})" || echo "no change"
+          git push -f origin ci-logs
 
       # 把完整日志推到 ci-logs 分支，外部可以直接读取（不受 GitHub 登录/截断限制）
       # 日志推送只是诊断用途，失败不应该让整个 job 标红。
