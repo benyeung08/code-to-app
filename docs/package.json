@@ -1,9 +1,9 @@
 {
-  "name": "webtoapp-docs",
+  "name": "codetoapp-docs",
   "version": "1.0.0",
   "private": true,
   "type": "module",
-  "description": "Official documentation site for WebToApp",
+  "description": "Official documentation site for CodeToApp",
   "scripts": {
     "dev": "vitepress dev",
     "build": "vitepress build",

@@ -1,76 +1,134 @@
 ---
 layout: home
-title: WebToApp
-titleTemplate: Build Android APKs on your phone
+
 hero:
-  name: WebToApp
-  text: Build Android APKs on your phone
-  tagline: The most full featured web-to-app toolkit on Android, a complete APK workshop that runs entirely on your phone. Now with Native Import & self-update.
+  name: CodeToApp
+  text: 设备端 APK 工坊
+  tagline: 远不止「套个网址」—— fork+exec 真实服务器运行时、加固的网络栈、导出可直接发布的包。全程不需要电脑。
+  image:
+    src: /logo.svg
+    alt: CodeToApp
   actions:
     - theme: brand
-      text: Get Started
+      text: 快速上手
       link: /guide/getting-started
     - theme: alt
-      text: View on GitHub
-      link: https://github.com/benyeung08/web-to-app
-  image:
-    src: /logo.png
-    alt: WebToApp
+      text: 在 GitHub 查看
+      link: https://github.com/benyeung08/code-to-app
 
 features:
-  - title: 13 App Types, One Builder
-    details: Web, Multi-Web, HTML, Offline Pack, Frontend, Node.js, PHP, Python, Go, WordPress, Media, Gallery, and NEW Native Import for existing Android Studio projects.
-  - title: Self-Update
-    details: About screen now checks benyeung08/web-to-app releases. No more v1.0.0-mobilecode — clean versioning with in-app download & install.
-  - title: On-Device Build
-    details: Binary AXML/ARSC patching, V1/V2/V3 signing, AAB export, and now full Gradle build via :native_build fork+exec.
+  - icon: ⚙️
+    title: 真实运行时，不是模拟器
+    details: Node.js、PHP、Python、Go 以原生二进制从应用存储里 fork+exec 起来 —— 像把 Termux 打包进一个可安装的 APK。
+  - icon: 🛡️
+    title: 加固的网络栈
+    details: DNS-over-HTTPS、带本地 MITM 桥接的 TLS 指纹伪装、加密客户端问候（ECH）、按应用配置代理，以及为受限 SPA 提供的 CORS 绕过。
+  - icon: 🔧
+    title: 应用内完成二进制补丁
+    details: 二进制 AXML/ARSC 改写、权限裁剪、V1/V2/V3 签名、Google Play 就绪的 AAB 导出 —— 全部在应用内通过 apksig 完成，没有远端构建队列。
+  - icon: 🧩
+    title: 插件化扩展
+    details: 注入 JS/CSS 模块、Tampermonkey 式用户脚本，或 MV3 Chrome 扩展（可从 Chrome 应用商店实时搜索），无需重新构建宿主。
+  - icon: 🎭
+    title: 指纹伪装与隐私
+    details: 50+ 项浏览器指纹伪装、带 20 个内置列表的 hosts 规则广告拦截、AES-256-GCM 资源加密，以及激活码门禁。
+  - icon: 🌏
+    title: 十种语言
+    details: 中文、英文、阿拉伯文（RTL）、葡萄牙文、西班牙文、法文、德文、俄文、日文、韩文 —— 随时在设置里切换。
 ---
 
-## From URL to a signed APK in three steps
+## 三步做出第一个 APK
 
-1. **Pick a type** Choose from [13 app types](/guide/app-types/) — a plain [Web](/guide/app-types/web) wrapper, [HTML](/guide/app-types/html) or [Frontend](/guide/app-types/frontend) builds, on-device [Node.js](/guide/app-types/nodejs), [PHP](/guide/app-types/php), [Python](/guide/app-types/python), [Go](/guide/app-types/go), [WordPress](/guide/app-types/wordpress) servers, or [Native Import](/guide/app-types/native-import) for existing Android Studio projects.
-2. **Fill in the basics** A name, a URL or a project, an icon — then save. Every type shares the same [configuration cards](/guide/config/) for network, privacy, appearance, and runtimes.
-3. **Build and share** [Build APK](/guide/app-actions/build-apk) signs on-device with V1/V2/V3, then [share](/guide/app-actions/share-apk) it or [export a Play-ready AAB](/guide/app-actions/export-apk). No PC, no build queue.
+<div class="cta-steps">
 
-## Thirteen app types, one builder
+<div class="cta-step">
+<span class="cta-step-num">1</span>
+<h3>选一个类型</h3>
+<p>网页、多站点、HTML、离线包、前端、PHP、WordPress、Node.js、Python、Go、媒体、相册，或者 <strong>CodeToApp</strong> —— 通用源码项目类型。</p>
+</div>
 
-[**Web and Multi-Web**](/guide/app-types/multi-web) URL wrappers, tabbed hubs, portals, and link feeds.
+<div class="cta-step">
+<span class="cta-step-num">2</span>
+<h3>填基本信息</h3>
+<p>一个名称、一个 URL 或一个项目、一个图标，然后保存。所有类型共用同一套配置卡片：网络、隐私、外观与运行时。</p>
+</div>
 
-[**HTML and Offline Pack**](/guide/app-types/html) Package local HTML or zip builds, or scrape a site into a self-contained offline APK.
+<div class="cta-step">
+<span class="cta-step-num">3</span>
+<h3>构建并分享</h3>
+<p>导出 APK、分享给朋友，或继续微调后重新打包。</p>
+</div>
 
-[**Frontend**](/guide/app-types/frontend) Ship React, Vue, or Vite builds as a localhost-served APK.
+</div>
 
-[**Server runtimes**](/guide/app-types/nodejs) fork+exec Node.js, PHP, Python, or Go binaries that serve on a local port.
+## 应用类型
 
-[**WordPress**](/guide/app-types/wordpress) A full portable WordPress site with PHP and SQLite running on-device.
+<div class="type-grid">
 
-[**Media and Gallery**](/guide/app-types/media) Image and video players, albums, and portfolios as standalone apps.
+<div class="type-card">
+<span class="type-icon">🌐</span>
+<strong>网页 / 多站点</strong>
+<p>网址套壳、标签式聚合门户与链接流。</p>
+</div>
 
-[**Native Import (NEW)**](/guide/app-types/native-import) Import an existing Android Studio project and build it on your phone. Phase 1: fast binary merge of res/assets/jniLibs/dex. Phase 2: full `./gradlew assembleDebug` via :native_build process with JDK 17 + Android SDK auto-download.
+<div class="type-card">
+<span class="type-icon">📦</span>
+<strong>HTML / 离线包</strong>
+<p>打包本地 HTML 或 zip 构建，也能把站点抓成一个自包含的离线 APK。</p>
+</div>
 
-## A toolbox behind the editor
+<div class="type-card">
+<span class="type-icon">⚛️</span>
+<strong>前端</strong>
+<p>把 React、Vue 或 Vite 构建产物做成 localhost 服务的 APK。</p>
+</div>
 
-[**Agent**](/guide/more-features/agent) A tool-calling assistant with up to 57 built-in tools that can build, edit, and operate the whole app.
+<div class="type-card">
+<span class="type-icon">🖥️</span>
+<strong>Node.js / PHP / Python / Go</strong>
+<p>fork+exec 原生二进制，在本地端口上提供服务。</p>
+</div>
 
-[**Extension modules**](/guide/more-features/extension-modules) Inject JS/CSS, userscripts, or MV3 Chrome extensions into any generated app.
+<div class="type-card">
+<span class="type-icon">📝</span>
+<strong>WordPress</strong>
+<p>一个完整可移植站点，PHP + SQLite 直接在设备上跑起来。</p>
+</div>
 
-[**Hosts ad-block**](/guide/more-features/hosts-adblock) 20 built-in filter lists and per-app subscriptions, compiled into the shipped APK.
+<div class="type-card">
+<span class="type-icon">🖼️</span>
+<strong>媒体 / 相册</strong>
+<p>图片与视频播放器、相册、作品集，做成独立应用。</p>
+</div>
 
-[**Linux environment**](/guide/more-features/linux-environment) A Termux-style environment with real toolchains for building and running projects.
+<div class="type-card">
+<span class="type-icon">🤖</span>
+<strong>Agent</strong>
+<p>带工具调用的助手，最多 57 个内置工具，可以构建、编辑并操作整个应用。</p>
+</div>
 
-[**Port manager**](/guide/more-features/port-manager) Conflict policies, real stop handlers, and DNS bridging for every local server runtime.
+<div class="type-card type-card-brand">
+<span class="type-icon">🤖</span>
+<strong>CodeToApp</strong>
+<p>通用源码项目：导入一个源码目录后自动侦测语言与框架，再委派给对应的既有运行时启动器。</p>
+</div>
 
-[**App modifier**](/guide/more-features/app-modifier) Clone and rebrand installed APKs, batch-import definitions, export templates.
+</div>
 
-[**Self-update**](/guide/more-features/self-update) NEW: About screen checks benyeung08/web-to-app releases, downloads APK to update_apks/, installs via FileProvider.
+## 还有更多
 
-## Under the hood
+- **插件模块** —— 注入 JS/CSS、用户脚本或 MV3 Chrome 扩展到任意生成的应用里
+- **广告拦截** —— 20 个内置过滤列表加按应用订阅，编译进最终 APK
+- **Linux 环境** —— Termux 风格的真实工具链，用来构建和运行项目
+- **本地服务器** —— 为每种本地运行时提供冲突策略、真正的停止处理器与 DNS 桥接
+- **克隆与改名** —— 克隆并重新品牌化已安装的 APK、批量导入定义、导出模板
 
-13 app types
-57 agent tools max
-10 UI languages
-20 ad-filter lists
+构建器自己做二进制补丁 —— AXML/ARSC 改写、权限裁剪、AES-256-GCM 资源加密、16 KB 页对齐的原生库 —— 并保持一个低 targetSdk 的外壳，让 fork+exec 运行时继续可用。开发者文档覆盖了完整的导出流水线。
 
-The builder does its own binary patching — AXML/ARSC rewriting, permission pruning, AES-256-GCM resource encryption, 16 KB page-aligned native libraries — and keeps a low targetSdk shell so fork+exec runtimes keep working. Phase 2 adds a `gradle_launcher` native wrapper for true on-device Gradle builds. The [developer docs](/developer/architecture) cover the full export pipeline.
+<div class="cta-final">
 
-Ready to build your first APK? [Get started](/guide/getting-started)
+## 准备好构建你的第一个 APK 了吗？
+
+[下载最新 APK](https://github.com/benyeung08/code-to-app/raw/apk/builds/latest.apk){.cta-button} · [查看源码](https://github.com/benyeung08/code-to-app)
+
+</div>
