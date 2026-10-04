@@ -1,0 +1,259 @@
+Downloading https://services.gradle.org/distributions/gradle-9.4.1-bin.zip
+.............10%.............20%.............30%.............40%.............50%.............60%..............70%.............80%.............90%.............100%
+
+Welcome to Gradle 9.4.1!
+
+Here are the highlights of this release:
+ - Java 26 support
+ - Non-class-based JVM tests
+ - Enhanced console progress bar
+
+For more details see https://docs.gradle.org/9.4.1/release-notes.html
+
+To honour the JVM settings for this build a single-use Daemon process will be forked. For more on this, please refer to https://docs.gradle.org/9.4.1/userguide/gradle_daemon.html#sec:disabling_the_daemon in the Gradle documentation.
+Daemon will be stopped at the end of the build 
+
+> Configure project :app
+WARNING: The option setting 'android.usesSdkInManifest.disallowed=false' is deprecated.
+The current default is 'true'.
+It will be removed in version 10.0 of the Android Gradle plugin.
+WARNING: The option setting 'android.sdk.defaultTargetSdkToCompileSdkIfUnset=false' is deprecated.
+The current default is 'true'.
+It will be removed in version 10.0 of the Android Gradle plugin.
+WARNING: The option setting 'android.enableAppCompileTimeRClass=false' is deprecated.
+The current default is 'true'.
+It will be removed in version 10.0 of the Android Gradle plugin.
+WARNING: The option setting 'android.builtInKotlin=false' is deprecated.
+The current default is 'true'.
+It will be removed in version 10.0 of the Android Gradle plugin.
+WARNING: The option setting 'android.newDsl=false' is deprecated.
+The current default is 'true'.
+It will be removed in version 10.0 of the Android Gradle plugin.
+WARNING: The option setting 'android.r8.optimizedResourceShrinking=false' is deprecated.
+The current default is 'true'.
+It will be removed in version 10.0 of the Android Gradle plugin.
+WARNING: The option setting 'android.defaults.buildfeatures.resvalues=true' is deprecated.
+The current default is 'false'.
+It will be removed in version 10.0 of the Android Gradle plugin.
+WARNING: API 'applicationVariants' is obsolete and has been replaced with 'AndroidComponentsExtension'.
+It will be removed in version 10.0 of the Android Gradle plugin.
+The legacy variant API is disabled by default in AGP 9.0, but can be re-enabled by adding 
+    android.newDsl=false
+to this project's gradle.properties file.
+For more information, see http://developer.android.com/build/r/new-dsl.
+
+To determine what is calling applicationVariants, use -Pandroid.debug.obsoleteApi=true on the command line to display more information.
+WARNING: API 'testVariants' is obsolete and has been replaced with 'AndroidComponentsExtension'.
+It will be removed in version 10.0 of the Android Gradle plugin.
+The legacy variant API is disabled by default in AGP 9.0, but can be re-enabled by adding 
+    android.newDsl=false
+to this project's gradle.properties file.
+For more information, see http://developer.android.com/build/r/new-dsl.
+
+To determine what is calling testVariants, use -Pandroid.debug.obsoleteApi=true on the command line to display more information.
+WARNING: API 'unitTestVariants' is obsolete and has been replaced with 'AndroidComponentsExtension'.
+It will be removed in version 10.0 of the Android Gradle plugin.
+The legacy variant API is disabled by default in AGP 9.0, but can be re-enabled by adding 
+    android.newDsl=false
+to this project's gradle.properties file.
+For more information, see http://developer.android.com/build/r/new-dsl.
+
+To determine what is calling unitTestVariants, use -Pandroid.debug.obsoleteApi=true on the command line to display more information.
+w: file:///home/runner/work/code-to-app/code-to-app/app/build.gradle.kts:40:1: 'fun Project.android(configure: Action<BaseAppModuleExtension>): Unit' is deprecated. Replaced by com.android.build.api.dsl.ApplicationExtension.
+This class is not used for the public extensions in AGP when android.newDsl=true, which is the default in AGP 9.0, and will be removed in AGP 10.0.
+w: file:///home/runner/work/code-to-app/code-to-app/app/build.gradle.kts:160:5: 'fun BaseAppModuleExtension.kotlinOptions(configure: Action<DeprecatedKotlinJvmOptions>): Unit' is deprecated. Please migrate to the compilerOptions DSL. More details are here: https://kotl.in/u1r8ln.
+w: file:///home/runner/work/code-to-app/code-to-app/app/build.gradle.kts:161:9: 'var jvmTarget: String' is deprecated. Please migrate to the compilerOptions DSL. More details are here: https://kotl.in/u1r8ln.
+w: file:///home/runner/work/code-to-app/code-to-app/app/build.gradle.kts:278:21: 'val Project.android: BaseAppModuleExtension' is deprecated. Replaced by com.android.build.api.dsl.ApplicationExtension.
+This class is not used for the public extensions in AGP when android.newDsl=true, which is the default in AGP 9.0, and will be removed in AGP 10.0.
+
+> Configure project :feature-stacks:admob
+WARNING: API 'libraryVariants' is obsolete and has been replaced with 'AndroidComponentsExtension'.
+It will be removed in version 10.0 of the Android Gradle plugin.
+The legacy variant API is disabled by default in AGP 9.0, but can be re-enabled by adding 
+    android.newDsl=false
+to this project's gradle.properties file.
+For more information, see http://developer.android.com/build/r/new-dsl.
+
+To determine what is calling libraryVariants, use -Pandroid.debug.obsoleteApi=true on the command line to display more information.
+w: file:///home/runner/work/code-to-app/code-to-app/feature-stacks/admob/build.gradle.kts:27:1: 'fun Project.android(configure: Action<LibraryExtension>): Unit' is deprecated. Replaced by com.android.build.api.dsl.LibraryExtension.
+This class is not used for the public extensions in AGP when android.newDsl=true, which is the default in AGP 9.0, and will be removed in AGP 10.0.
+w: file:///home/runner/work/code-to-app/code-to-app/feature-stacks/admob/build.gradle.kts:42:18: 'fun srcDir(srcDir: Any): Any' is deprecated. Use `directories` mutable set instead.
+w: file:///home/runner/work/code-to-app/code-to-app/feature-stacks/admob/build.gradle.kts:51:5: 'fun LibraryExtension.kotlinOptions(configure: Action<DeprecatedKotlinJvmOptions>): Unit' is deprecated. Please migrate to the compilerOptions DSL. More details are here: https://kotl.in/u1r8ln.
+w: file:///home/runner/work/code-to-app/code-to-app/feature-stacks/admob/build.gradle.kts:52:9: 'var jvmTarget: String' is deprecated. Please migrate to the compilerOptions DSL. More details are here: https://kotl.in/u1r8ln.
+w: file:///home/runner/work/code-to-app/code-to-app/feature-stacks/admob/build.gradle.kts:355:18: 'val Project.android: LibraryExtension' is deprecated. Replaced by com.android.build.api.dsl.LibraryExtension.
+This class is not used for the public extensions in AGP when android.newDsl=true, which is the default in AGP 9.0, and will be removed in AGP 10.0.
+WARNING: The property android.dependency.excludeLibraryComponentsFromConstraints improves project import performance for very large projects. It should be enabled to improve performance.
+To suppress this warning, add android.generateSyncIssueWhenLibraryConstraintsAreEnabled=false to gradle.properties
+WARNING: The property android.dependency.excludeLibraryComponentsFromConstraints improves project import performance for very large projects. It should be enabled to improve performance.
+To suppress this warning, add android.generateSyncIssueWhenLibraryConstraintsAreEnabled=false to gradle.properties
+WARNING: The property android.dependency.excludeLibraryComponentsFromConstraints improves project import performance for very large projects. It should be enabled to improve performance.
+To suppress this warning, add android.generateSyncIssueWhenLibraryConstraintsAreEnabled=false to gradle.properties
+WARNING: The property android.dependency.excludeLibraryComponentsFromConstraints improves project import performance for very large projects. It should be enabled to improve performance.
+To suppress this warning, add android.generateSyncIssueWhenLibraryConstraintsAreEnabled=false to gradle.properties
+
+> Configure project :app
+WARNING: The property android.dependency.excludeLibraryComponentsFromConstraints improves project import performance for very large projects. It should be enabled to improve performance.
+To suppress this warning, add android.generateSyncIssueWhenLibraryConstraintsAreEnabled=false to gradle.properties
+WARNING: The property android.dependency.excludeLibraryComponentsFromConstraints improves project import performance for very large projects. It should be enabled to improve performance.
+To suppress this warning, add android.generateSyncIssueWhenLibraryConstraintsAreEnabled=false to gradle.properties
+WARNING: The property android.dependency.excludeLibraryComponentsFromConstraints improves project import performance for very large projects. It should be enabled to improve performance.
+To suppress this warning, add android.generateSyncIssueWhenLibraryConstraintsAreEnabled=false to gradle.properties
+WARNING: The property android.dependency.excludeLibraryComponentsFromConstraints improves project import performance for very large projects. It should be enabled to improve performance.
+To suppress this warning, add android.generateSyncIssueWhenLibraryConstraintsAreEnabled=false to gradle.properties
+WARNING: The property android.dependency.excludeLibraryComponentsFromConstraints improves project import performance for very large projects. It should be enabled to improve performance.
+To suppress this warning, add android.generateSyncIssueWhenLibraryConstraintsAreEnabled=false to gradle.properties
+WARNING: The property android.dependency.excludeLibraryComponentsFromConstraints improves project import performance for very large projects. It should be enabled to improve performance.
+To suppress this warning, add android.generateSyncIssueWhenLibraryConstraintsAreEnabled=false to gradle.properties
+WARNING: The property android.dependency.excludeLibraryComponentsFromConstraints improves project import performance for very large projects. It should be enabled to improve performance.
+To suppress this warning, add android.generateSyncIssueWhenLibraryConstraintsAreEnabled=false to gradle.properties
+WARNING: The property android.dependency.excludeLibraryComponentsFromConstraints improves project import performance for very large projects. It should be enabled to improve performance.
+To suppress this warning, add android.generateSyncIssueWhenLibraryConstraintsAreEnabled=false to gradle.properties
+
+> Configure project :clone-host
+w: file:///home/runner/work/code-to-app/code-to-app/clone-host/build.gradle.kts:6:1: 'fun Project.android(configure: Action<LibraryExtension>): Unit' is deprecated. Replaced by com.android.build.api.dsl.LibraryExtension.
+This class is not used for the public extensions in AGP when android.newDsl=true, which is the default in AGP 9.0, and will be removed in AGP 10.0.
+w: file:///home/runner/work/code-to-app/code-to-app/clone-host/build.gradle.kts:19:5: 'fun LibraryExtension.kotlinOptions(configure: Action<DeprecatedKotlinJvmOptions>): Unit' is deprecated. Please migrate to the compilerOptions DSL. More details are here: https://kotl.in/u1r8ln.
+w: file:///home/runner/work/code-to-app/code-to-app/clone-host/build.gradle.kts:20:9: 'var jvmTarget: String' is deprecated. Please migrate to the compilerOptions DSL. More details are here: https://kotl.in/u1r8ln.
+WARNING: The property android.dependency.excludeLibraryComponentsFromConstraints improves project import performance for very large projects. It should be enabled to improve performance.
+To suppress this warning, add android.generateSyncIssueWhenLibraryConstraintsAreEnabled=false to gradle.properties
+WARNING: The property android.dependency.excludeLibraryComponentsFromConstraints improves project import performance for very large projects. It should be enabled to improve performance.
+To suppress this warning, add android.generateSyncIssueWhenLibraryConstraintsAreEnabled=false to gradle.properties
+WARNING: The property android.dependency.excludeLibraryComponentsFromConstraints improves project import performance for very large projects. It should be enabled to improve performance.
+To suppress this warning, add android.generateSyncIssueWhenLibraryConstraintsAreEnabled=false to gradle.properties
+WARNING: The property android.dependency.excludeLibraryComponentsFromConstraints improves project import performance for very large projects. It should be enabled to improve performance.
+To suppress this warning, add android.generateSyncIssueWhenLibraryConstraintsAreEnabled=false to gradle.properties
+
+> Configure project :shell
+w: file:///home/runner/work/code-to-app/code-to-app/shell/build.gradle.kts:17:1: 'fun Project.android(configure: Action<BaseAppModuleExtension>): Unit' is deprecated. Replaced by com.android.build.api.dsl.ApplicationExtension.
+This class is not used for the public extensions in AGP when android.newDsl=true, which is the default in AGP 9.0, and will be removed in AGP 10.0.
+w: file:///home/runner/work/code-to-app/code-to-app/shell/build.gradle.kts:89:18: 'fun srcDirs(vararg srcDirs: Any): Any' is deprecated. Use `directories` mutable set instead.
+w: file:///home/runner/work/code-to-app/code-to-app/shell/build.gradle.kts:94:17: 'fun srcDirs(vararg srcDirs: Any): Any' is deprecated. Use `directories` mutable set instead.
+w: file:///home/runner/work/code-to-app/code-to-app/shell/build.gradle.kts:95:20: 'fun srcDirs(vararg srcDirs: Any): Any' is deprecated. Use `directories` mutable set instead.
+w: file:///home/runner/work/code-to-app/code-to-app/shell/build.gradle.kts:116:5: 'fun BaseAppModuleExtension.kotlinOptions(configure: Action<DeprecatedKotlinJvmOptions>): Unit' is deprecated. Please migrate to the compilerOptions DSL. More details are here: https://kotl.in/u1r8ln.
+w: file:///home/runner/work/code-to-app/code-to-app/shell/build.gradle.kts:117:9: 'var jvmTarget: String' is deprecated. Please migrate to the compilerOptions DSL. More details are here: https://kotl.in/u1r8ln.
+WARNING: The property android.dependency.excludeLibraryComponentsFromConstraints improves project import performance for very large projects. It should be enabled to improve performance.
+To suppress this warning, add android.generateSyncIssueWhenLibraryConstraintsAreEnabled=false to gradle.properties
+WARNING: The property android.dependency.excludeLibraryComponentsFromConstraints improves project import performance for very large projects. It should be enabled to improve performance.
+To suppress this warning, add android.generateSyncIssueWhenLibraryConstraintsAreEnabled=false to gradle.properties
+WARNING: The property android.dependency.excludeLibraryComponentsFromConstraints improves project import performance for very large projects. It should be enabled to improve performance.
+To suppress this warning, add android.generateSyncIssueWhenLibraryConstraintsAreEnabled=false to gradle.properties
+WARNING: The property android.dependency.excludeLibraryComponentsFromConstraints improves project import performance for very large projects. It should be enabled to improve performance.
+To suppress this warning, add android.generateSyncIssueWhenLibraryConstraintsAreEnabled=false to gradle.properties
+
+> Task :clone-host:preBuild UP-TO-DATE
+> Task :app:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :app:protobufDummy UP-TO-DATE
+> Task :clone-host:preReleaseBuild UP-TO-DATE
+> Task :app:extractDebugProto
+> Task :clone-host:checkReleaseAarMetadata
+> Task :clone-host:mergeReleaseJniLibFolders
+> Task :clone-host:mergeReleaseNativeLibs NO-SOURCE
+> Task :clone-host:stripReleaseDebugSymbols NO-SOURCE
+> Task :clone-host:copyReleaseJniLibsProjectAndLocalJars
+> Task :clone-host:generateReleaseResValues
+> Task :clone-host:extractDeepLinksForAarRelease
+> Task :clone-host:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :clone-host:generateReleaseResources
+> Task :clone-host:packageReleaseResources
+> Task :clone-host:processReleaseNavigationResources
+> Task :clone-host:generateReleaseAssets UP-TO-DATE
+> Task :clone-host:mergeReleaseAssets
+> Task :clone-host:javaPreCompileRelease
+> Task :clone-host:prepareLintJarForPublish
+> Task :clone-host:prepareReleaseArtProfile
+> Task :clone-host:parseReleaseLocalResources
+> Task :clone-host:writeReleaseAarMetadata
+> Task :clone-host:mapReleaseSourceSetPaths
+> Task :clone-host:generateReleaseRFile
+> Task :clone-host:mergeReleaseResources
+> Task :clone-host:processReleaseManifest
+> Task :clone-host:verifyReleaseResources
+> Task :clone-host:compileReleaseKotlin
+> Task :clone-host:extractReleaseAnnotations
+> Task :clone-host:compileReleaseJavaWithJavac NO-SOURCE
+> Task :clone-host:mergeReleaseGeneratedProguardFiles
+> Task :clone-host:mergeReleaseConsumerProguardFiles
+> Task :clone-host:processReleaseJavaRes
+> Task :clone-host:mergeReleaseJavaResource
+> Task :clone-host:syncReleaseLibJars
+> Task :clone-host:bundleReleaseAar
+> Task :clone-host:assembleRelease
+> Task :app:extractIncludeStandardDebugProto
+> Task :app:syncCloneHostDex SKIPPED
+> Task :app:preBuild UP-TO-DATE
+> Task :app:preStandardDebugBuild UP-TO-DATE
+> Task :app:generateStandardDebugBuildConfig
+> Task :app:extractProto
+> Task :app:extractStandardDebugProto
+> Task :app:extractStandardProto
+> Task :app:generateStandardDebugProto
+> Task :app:generateStandardDebugResValues FROM-CACHE
+> Task :app:checkStandardDebugAarMetadata
+> Task :app:mapStandardDebugSourceSetPaths
+> Task :app:processStandardDebugNavigationResources
+> Task :app:compileStandardDebugNavigationResources
+> Task :app:generateStandardDebugResources
+> Task :app:packageStandardDebugResources
+> Task :app:createStandardDebugCompatibleScreenManifests
+> Task :app:extractDeepLinksStandardDebug
+> Task :app:parseStandardDebugLocalResources
+> Task :app:processStandardDebugMainManifest
+> Task :app:processStandardDebugManifest
+> Task :app:processStandardDebugManifestForPackage
+> Task :app:mergeStandardDebugResources
+> Task :app:processStandardDebugResources
+> Task :app:kspStandardDebugKotlin
+> Task :app:compileStandardDebugKotlin
+e: file:///home/runner/work/code-to-app/code-to-app/app/src/main/java/com/webtoapp/core/apkbuilder/ApkBuilder.kt:4211:47 Unresolved reference 'AppType'.
+e: file:///home/runner/work/code-to-app/code-to-app/app/src/main/java/com/webtoapp/core/apkbuilder/ApkBuilder.kt:5108:89 Unresolved reference 'AppType'.
+e: file:///home/runner/work/code-to-app/code-to-app/app/src/main/java/com/webtoapp/core/i18n/Strings.kt:166:51 Unresolved reference 'appTypeCodeToApp'.
+e: file:///home/runner/work/code-to-app/code-to-app/app/src/main/java/com/webtoapp/core/i18n/StringsA.kt:1432:35 Return type mismatch: expected 'String', actual 'Any'.
+e: file:///home/runner/work/code-to-app/code-to-app/app/src/main/java/com/webtoapp/core/i18n/StringsA.kt:1433:5 Syntax error: Expecting an expression.
+e: file:///home/runner/work/code-to-app/code-to-app/app/src/main/java/com/webtoapp/core/i18n/StringsA.kt:1433:5 Syntax error: Expecting '->'.
+e: file:///home/runner/work/code-to-app/code-to-app/app/src/main/java/com/webtoapp/core/i18n/StringsA.kt:1433:9 Unresolved reference 'appTypeCodeToApp'.
+e: file:///home/runner/work/code-to-app/code-to-app/app/src/main/java/com/webtoapp/core/i18n/StringsA.kt:1433:25 Syntax error: Expecting an expression.
+e: file:///home/runner/work/code-to-app/code-to-app/app/src/main/java/com/webtoapp/core/i18n/StringsA.kt:1433:25 Syntax error: Expecting '->'.
+e: file:///home/runner/work/code-to-app/code-to-app/app/src/main/java/com/webtoapp/core/i18n/StringsA.kt:1433:27 Variable expected.
+e: file:///home/runner/work/code-to-app/code-to-app/app/src/main/java/com/webtoapp/core/i18n/StringsA.kt:1433:34 Unresolved reference 'get'.
+e: file:///home/runner/work/code-to-app/code-to-app/app/src/main/java/com/webtoapp/core/i18n/StringsA.kt:1433:38 Syntax error: Expecting an expression.
+e: file:///home/runner/work/code-to-app/code-to-app/app/src/main/java/com/webtoapp/ui/navigation/AppNavigation.kt:189:29 'when' expression must be exhaustive. Add the 'CODETOAPP' branch or an 'else' branch.
+e: file:///home/runner/work/code-to-app/code-to-app/app/src/main/java/com/webtoapp/ui/navigation/AppNavigation.kt:198:75 Unresolved reference 'AppType'.
+e: file:///home/runner/work/code-to-app/code-to-app/app/src/main/java/com/webtoapp/ui/screens/HomeScreen.kt:1132:51 Unresolved reference 'AppType'.
+e: file:///home/runner/work/code-to-app/code-to-app/app/src/main/java/com/webtoapp/ui/screens/HomeScreen.kt:1166:46 'when' expression must be exhaustive. Add the 'CODETOAPP' branch or an 'else' branch.
+e: file:///home/runner/work/code-to-app/code-to-app/app/src/main/java/com/webtoapp/ui/screens/HomeScreen.kt:1172:71 Unresolved reference 'AppType'.
+e: file:///home/runner/work/code-to-app/code-to-app/app/src/main/java/com/webtoapp/ui/screens/HomeScreen.kt:1177:69 Unresolved reference 'AppType'.
+e: file:///home/runner/work/code-to-app/code-to-app/app/src/main/java/com/webtoapp/ui/screens/HomeScreen.kt:1295:29 'when' expression must be exhaustive. Add the 'CODETOAPP' branch or an 'else' branch.
+e: file:///home/runner/work/code-to-app/code-to-app/app/src/main/java/com/webtoapp/ui/screens/HomeScreen.kt:1301:75 Unresolved reference 'AppType'.
+e: file:///home/runner/work/code-to-app/code-to-app/app/src/main/java/com/webtoapp/ui/screens/HomeScreen.kt:1306:73 Unresolved reference 'AppType'.
+e: file:///home/runner/work/code-to-app/code-to-app/app/src/main/java/com/webtoapp/ui/screens/HomeScreen.kt:1437:25 'when' expression must be exhaustive. Add the 'CODETOAPP' branch or an 'else' branch.
+e: file:///home/runner/work/code-to-app/code-to-app/app/src/main/java/com/webtoapp/ui/screens/HomeScreen.kt:1458:51 Unresolved reference 'AppType'.
+e: file:///home/runner/work/code-to-app/code-to-app/app/src/main/java/com/webtoapp/ui/screens/HomeScreen.kt:1478:49 Unresolved reference 'AppType'.
+e: file:///home/runner/work/code-to-app/code-to-app/app/src/main/java/com/webtoapp/ui/webview/WebViewActivity.kt:3078:69 Use '||' instead of commas in conditions of 'when' without a subject.
+e: file:///home/runner/work/code-to-app/code-to-app/app/src/main/java/com/webtoapp/ui/webview/WebViewActivity.kt:3078:71 Unresolved reference 'AppType'.
+e: file:///home/runner/work/code-to-app/code-to-app/app/src/main/java/com/webtoapp/ui/webview/WebViewActivity.kt:3080:36 Only safe (?.) or non-null asserted (!!.) calls are allowed on a nullable receiver of type 'WebApp?'.
+e: file:///home/runner/work/code-to-app/code-to-app/app/src/main/java/com/webtoapp/ui/webview/WebViewActivity.kt:3081:36 Only safe (?.) or non-null asserted (!!.) calls are allowed on a nullable receiver of type 'WebApp?'.
+e: file:///home/runner/work/code-to-app/code-to-app/app/src/main/java/com/webtoapp/ui/webview/WebViewActivity.kt:3089:66 Only safe (?.) or non-null asserted (!!.) calls are allowed on a nullable receiver of type 'WebApp?'.
+e: file:///home/runner/work/code-to-app/code-to-app/app/src/main/java/com/webtoapp/ui/webview/WebViewActivity.kt:3090:72 Only safe (?.) or non-null asserted (!!.) calls are allowed on a nullable receiver of type 'WebApp?'.
+e: file:///home/runner/work/code-to-app/code-to-app/app/src/main/java/com/webtoapp/ui/webview/WebViewActivity.kt:3108:55 Only safe (?.) or non-null asserted (!!.) calls are allowed on a nullable receiver of type 'WebApp?'.
+e: file:///home/runner/work/code-to-app/code-to-app/app/src/main/java/com/webtoapp/ui/webview/WebViewActivity.kt:3111:54 Only safe (?.) or non-null asserted (!!.) calls are allowed on a nullable receiver of type 'WebApp?'.
+e: file:///home/runner/work/code-to-app/code-to-app/app/src/main/java/com/webtoapp/ui/webview/WebViewActivity.kt:3121:59 Only safe (?.) or non-null asserted (!!.) calls are allowed on a nullable receiver of type 'WebApp?'.
+e: file:///home/runner/work/code-to-app/code-to-app/app/src/main/java/com/webtoapp/ui/webview/WebViewActivity.kt:3123:52 Only safe (?.) or non-null asserted (!!.) calls are allowed on a nullable receiver of type 'WebApp?'.
+e: file:///home/runner/work/code-to-app/code-to-app/app/src/main/java/com/webtoapp/ui/webview/WebViewActivity.kt:3128:36 Only safe (?.) or non-null asserted (!!.) calls are allowed on a nullable receiver of type 'WebApp?'.
+
+> Task :app:compileStandardDebugKotlin FAILED
+
+FAILURE: Build failed with an exception.
+
+* What went wrong:
+Execution failed for task ':app:compileStandardDebugKotlin'.
+> A failure occurred while executing org.jetbrains.kotlin.compilerRunner.GradleCompilerRunnerWithWorkers$GradleKotlinCompilerWorkAction
+   > Compilation error. See log for more details
+
+* Try:
+> Run with --stacktrace option to get the stack trace.
+> Run with --info or --debug option to get more log output.
+> Run with --scan to get full insights from a Build Scan (powered by Develocity).
+> Get more help at https://help.gradle.org.
+
+BUILD FAILED in 2m 57s
+51 actionable tasks: 50 executed, 1 from cache
