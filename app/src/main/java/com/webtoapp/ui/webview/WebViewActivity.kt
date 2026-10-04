@@ -3075,7 +3075,7 @@ fun WebViewScreen(
                 (firstSite?.getEffectiveUrl() ?: "about:blank") to null
             }
             app?.appType == com.webtoapp.data.model.AppType.HTML ||
-            app?.appType == com.webtoapp.data.model.AppType.FRONTEND -> {
+            app?.appType == com.webtoapp.data.model.AppType.FRONTEND, AppType.CODETOAPP -> {
 
                 val projectId = app.htmlConfig?.projectId ?: ""
                 val entryFile = app.htmlConfig?.getValidEntryFile() ?: "index.html"
