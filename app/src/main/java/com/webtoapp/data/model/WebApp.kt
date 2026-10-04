@@ -21,7 +21,16 @@ enum class AppType {
     PHP_APP,
     PYTHON_APP,
     GO_APP,
-    MULTI_WEB;
+    MULTI_WEB,
+    /**
+     * CodeToApp —— 通用源码项目类型。
+     *
+     * 与 NODEJS/PYTHON/GO 等「单一语言 runtime」不同，本类型在导入源码目录后
+     * 自动侦测语言与框架（见 [CodeToAppConfig.detectedRuntime]），再委派给对应
+     * 的既有 runtime 启动器。行为默认贴近 FRONTEND（本地源码 + WebView 承载），
+     * 因此凡是没有为它单独写分支的 when，都会跟 FRONTEND 走同一条路。
+     */
+    CODETOAPP;
 
     /**
      * Whether this app type execves native server runtimes (Node/PHP/Python/Go/WordPress) from
@@ -82,6 +91,7 @@ data class WebApp(
     val phpAppConfig: PhpAppConfig? = null,
     val pythonAppConfig: PythonAppConfig? = null,
     val goAppConfig: GoAppConfig? = null,
+    val codeToAppConfig: CodeToAppConfig? = null,
     val multiWebConfig: MultiWebConfig? = null,
 
     val activationEnabled: Boolean = false,
@@ -1014,6 +1024,29 @@ data class GoAppConfig(
     val serverPort: Int = 0,
     val portConflictMode: PortConflictMode = PortConflictMode.AUTO_KILL,
     val envVars: Map<String, String> = emptyMap(),
+    val staticDir: String = ""
+)
+
+/**
+ * CodeToApp 专用配置：一个「源码目录 → 可运行 app」的通用容器。
+ *
+ * [detectedRuntime] 决定实际委派给哪个既有 runtime 启动器；留空时按
+ * [sourcePath] 内的特征文件在导入时推断（package.json / requirements.txt /
+ * go.mod / index.php …）。
+ */
+data class CodeToAppConfig(
+    val projectId: String = "",
+    val projectName: String = "",
+    /** 源码目录（app 私有存储内的绝对路径）。 */
+    val sourcePath: String = "",
+    /** 自动侦测结果：NODEJS / PYTHON / GO / PHP / STATIC，空串表示未侦测。 */
+    val detectedRuntime: String = "",
+    val entryFile: String = "",
+    val serverPort: Int = 0,
+    val portConflictMode: PortConflictMode = PortConflictMode.AUTO_KILL,
+    val envVars: Map<String, String> = emptyMap(),
+    val buildCommand: String = "",
+    val startCommand: String = "",
     val staticDir: String = ""
 )
 
