@@ -19,7 +19,7 @@ import com.webtoapp.core.stats.AppUsageStatsDao
 
 @Database(
     entities = [WebApp::class, AppCategory::class, AppUsageStats::class, AppHealthRecord::class],
-    version = 45,
+    version = 46,
     exportSchema = true
 )
 @TypeConverters(Converters::class)
@@ -1137,6 +1137,12 @@ abstract class AppDatabase : RoomDatabase() {
             }
         }
 
+        // CodeToApp 通用源码项目配置列（AppType.CODETOAPP）。
+        // 与 wordpressConfig / nodejsConfig 等一样走「加一个可空 TEXT 列」的路子：
+        // ALTER TABLE ADD COLUMN ... DEFAULT NULL，旧数据反序列化为 null。
+        private val MIGRATION_45_46 =
+            createAddColumnMigration(45, 46, "codeToAppConfig")
+
         private val MIGRATION_27_28_COLUMNS = """
             id, name, url, iconPath, packageName, appType,
             mediaConfig, galleryConfig, htmlConfig,
@@ -1300,7 +1306,8 @@ abstract class AppDatabase : RoomDatabase() {
                     MIGRATION_41_42,
                     MIGRATION_42_43,
                     MIGRATION_43_44,
-                    MIGRATION_44_45
+                    MIGRATION_44_45,
+                MIGRATION_45_46
                 )
                 .fallbackToDestructiveMigrationOnDowngrade()
                 .fallbackToDestructiveMigrationFrom(1, 2, 3, 4, 5, 6, 7)
