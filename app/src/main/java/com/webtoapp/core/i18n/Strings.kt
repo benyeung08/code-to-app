@@ -163,6 +163,7 @@ object Strings {
     val appTypePhp: String get() = StringsA.appTypePhp
     val appTypePython: String get() = StringsA.appTypePython
     val appTypeGo: String get() = StringsA.appTypeGo
+    val appTypeCodeToApp: String get() = StringsA.appTypeCodeToApp
     val dirNotExists: String get() = StringsA.dirNotExists
     val projectImportFailed: String get() = StringsA.projectImportFailed
     val frameworkDetected: String get() = StringsA.frameworkDetected

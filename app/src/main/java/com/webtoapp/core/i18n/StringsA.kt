@@ -1430,6 +1430,19 @@ object StringsA {
     }
 
     val appTypeGo: String get() = when (Strings.lang) {
+    val appTypeCodeToApp: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "CodeToApp"
+        AppLanguage.ENGLISH -> "CodeToApp"
+        AppLanguage.ARABIC -> "CodeToApp"
+        AppLanguage.PORTUGUESE -> "CodeToApp"
+        AppLanguage.SPANISH -> "CodeToApp"
+        AppLanguage.FRENCH -> "CodeToApp"
+        AppLanguage.GERMAN -> "CodeToApp"
+        AppLanguage.RUSSIAN -> "CodeToApp"
+        AppLanguage.JAPANESE -> "CodeToApp"
+        AppLanguage.KOREAN -> "CodeToApp"
+    }
+
         AppLanguage.CHINESE -> "Go"
         AppLanguage.ENGLISH -> "Go"
         AppLanguage.ARABIC -> "Go"
@@ -8555,8 +8568,8 @@ object StringsA {
     }
 
     val aboutAppDescription: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "CodeToApp —— 安卓上功能最完善的 WEB 转 APK 工具型应用。"
-        AppLanguage.ENGLISH -> "CodeToApp — the most full-featured Web-to-APK utility app on Android."
+        AppLanguage.CHINESE -> "安卓上功能最完善的WEB转APK工具型应用。"
+        AppLanguage.ENGLISH -> "The most full-featured Web-to-APK utility app on Android."
         AppLanguage.ARABIC -> "تطبيق أدوات Web-to-APK الأكثر اكتمالاً على Android."
         AppLanguage.PORTUGUESE -> "O app utilitário de Web-para-APK mais completo no Android."
         AppLanguage.SPANISH -> "La app utilitaria de Web-a-APK más completa en Android."
