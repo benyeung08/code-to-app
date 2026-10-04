@@ -1174,7 +1174,7 @@ fun AppCard(
                             com.webtoapp.data.model.AppType.NODEJS_APP -> R.drawable.ic_type_nodejs
                             com.webtoapp.data.model.AppType.PHP_APP -> R.drawable.ic_type_php
                             com.webtoapp.data.model.AppType.PYTHON_APP -> R.drawable.ic_type_python
-                            com.webtoapp.data.model.AppType.GO_APP -> R.drawable.ic_type_go
+                            com.webtoapp.data.model.AppType.GO_APP, AppType.CODETOAPP -> R.drawable.ic_type_go
                             com.webtoapp.data.model.AppType.MULTI_WEB -> R.drawable.ic_type_multi_web
                         }
                         Icon(
@@ -1303,7 +1303,7 @@ fun AppCard(
                                 com.webtoapp.data.model.AppType.NODEJS_APP -> R.drawable.ic_type_nodejs
                                 com.webtoapp.data.model.AppType.PHP_APP -> R.drawable.ic_type_php
                                 com.webtoapp.data.model.AppType.PYTHON_APP -> R.drawable.ic_type_python
-                                com.webtoapp.data.model.AppType.GO_APP -> R.drawable.ic_type_go
+                                com.webtoapp.data.model.AppType.GO_APP, AppType.CODETOAPP -> R.drawable.ic_type_go
                                 com.webtoapp.data.model.AppType.MULTI_WEB -> R.drawable.ic_type_multi_web
                             }
                         ),
@@ -1475,7 +1475,7 @@ fun AppTypeChip(appType: com.webtoapp.data.model.AppType) {
             Icons.Outlined.Psychology,
             Strings.appTypePython
         )
-        com.webtoapp.data.model.AppType.GO_APP -> Pair(
+        com.webtoapp.data.model.AppType.GO_APP, AppType.CODETOAPP -> Pair(
             Icons.Outlined.Speed,
             Strings.appTypeGo
         )
@@ -1592,3 +1592,4 @@ private fun CreateActionTile(
         )
     }
 }
+
