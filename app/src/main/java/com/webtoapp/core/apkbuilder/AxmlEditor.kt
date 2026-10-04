@@ -6,7 +6,10 @@ class AxmlEditor {
 
     companion object {
         private const val TAG = "AxmlEditor"
-        private const val ORIGINAL_PACKAGE = "com.webtoapp"
+        // ⚠️ 已由 com.webtoapp 改为 com.codetoapp.app
+        // 本常量只在 AppCloner 克隆「宿主 app 自己」时使用，负责把 manifest 里的
+        // 旧包名字符串整体替换成新包名。所以必须跟随 app 的 applicationId。
+        private const val ORIGINAL_PACKAGE = "com.codetoapp.app"
     }
 
     /**
