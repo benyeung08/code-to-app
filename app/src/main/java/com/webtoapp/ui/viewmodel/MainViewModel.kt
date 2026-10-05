@@ -1080,6 +1080,38 @@ class MainViewModel(
         )
     }
 
+    fun saveCodeToApp(
+        name: String,
+        codeToAppConfig: CodeToAppConfig,
+        iconUri: Uri?,
+        themeType: String = "AURORA"
+    ) = createApp("CodeToApp", iconUri) { savedIconPath, currentThemeType, categoryId ->
+        WebApp(
+            name = name.ifBlank { "CodeToApp" },
+            url = "",
+            iconPath = savedIconPath,
+            appType = AppType.CODETOAPP,
+            codeToAppConfig = codeToAppConfig,
+            themeType = currentThemeType,
+            categoryId = categoryId
+        )
+    }
+
+    fun updateCodeToApp(
+        appId: Long,
+        name: String,
+        codeToAppConfig: CodeToAppConfig,
+        iconUri: Uri?,
+        themeType: String = "AURORA"
+    ) = updateApp(appId, "CodeToApp", iconUri) { existingApp, savedIconPath ->
+        existingApp.copy(
+            name = name.ifBlank { existingApp.name },
+            iconPath = savedIconPath,
+            codeToAppConfig = codeToAppConfig,
+            updatedAt = System.currentTimeMillis()
+        )
+    }
+
     fun saveMultiWebApp(
         name: String,
         multiWebConfig: MultiWebConfig,
