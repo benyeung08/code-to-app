@@ -38,17 +38,17 @@ Execution failed for task ':app:compileStandardDebugUnitTestKotlin'.
 > Run with --scan to get full insights from a Build Scan (powered by Develocity).
 > Get more help at https://help.gradle.org.
 
-BUILD FAILED in 56s
+BUILD FAILED in 1m 16s
 68 actionable tasks: 16 executed, 1 from cache, 51 up-to-date
 ```
 **编译错误 (2)**
 ```
 e: file:///home/runner/work/code-to-app/code-to-app/app/src/test/java/com/webtoapp/core/webview/DownloadBridge.kt:31:7 Redeclaration:
-e: file:///home/runner/work/code-to-app/code-to-app/app/src/test/java/com/webtoapp/core/webview/DownloadBridgeCustomLocationTest.kt:26:7 Redeclaration:
+e: file:///home/runner/work/code-to-app/code-to-app/app/src/test/java/com/webtoapp/core/webview/DownloadBridgeCustomLocationTest.kt:31:7 Redeclaration:
 ```
 **失败任务 (3)**
 ```
 > Task :app:compileStandardDebugUnitTestKotlin FAILED
 Execution failed for task ':app:compileStandardDebugUnitTestKotlin'.
-BUILD FAILED in 56s
+BUILD FAILED in 1m 16s
 ```
