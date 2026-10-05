@@ -34,6 +34,7 @@ import com.webtoapp.ui.screens.CreateAppScreen
 import com.webtoapp.ui.screens.CreateFrontendAppScreen
 import com.webtoapp.ui.screens.CreateGalleryAppScreenV2
 import com.webtoapp.ui.screens.CreateGoAppScreen
+import com.webtoapp.ui.screens.CreateCodeToAppScreen
 import com.webtoapp.ui.screens.CreateHtmlAppScreen
 import com.webtoapp.ui.screens.CreateMediaAppScreen
 import com.webtoapp.ui.screens.CreateMultiWebAppScreen
@@ -72,6 +73,7 @@ object Routes {
     const val CREATE_PHP_APP = "create_php_app"
     const val CREATE_PYTHON_APP = "create_python_app"
     const val CREATE_GO_APP = "create_go_app"
+    const val CREATE_CODETOAPP_APP = "create_codetoapp_app"
     const val CREATE_MULTI_WEB_APP = "create_multi_web_app"
     const val CREATE_OFFLINE_PACK = "create_offline_pack"
     const val LINUX_ENVIRONMENT = "linux_environment"
@@ -86,6 +88,7 @@ object Routes {
     const val EDIT_PHP_APP = "edit_php_app/{appId}"
     const val EDIT_PYTHON_APP = "edit_python_app/{appId}"
     const val EDIT_GO_APP = "edit_go_app/{appId}"
+    const val EDIT_CODETOAPP_APP = "edit_codetoapp_app/{appId}"
     const val EDIT_MULTI_WEB_APP = "edit_multi_web_app/{appId}"
 
     const val PREVIEW = "preview/{appId}"
@@ -127,6 +130,7 @@ object Routes {
     fun editPhpApp(appId: Long) = "edit_php_app/$appId"
     fun editPythonApp(appId: Long) = "edit_python_app/$appId"
     fun editGoApp(appId: Long) = "edit_go_app/$appId"
+        fun editCodeToAppApp(appId: Long) = "edit_codetoapp_app/$appId"
     fun editMultiWebApp(appId: Long) = "edit_multi_web_app/$appId"
     fun preview(appId: Long) = "preview/$appId"
     fun editPlugin(pluginId: String) = "plugin_editor/$pluginId"
@@ -180,6 +184,7 @@ fun AppNavigation() {
                         onCreatePhpApp = { navController.navigate(Routes.CREATE_PHP_APP) },
                         onCreatePythonApp = { navController.navigate(Routes.CREATE_PYTHON_APP) },
                         onCreateGoApp = { navController.navigate(Routes.CREATE_GO_APP) },
+                        onCreateCodeToApp = { navController.navigate(Routes.CREATE_CODETOAPP_APP) },
                         onCreateMultiWebApp = { navController.navigate(Routes.CREATE_MULTI_WEB_APP) },
                         onCreateOfflinePack = { navController.navigate(Routes.CREATE_OFFLINE_PACK) },
                         onEditApp = { webApp ->
@@ -196,7 +201,8 @@ fun AppNavigation() {
                                 com.webtoapp.data.model.AppType.VIDEO -> navController.navigate(Routes.editMediaApp(webApp.id))
                                 com.webtoapp.data.model.AppType.GALLERY -> navController.navigate(Routes.editGalleryApp(webApp.id))
                                 com.webtoapp.data.model.AppType.HTML -> navController.navigate(Routes.editHtmlApp(webApp.id))
-                                com.webtoapp.data.model.AppType.FRONTEND, AppType.CODETOAPP -> navController.navigate(Routes.editFrontendApp(webApp.id))
+                                com.webtoapp.data.model.AppType.FRONTEND -> navController.navigate(Routes.editFrontendApp(webApp.id))
+                                AppType.CODETOAPP -> navController.navigate(Routes.editCodeToAppApp(webApp.id))
                                 com.webtoapp.data.model.AppType.NODEJS_APP -> navController.navigate(Routes.editNodeJsApp(webApp.id))
                                 com.webtoapp.data.model.AppType.WORDPRESS -> {
                                     viewModel.editApp(webApp)
@@ -478,6 +484,31 @@ fun AppNavigation() {
                     onBack = { navController.popBackStackSafely() },
                     onCreated = { name, goAppConfig, iconUri, themeType ->
                         viewModel.updateGoApp(appId, name, goAppConfig, iconUri, themeType)
+                        navController.popBackStackSafely()
+                    }
+                )
+            }
+
+            composable(Routes.CREATE_CODETOAPP_APP) {
+                CreateCodeToAppScreen(
+                    onBack = { navController.popBackStackSafely() },
+                    onCreated = { name, codeToAppConfig, iconUri, themeType ->
+                        viewModel.saveCodeToApp(name, codeToAppConfig, iconUri, themeType)
+                        navController.popBackStackSafely()
+                    }
+                )
+            }
+
+            composable(
+                route = Routes.EDIT_CODETOAPP_APP,
+                arguments = listOf(navArgument("appId") { type = NavType.LongType })
+            ) { backStackEntry ->
+                val appId = backStackEntry.arguments?.getLong("appId") ?: 0L
+                CreateCodeToAppScreen(
+                    existingAppId = appId,
+                    onBack = { navController.popBackStackSafely() },
+                    onCreated = { name, codeToAppConfig, iconUri, themeType ->
+                        viewModel.updateCodeToApp(appId, name, codeToAppConfig, iconUri, themeType)
                         navController.popBackStackSafely()
                     }
                 )
