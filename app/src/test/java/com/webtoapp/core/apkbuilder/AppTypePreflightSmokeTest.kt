@@ -4,6 +4,7 @@ import android.content.Context
 import androidx.test.core.app.ApplicationProvider
 import com.google.common.truth.Truth.assertThat
 import com.webtoapp.data.model.AppType
+import com.webtoapp.data.model.CodeToAppConfig
 import com.webtoapp.data.model.GalleryConfig
 import com.webtoapp.data.model.GalleryItem
 import com.webtoapp.data.model.GalleryItemType
@@ -101,7 +102,7 @@ class AppTypePreflightSmokeTest {
                 )
             }
 
-            AppType.FRONTEND -> {
+            AppType.FRONTEND, AppType.CODETOAPP -> {
                 val index = temp.newFile("front-${packageName}.html").apply { writeText("<html></html>") }
                 WebApp(
                     name = "Frontend",
