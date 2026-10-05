@@ -1494,6 +1494,110 @@ object StringsA {
         AppLanguage.KOREAN -> "프레임워크 감지됨"
     }
 
+    val ctaSelectProjectZip: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "选择项目 ZIP"
+        AppLanguage.ENGLISH -> "Select Project ZIP"
+        AppLanguage.ARABIC -> "اختر ملف ZIP للمشروع"
+        AppLanguage.PORTUGUESE -> "Selecionar ZIP do Projeto"
+        AppLanguage.SPANISH -> "Seleccionar ZIP del Proyecto"
+        AppLanguage.FRENCH -> "Sélectionner le ZIP du projet"
+        AppLanguage.GERMAN -> "Projekt-ZIP auswählen"
+        AppLanguage.RUSSIAN -> "Выберите ZIP проекта"
+        AppLanguage.JAPANESE -> "プロジェクトZIPを選択"
+        AppLanguage.KOREAN -> "프로젝트 ZIP 선택"
+    }
+
+    val ctaDetectedRuntime: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "侦测到的运行时"
+        AppLanguage.ENGLISH -> "Detected Runtime"
+        AppLanguage.ARABIC -> "وقت التشغيل المكتشف"
+        AppLanguage.PORTUGUESE -> "Runtime Detectado"
+        AppLanguage.SPANISH -> "Runtime Detectado"
+        AppLanguage.FRENCH -> "Runtime détecté"
+        AppLanguage.GERMAN -> "Erkannte Runtime"
+        AppLanguage.RUSSIAN -> "Обнаруженная среда выполнения"
+        AppLanguage.JAPANESE -> "検出されたランタイム"
+        AppLanguage.KOREAN -> "감지된 런타임"
+    }
+
+    val ctaRuntimeSettings: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "运行设置"
+        AppLanguage.ENGLISH -> "Runtime Settings"
+        AppLanguage.ARABIC -> "إعدادات التشغيل"
+        AppLanguage.PORTUGUESE -> "Configurações de Runtime"
+        AppLanguage.SPANISH -> "Configuración de Runtime"
+        AppLanguage.FRENCH -> "Paramètres d'exécution"
+        AppLanguage.GERMAN -> "Runtime-Einstellungen"
+        AppLanguage.RUSSIAN -> "Настройки среды выполнения"
+        AppLanguage.JAPANESE -> "ランタイム設定"
+        AppLanguage.KOREAN -> "런타임 설정"
+    }
+
+    val ctaServerPort: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "服务端口"
+        AppLanguage.ENGLISH -> "Server Port"
+        AppLanguage.ARABIC -> "منفذ الخادم"
+        AppLanguage.PORTUGUESE -> "Porta do Servidor"
+        AppLanguage.SPANISH -> "Puerto del Servidor"
+        AppLanguage.FRENCH -> "Port du serveur"
+        AppLanguage.GERMAN -> "Server-Port"
+        AppLanguage.RUSSIAN -> "Порт сервера"
+        AppLanguage.JAPANESE -> "サーバーポート"
+        AppLanguage.KOREAN -> "서버 포트"
+    }
+
+    val ctaBuildCommand: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "构建命令"
+        AppLanguage.ENGLISH -> "Build Command"
+        AppLanguage.ARABIC -> "أمر البناء"
+        AppLanguage.PORTUGUESE -> "Comando de Build"
+        AppLanguage.SPANISH -> "Comando de Compilación"
+        AppLanguage.FRENCH -> "Commande de build"
+        AppLanguage.GERMAN -> "Build-Befehl"
+        AppLanguage.RUSSIAN -> "Команда сборки"
+        AppLanguage.JAPANESE -> "ビルドコマンド"
+        AppLanguage.KOREAN -> "빌드 명령어"
+    }
+
+    val ctaStartCommand: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "启动命令"
+        AppLanguage.ENGLISH -> "Start Command"
+        AppLanguage.ARABIC -> "أمر التشغيل"
+        AppLanguage.PORTUGUESE -> "Comando de Início"
+        AppLanguage.SPANISH -> "Comando de Inicio"
+        AppLanguage.FRENCH -> "Commande de démarrage"
+        AppLanguage.GERMAN -> "Startbefehl"
+        AppLanguage.RUSSIAN -> "Команда запуска"
+        AppLanguage.JAPANESE -> "起動コマンド"
+        AppLanguage.KOREAN -> "시작 명령어"
+    }
+
+    val ctaStaticDir: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "静态目录"
+        AppLanguage.ENGLISH -> "Static Directory"
+        AppLanguage.ARABIC -> "المجلد الثابت"
+        AppLanguage.PORTUGUESE -> "Diretório Estático"
+        AppLanguage.SPANISH -> "Directorio Estático"
+        AppLanguage.FRENCH -> "Répertoire statique"
+        AppLanguage.GERMAN -> "Statisches Verzeichnis"
+        AppLanguage.RUSSIAN -> "Статическая папка"
+        AppLanguage.JAPANESE -> "静的ディレクトリ"
+        AppLanguage.KOREAN -> "정적 디렉터리"
+    }
+
+    val ctaImportFirstHint: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "请先导入项目源码后再保存"
+        AppLanguage.ENGLISH -> "Import a project source before saving"
+        AppLanguage.ARABIC -> "استورد مصدر المشروع أولاً"
+        AppLanguage.PORTUGUESE -> "Importe o código-fonte primeiro"
+        AppLanguage.SPANISH -> "Importa el código fuente primero"
+        AppLanguage.FRENCH -> "Importez d'abord le code source"
+        AppLanguage.GERMAN -> "Importieren Sie zuerst den Quellcode"
+        AppLanguage.RUSSIAN -> "Сначала импортируйте исходный код"
+        AppLanguage.JAPANESE -> "先にプロジェクトをインポートしてください"
+        AppLanguage.KOREAN -> "먼저 프로젝트 소스를 가져오세요"
+    }
+
     val preparingEnv: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "正在准备环境..."
         AppLanguage.ENGLISH -> "Preparing environment..."

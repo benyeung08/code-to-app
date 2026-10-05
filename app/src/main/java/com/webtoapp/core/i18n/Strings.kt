@@ -167,6 +167,14 @@ object Strings {
     val dirNotExists: String get() = StringsA.dirNotExists
     val projectImportFailed: String get() = StringsA.projectImportFailed
     val frameworkDetected: String get() = StringsA.frameworkDetected
+    val ctaSelectProjectZip: String get() = StringsA.ctaSelectProjectZip
+    val ctaDetectedRuntime: String get() = StringsA.ctaDetectedRuntime
+    val ctaRuntimeSettings: String get() = StringsA.ctaRuntimeSettings
+    val ctaServerPort: String get() = StringsA.ctaServerPort
+    val ctaBuildCommand: String get() = StringsA.ctaBuildCommand
+    val ctaStartCommand: String get() = StringsA.ctaStartCommand
+    val ctaStaticDir: String get() = StringsA.ctaStaticDir
+    val ctaImportFirstHint: String get() = StringsA.ctaImportFirstHint
     val preparingEnv: String get() = StringsA.preparingEnv
     val startingServer: String get() = StringsA.startingServer
     val serverStartFailed: String get() = StringsA.serverStartFailed
