@@ -61,9 +61,9 @@ For more information, see http://developer.android.com/build/r/new-dsl.
 To determine what is calling unitTestVariants, use -Pandroid.debug.obsoleteApi=true on the command line to display more information.
 w: file:///home/runner/work/code-to-app/code-to-app/app/build.gradle.kts:44:1: 'fun Project.android(configure: Action<BaseAppModuleExtension>): Unit' is deprecated. Replaced by com.android.build.api.dsl.ApplicationExtension.
 This class is not used for the public extensions in AGP when android.newDsl=true, which is the default in AGP 9.0, and will be removed in AGP 10.0.
-w: file:///home/runner/work/code-to-app/code-to-app/app/build.gradle.kts:185:5: 'fun BaseAppModuleExtension.kotlinOptions(configure: Action<DeprecatedKotlinJvmOptions>): Unit' is deprecated. Please migrate to the compilerOptions DSL. More details are here: https://kotl.in/u1r8ln.
-w: file:///home/runner/work/code-to-app/code-to-app/app/build.gradle.kts:186:9: 'var jvmTarget: String' is deprecated. Please migrate to the compilerOptions DSL. More details are here: https://kotl.in/u1r8ln.
-w: file:///home/runner/work/code-to-app/code-to-app/app/build.gradle.kts:303:21: 'val Project.android: BaseAppModuleExtension' is deprecated. Replaced by com.android.build.api.dsl.ApplicationExtension.
+w: file:///home/runner/work/code-to-app/code-to-app/app/build.gradle.kts:186:5: 'fun BaseAppModuleExtension.kotlinOptions(configure: Action<DeprecatedKotlinJvmOptions>): Unit' is deprecated. Please migrate to the compilerOptions DSL. More details are here: https://kotl.in/u1r8ln.
+w: file:///home/runner/work/code-to-app/code-to-app/app/build.gradle.kts:187:9: 'var jvmTarget: String' is deprecated. Please migrate to the compilerOptions DSL. More details are here: https://kotl.in/u1r8ln.
+w: file:///home/runner/work/code-to-app/code-to-app/app/build.gradle.kts:304:21: 'val Project.android: BaseAppModuleExtension' is deprecated. Replaced by com.android.build.api.dsl.ApplicationExtension.
 This class is not used for the public extensions in AGP when android.newDsl=true, which is the default in AGP 9.0, and will be removed in AGP 10.0.
 
 > Configure project :feature-stacks:admob
@@ -140,8 +140,8 @@ To suppress this warning, add android.generateSyncIssueWhenLibraryConstraintsAre
 WARNING: The property android.dependency.excludeLibraryComponentsFromConstraints improves project import performance for very large projects. It should be enabled to improve performance.
 To suppress this warning, add android.generateSyncIssueWhenLibraryConstraintsAreEnabled=false to gradle.properties
 
-> Task :clone-host:preBuild UP-TO-DATE
 > Task :app:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :clone-host:preBuild UP-TO-DATE
 > Task :app:protobufDummy UP-TO-DATE
 > Task :clone-host:preReleaseBuild UP-TO-DATE
 > Task :app:extractDebugProto
@@ -149,8 +149,8 @@ To suppress this warning, add android.generateSyncIssueWhenLibraryConstraintsAre
 > Task :clone-host:mergeReleaseJniLibFolders
 > Task :clone-host:mergeReleaseNativeLibs NO-SOURCE
 > Task :clone-host:stripReleaseDebugSymbols NO-SOURCE
-> Task :clone-host:copyReleaseJniLibsProjectAndLocalJars
 > Task :clone-host:generateReleaseResValues
+> Task :clone-host:copyReleaseJniLibsProjectAndLocalJars
 > Task :clone-host:extractDeepLinksForAarRelease
 > Task :clone-host:checkKotlinGradlePluginConfigurationErrors SKIPPED
 > Task :clone-host:generateReleaseResources
@@ -477,5 +477,5 @@ w: file:///home/runner/work/code-to-app/code-to-app/app/src/main/java/com/webtoa
 w: file:///home/runner/work/code-to-app/code-to-app/app/src/main/java/com/webtoapp/util/SvgIconMapper.kt:135:49 'val Icons.Outlined.MenuBook: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Outlined.MenuBook.
 w: file:///home/runner/work/code-to-app/code-to-app/app/src/main/java/com/webtoapp/util/SvgIconMapper.kt:151:49 'val Icons.Outlined.HelpOutline: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Outlined.HelpOutline.
 
-BUILD SUCCESSFUL in 5m 14s
+BUILD SUCCESSFUL in 4m 17s
 51 actionable tasks: 50 executed, 1 from cache
