@@ -14,7 +14,7 @@ class UpdateCheckerAuthorReposTest {
     fun `parseAuthorRepos filters forks and the app repo itself`() {
         val json = """
             [
-              {"name":"web-to-app","description":"self","stargazers_count":999,"forks_count":10,"language":"Kotlin","pushed_at":"2026-01-01T00:00:00Z","html_url":"https://github.com/shiaho777/web-to-app","fork":false},
+              {"name":"code-to-app","description":"self","stargazers_count":999,"forks_count":10,"language":"Kotlin","pushed_at":"2026-01-01T00:00:00Z","html_url":"https://github.com/benyeung08/code-to-app","fork":false},
               {"name":"some-fork","description":"forked","stargazers_count":5,"forks_count":0,"language":"Java","pushed_at":"2026-01-02T00:00:00Z","html_url":"https://github.com/shiaho777/some-fork","fork":true},
               {"name":"cool-tool","description":"A tool","stargazers_count":42,"forks_count":7,"language":"Kotlin","pushed_at":"2026-01-03T00:00:00Z","html_url":"https://github.com/shiaho777/cool-tool","fork":false},
               {"name":"no-desc","description":null,"stargazers_count":0,"forks_count":0,"language":null,"pushed_at":"2026-01-04T00:00:00Z","html_url":"https://github.com/shiaho777/no-desc","fork":false}
