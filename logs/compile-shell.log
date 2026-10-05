@@ -115,8 +115,8 @@ generateShellStrings: facade 818/5113 members, splits 813/5110 members, toplevel
 > Task :shell:preDebugBuild
 > Task :shell:generateDebugBuildConfig
 > Task :shell:generateDebugResValues FROM-CACHE
-> Task :shell:mapDebugSourceSetPaths
 > Task :shell:checkDebugAarMetadata
+> Task :shell:mapDebugSourceSetPaths
 > Task :shell:processDebugNavigationResources
 > Task :shell:compileDebugNavigationResources FROM-CACHE
 > Task :shell:generateDebugResources
