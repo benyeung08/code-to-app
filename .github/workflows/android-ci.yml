@@ -197,6 +197,11 @@ jobs:
           mkdir -p apk-out
           SRC=$(find app/build/outputs/apk -name "*.apk" | head -1)
           echo "source: $SRC"
+          if [ -z "$SRC" ] || [ ! -f "$SRC" ]; then
+            echo "::error::No APK under app/build/outputs/apk — assembleStandardDebug failed"
+            find app/build/outputs -maxdepth 3 -type d 2>/dev/null | head -20
+            exit 1
+          fi
           VERSION=$(grep -m1 'versionName' app/build.gradle.kts | sed 's/.*"\([^"]*\)".*/\1/')
           VERSION=${VERSION:-dev}
           OUT="code-to-app-v${VERSION}-run${{ github.run_number }}-debug.apk"
@@ -220,11 +225,20 @@ jobs:
           git fetch origin apk || true
           git checkout -B apk origin/apk 2>/dev/null || git checkout --orphan apk
           git rm -rq --cached . 2>/dev/null || true
-          find . -maxdepth 1 -mindepth 1 -not -name .git -not -name builds -exec rm -rf {} + 2>/dev/null || true
+          # ⚠️ 必须排除 apk-out：上一步刚把 APK 复制进去，
+          # 若被这条清理命令删掉，后面 cp 会因源文件不存在而静默失败（|| true 吞掉），
+          # 结果 apk 分支只剩旧档、artifact 为 0。
+          find . -maxdepth 1 -mindepth 1 -not -name .git -not -name builds -not -name apk-out -exec rm -rf {} + 2>/dev/null || true
           mkdir -p builds
           # APK_NAME 可能含空格（versionName 写成 "1.0.0 beta2" 时），必须加引号
-          cp "apk-out/$APK_NAME" builds/ 2>/dev/null || true
-          cp apk-out/latest.apk builds/latest.apk 2>/dev/null || true
+          # 先校验 APK 真的存在，不存在就直接报错，避免静默产出空分支
+          ls -lh apk-out
+          if [ ! -f "apk-out/$APK_NAME" ]; then
+            echo "::error::APK missing: apk-out/$APK_NAME (collect step did not produce it)"
+            exit 1
+          fi
+          cp "apk-out/$APK_NAME" builds/
+          cp apk-out/latest.apk builds/latest.apk
           # 只保留最近 8 个 build
           ls -1t builds/*.apk 2>/dev/null | tail -n +9 | while read f; do rm -f "$f"; done
           ls -lh builds
