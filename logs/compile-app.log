@@ -161,9 +161,9 @@ To suppress this warning, add android.generateSyncIssueWhenLibraryConstraintsAre
 > Task :clone-host:javaPreCompileRelease
 > Task :clone-host:prepareLintJarForPublish
 > Task :clone-host:prepareReleaseArtProfile
+> Task :clone-host:parseReleaseLocalResources
 > Task :clone-host:writeReleaseAarMetadata
 > Task :clone-host:mapReleaseSourceSetPaths
-> Task :clone-host:parseReleaseLocalResources
 > Task :clone-host:mergeReleaseResources
 > Task :clone-host:generateReleaseRFile
 > Task :clone-host:processReleaseManifest
@@ -191,8 +191,8 @@ To suppress this warning, add android.generateSyncIssueWhenLibraryConstraintsAre
 > Task :app:generateStandardDebugResValues FROM-CACHE
 > Task :app:mapStandardDebugSourceSetPaths
 > Task :app:processStandardDebugNavigationResources
-> Task :app:generateStandardDebugResources
 > Task :app:compileStandardDebugNavigationResources
+> Task :app:generateStandardDebugResources
 > Task :app:packageStandardDebugResources
 > Task :app:createStandardDebugCompatibleScreenManifests
 > Task :app:extractDeepLinksStandardDebug
@@ -248,5 +248,5 @@ Execution failed for task ':app:compileStandardDebugKotlin'.
 > Run with --scan to get full insights from a Build Scan (powered by Develocity).
 > Get more help at https://help.gradle.org.
 
-BUILD FAILED in 3m 57s
+BUILD FAILED in 2m 32s
 51 actionable tasks: 50 executed, 1 from cache
