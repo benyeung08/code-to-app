@@ -149,8 +149,8 @@ To suppress this warning, add android.generateSyncIssueWhenLibraryConstraintsAre
 > Task :clone-host:mergeReleaseJniLibFolders
 > Task :clone-host:mergeReleaseNativeLibs NO-SOURCE
 > Task :clone-host:stripReleaseDebugSymbols NO-SOURCE
-> Task :clone-host:copyReleaseJniLibsProjectAndLocalJars
 > Task :clone-host:generateReleaseResValues
+> Task :clone-host:copyReleaseJniLibsProjectAndLocalJars
 > Task :clone-host:extractDeepLinksForAarRelease
 > Task :clone-host:checkKotlinGradlePluginConfigurationErrors SKIPPED
 > Task :clone-host:generateReleaseResources
@@ -158,14 +158,14 @@ To suppress this warning, add android.generateSyncIssueWhenLibraryConstraintsAre
 > Task :clone-host:processReleaseNavigationResources
 > Task :clone-host:generateReleaseAssets UP-TO-DATE
 > Task :clone-host:mergeReleaseAssets
-> Task :clone-host:prepareLintJarForPublish
 > Task :clone-host:javaPreCompileRelease
 > Task :clone-host:prepareReleaseArtProfile
-> Task :clone-host:parseReleaseLocalResources
+> Task :clone-host:prepareLintJarForPublish
 > Task :clone-host:writeReleaseAarMetadata
+> Task :clone-host:parseReleaseLocalResources
 > Task :clone-host:mapReleaseSourceSetPaths
-> Task :clone-host:generateReleaseRFile
 > Task :clone-host:mergeReleaseResources
+> Task :clone-host:generateReleaseRFile
 > Task :clone-host:processReleaseManifest
 > Task :clone-host:verifyReleaseResources
 > Task :clone-host:compileReleaseKotlin
@@ -197,10 +197,10 @@ To suppress this warning, add android.generateSyncIssueWhenLibraryConstraintsAre
 > Task :app:createStandardDebugCompatibleScreenManifests
 > Task :app:extractDeepLinksStandardDebug
 > Task :app:parseStandardDebugLocalResources
+> Task :app:mergeStandardDebugResources
 > Task :app:processStandardDebugMainManifest
 > Task :app:processStandardDebugManifest
 > Task :app:processStandardDebugManifestForPackage
-> Task :app:mergeStandardDebugResources
 > Task :app:processStandardDebugResources
 > Task :app:kspStandardDebugKotlin
 > Task :app:compileStandardDebugKotlin
@@ -477,5 +477,5 @@ w: file:///home/runner/work/code-to-app/code-to-app/app/src/main/java/com/webtoa
 w: file:///home/runner/work/code-to-app/code-to-app/app/src/main/java/com/webtoapp/util/SvgIconMapper.kt:135:49 'val Icons.Outlined.MenuBook: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Outlined.MenuBook.
 w: file:///home/runner/work/code-to-app/code-to-app/app/src/main/java/com/webtoapp/util/SvgIconMapper.kt:151:49 'val Icons.Outlined.HelpOutline: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Outlined.HelpOutline.
 
-BUILD SUCCESSFUL in 4m 6s
+BUILD SUCCESSFUL in 3m 53s
 51 actionable tasks: 50 executed, 1 from cache

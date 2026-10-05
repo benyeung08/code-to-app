@@ -106,10 +106,10 @@ To suppress this warning, add android.generateSyncIssueWhenLibraryConstraintsAre
 
 > Task :app:checkKotlinGradlePluginConfigurationErrors SKIPPED
 > Task :clone-host:preBuild UP-TO-DATE
-> Task :app:protobufDummy UP-TO-DATE
 > Task :clone-host:preReleaseBuild UP-TO-DATE
-> Task :clone-host:checkReleaseAarMetadata UP-TO-DATE
+> Task :app:protobufDummy UP-TO-DATE
 > Task :app:extractDebugProto UP-TO-DATE
+> Task :clone-host:checkReleaseAarMetadata UP-TO-DATE
 > Task :clone-host:mergeReleaseJniLibFolders UP-TO-DATE
 > Task :clone-host:mergeReleaseNativeLibs NO-SOURCE
 > Task :clone-host:stripReleaseDebugSymbols NO-SOURCE
@@ -171,10 +171,8 @@ To suppress this warning, add android.generateSyncIssueWhenLibraryConstraintsAre
 > Task :app:extractTestDebugProto
 > Task :app:extractTestProto
 > Task :app:extractTestStandardDebugProto
-> Task :app:extractTestStandardProto
-> Task :app:preStandardDebugUnitTestBuild UP-TO-DATE
 > Task :app:javaPreCompileStandardDebug
-> Task :app:javaPreCompileStandardDebugUnitTest FROM-CACHE
+> Task :app:extractTestStandardProto
 
 > Task :app:compileStandardDebugJavaWithJavac
 /home/runner/work/code-to-app/code-to-app/app/build/generated/sources/proto/standardDebug/java/com/android/bundle/Config.java:3472: warning: [dep-ann] deprecated item is not annotated with @Deprecated
@@ -197,9 +195,11 @@ To suppress this warning, add android.generateSyncIssueWhenLibraryConstraintsAre
                  ^
 6 warnings
 
+> Task :app:preStandardDebugUnitTestBuild UP-TO-DATE
+> Task :app:javaPreCompileStandardDebugUnitTest FROM-CACHE
 > Task :app:generateStandardDebugAssets UP-TO-DATE
-> Task :app:bundleStandardDebugClassesToRuntimeJar
 > Task :app:bundleStandardDebugClassesToCompileJar
+> Task :app:bundleStandardDebugClassesToRuntimeJar
 > Task :app:mergeStandardDebugAssets
 > Task :app:extractIncludeStandardDebugUnitTestProto
 > Task :app:generateStandardDebugUnitTestProto NO-SOURCE
@@ -208,24 +208,84 @@ To suppress this warning, add android.generateSyncIssueWhenLibraryConstraintsAre
 > Task :app:generateStandardDebugUnitTestConfig
 > Task :app:processStandardDebugJavaRes
 > Task :app:kspStandardDebugUnitTestKotlin
+> Task :app:compileStandardDebugUnitTestKotlin
+w: file:///home/runner/work/code-to-app/code-to-app/app/src/test/java/com/webtoapp/core/apkbuilder/ArscPackageGrafterTest.kt:27:9 Only safe (?.) or non-null asserted (!!.) calls are allowed on a nullable receiver of type 'ClassLoader?'.
+w: file:///home/runner/work/code-to-app/code-to-app/app/src/test/java/com/webtoapp/core/apkbuilder/AxmlRebuilderFragmentTest.kt:26:9 Only safe (?.) or non-null asserted (!!.) calls are allowed on a nullable receiver of type 'ClassLoader?'.
+w: file:///home/runner/work/code-to-app/code-to-app/app/src/test/java/com/webtoapp/core/apkbuilder/DemoApkExportTest.kt:42:34 This property hides Java field 'field realPackageManager: PackageManager!' thus making it inaccessible.
+w: file:///home/runner/work/code-to-app/code-to-app/app/src/test/java/com/webtoapp/core/engine/GeckoRuntimeProvisionerTest.kt:18:15 'fun createTempDir(prefix: String = ..., suffix: String? = ..., directory: File? = ...): File' is deprecated. Avoid creating temporary directories in the default temp location with this function due to too wide permissions on the newly created directory. Use kotlin.io.path.createTempDirectory instead.
+w: file:///home/runner/work/code-to-app/code-to-app/app/src/test/java/com/webtoapp/core/golang/GoToolchainManagerUrlTest.kt:63:27 'constructor(p0: String!): Locale' is deprecated. Deprecated in Java.
+w: file:///home/runner/work/code-to-app/code-to-app/app/src/test/java/com/webtoapp/core/webview/GeolocationBridgeTest.kt:104:13 'fun setLastKnownLocation(p0: String!, p1: Location!): Unit' is deprecated. Deprecated in Java.
+w: file:///home/runner/work/code-to-app/code-to-app/app/src/test/java/com/webtoapp/core/webview/MediaPlaybackWakeLockTest.kt:42:20 'fun withIntent(p0: Intent!): ServiceController<WebMediaPlaybackService!>!' is deprecated. Deprecated in Java.
+w: file:///home/runner/work/code-to-app/code-to-app/app/src/test/java/com/webtoapp/core/webview/MediaPlaybackWakeLockTest.kt:54:20 'fun withIntent(p0: Intent!): ServiceController<WebMediaPlaybackService!>!' is deprecated. Deprecated in Java.
+w: file:///home/runner/work/code-to-app/code-to-app/app/src/test/java/com/webtoapp/core/webview/MediaPlaybackWakeLockTest.kt:60:20 'fun withIntent(p0: Intent!): ServiceController<WebMediaPlaybackService!>!' is deprecated. Deprecated in Java.
+w: file:///home/runner/work/code-to-app/code-to-app/app/src/test/java/com/webtoapp/core/webview/MediaPlaybackWakeLockTest.kt:72:20 'fun withIntent(p0: Intent!): ServiceController<WebMediaPlaybackService!>!' is deprecated. Deprecated in Java.
+w: file:///home/runner/work/code-to-app/code-to-app/app/src/test/java/com/webtoapp/core/webview/MediaPlaybackWakeLockTest.kt:76:20 'fun withIntent(p0: Intent!): ServiceController<WebMediaPlaybackService!>!' is deprecated. Deprecated in Java.
+w: file:///home/runner/work/code-to-app/code-to-app/app/src/test/java/com/webtoapp/core/webview/MediaSessionCoreTest.kt:82:52 'fun advanceBy(p0: Long): Boolean' is deprecated. Deprecated in Java.
+w: file:///home/runner/work/code-to-app/code-to-app/app/src/test/java/com/webtoapp/core/webview/WebViewMemoryTrimmerTest.kt:16:64 'static field TRIM_MEMORY_COMPLETE: Int' is deprecated. Deprecated in Java.
+w: file:///home/runner/work/code-to-app/code-to-app/app/src/test/java/com/webtoapp/core/webview/WebViewMemoryTrimmerTest.kt:19:76 'static field TRIM_MEMORY_COMPLETE: Int' is deprecated. Deprecated in Java.
+w: file:///home/runner/work/code-to-app/code-to-app/app/src/test/java/com/webtoapp/core/webview/WebViewMemoryTrimmerTest.kt:27:33 'static field TRIM_MEMORY_MODERATE: Int' is deprecated. Deprecated in Java.
+w: file:///home/runner/work/code-to-app/code-to-app/app/src/test/java/com/webtoapp/core/webview/WebViewMemoryTrimmerTest.kt:45:33 'static field TRIM_MEMORY_RUNNING_MODERATE: Int' is deprecated. Deprecated in Java.
+w: file:///home/runner/work/code-to-app/code-to-app/app/src/test/java/com/webtoapp/core/webview/WebViewMemoryTrimmerTest.kt:46:33 'static field TRIM_MEMORY_RUNNING_LOW: Int' is deprecated. Deprecated in Java.
+w: file:///home/runner/work/code-to-app/code-to-app/app/src/test/java/com/webtoapp/core/webview/WebViewMemoryTrimmerTest.kt:47:33 'static field TRIM_MEMORY_RUNNING_CRITICAL: Int' is deprecated. Deprecated in Java.
+w: file:///home/runner/work/code-to-app/code-to-app/app/src/test/java/com/webtoapp/core/webview/WebViewMemoryTrimmerTest.kt:52:64 'static field TRIM_MEMORY_RUNNING_CRITICAL: Int' is deprecated. Deprecated in Java.
+w: file:///home/runner/work/code-to-app/code-to-app/app/src/test/java/com/webtoapp/core/webview/WebViewMemoryTrimmerTest.kt:55:64 'static field TRIM_MEMORY_RUNNING_MODERATE: Int' is deprecated. Deprecated in Java.
+w: file:///home/runner/work/code-to-app/code-to-app/app/src/test/java/com/webtoapp/ui/shared/WindowHelperKeyboardModeTest.kt:16:41 'var systemUiVisibility: Int' is deprecated. Deprecated in Java.
+w: file:///home/runner/work/code-to-app/code-to-app/app/src/test/java/com/webtoapp/ui/shared/WindowHelperKeyboardModeTest.kt:17:25 'static field SYSTEM_UI_FLAG_LAYOUT_STABLE: Int' is deprecated. Deprecated in Java.
+w: file:///home/runner/work/code-to-app/code-to-app/app/src/test/java/com/webtoapp/ui/shared/WindowHelperKeyboardModeTest.kt:18:22 'static field SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN: Int' is deprecated. Deprecated in Java.
+w: file:///home/runner/work/code-to-app/code-to-app/app/src/test/java/com/webtoapp/ui/shared/WindowHelperKeyboardModeTest.kt:19:22 'static field SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION: Int' is deprecated. Deprecated in Java.
+w: file:///home/runner/work/code-to-app/code-to-app/app/src/test/java/com/webtoapp/ui/shared/WindowHelperKeyboardModeTest.kt:39:36 'static fun <T : Activity!> setupActivity(p0: Class<T!>!): T!' is deprecated. Deprecated in Java.
+w: file:///home/runner/work/code-to-app/code-to-app/app/src/test/java/com/webtoapp/ui/shared/WindowHelperKeyboardModeTest.kt:48:56 'static field SOFT_INPUT_ADJUST_RESIZE: Int' is deprecated. Deprecated in Java.
+w: file:///home/runner/work/code-to-app/code-to-app/app/src/test/java/com/webtoapp/ui/shared/WindowHelperKeyboardModeTest.kt:54:36 'static fun <T : Activity!> setupActivity(p0: Class<T!>!): T!' is deprecated. Deprecated in Java.
+w: file:///home/runner/work/code-to-app/code-to-app/app/src/test/java/com/webtoapp/ui/shared/WindowHelperKeyboardModeTest.kt:65:48 'var statusBarColor: Int' is deprecated. Deprecated in Java.
+w: file:///home/runner/work/code-to-app/code-to-app/app/src/test/java/com/webtoapp/ui/shared/WindowHelperKeyboardModeTest.kt:66:36 'var navigationBarColor: Int' is deprecated. Deprecated in Java.
+w: file:///home/runner/work/code-to-app/code-to-app/app/src/test/java/com/webtoapp/ui/shared/WindowHelperKeyboardModeTest.kt:67:40 'var statusBarColor: Int' is deprecated. Deprecated in Java.
+w: file:///home/runner/work/code-to-app/code-to-app/app/src/test/java/com/webtoapp/ui/shared/WindowHelperKeyboardModeTest.kt:72:36 'static fun <T : Activity!> setupActivity(p0: Class<T!>!): T!' is deprecated. Deprecated in Java.
+w: file:///home/runner/work/code-to-app/code-to-app/app/src/test/java/com/webtoapp/ui/shared/WindowHelperKeyboardModeTest.kt:89:56 'static field SOFT_INPUT_ADJUST_RESIZE: Int' is deprecated. Deprecated in Java.
+w: file:///home/runner/work/code-to-app/code-to-app/app/src/test/java/com/webtoapp/ui/shared/WindowHelperKeyboardModeTest.kt:94:36 'static fun <T : Activity!> setupActivity(p0: Class<T!>!): T!' is deprecated. Deprecated in Java.
+w: file:///home/runner/work/code-to-app/code-to-app/app/src/test/java/com/webtoapp/ui/shared/WindowHelperKeyboardModeTest.kt:109:36 'static fun <T : Activity!> setupActivity(p0: Class<T!>!): T!' is deprecated. Deprecated in Java.
+w: file:///home/runner/work/code-to-app/code-to-app/app/src/test/java/com/webtoapp/ui/shared/WindowHelperKeyboardModeTest.kt:122:84 'static field FLAG_FULLSCREEN: Int' is deprecated. Deprecated in Java.
+w: file:///home/runner/work/code-to-app/code-to-app/app/src/test/java/com/webtoapp/ui/shared/WindowHelperKeyboardModeTest.kt:128:36 'static fun <T : Activity!> setupActivity(p0: Class<T!>!): T!' is deprecated. Deprecated in Java.
+w: file:///home/runner/work/code-to-app/code-to-app/app/src/test/java/com/webtoapp/ui/shared/WindowHelperKeyboardModeTest.kt:143:84 'static field FLAG_FULLSCREEN: Int' is deprecated. Deprecated in Java.
+w: file:///home/runner/work/code-to-app/code-to-app/app/src/test/java/com/webtoapp/ui/shared/WindowHelperKeyboardModeTest.kt:157:84 'static field FLAG_FULLSCREEN: Int' is deprecated. Deprecated in Java.
+w: file:///home/runner/work/code-to-app/code-to-app/app/src/test/java/com/webtoapp/ui/shared/WindowHelperKeyboardModeTest.kt:163:36 'static fun <T : Activity!> setupActivity(p0: Class<T!>!): T!' is deprecated. Deprecated in Java.
+w: file:///home/runner/work/code-to-app/code-to-app/app/src/test/java/com/webtoapp/ui/shared/WindowHelperKeyboardModeTest.kt:184:36 'static fun <T : Activity!> setupActivity(p0: Class<T!>!): T!' is deprecated. Deprecated in Java.
+w: file:///home/runner/work/code-to-app/code-to-app/app/src/test/java/com/webtoapp/ui/shared/WindowHelperKeyboardModeTest.kt:199:36 'static fun <T : Activity!> setupActivity(p0: Class<T!>!): T!' is deprecated. Deprecated in Java.
+w: file:///home/runner/work/code-to-app/code-to-app/app/src/test/java/com/webtoapp/ui/shared/WindowHelperKeyboardModeTest.kt:210:84 'static field FLAG_FULLSCREEN: Int' is deprecated. Deprecated in Java.
+w: file:///home/runner/work/code-to-app/code-to-app/app/src/test/java/com/webtoapp/ui/shared/WindowHelperKeyboardModeTest.kt:216:36 'static fun <T : Activity!> setupActivity(p0: Class<T!>!): T!' is deprecated. Deprecated in Java.
 
-> Task :app:compileStandardDebugUnitTestKotlin FAILED
-e: file:///home/runner/work/code-to-app/code-to-app/app/src/test/java/com/webtoapp/core/apkbuilder/AppTypePreflightSmokeTest.kt:67:16 'when' expression must be exhaustive. Add the 'CODETOAPP' branch or an 'else' branch.
+> Task :app:compileStandardDebugUnitTestJavaWithJavac NO-SOURCE
+> Task :app:processStandardDebugUnitTestJavaRes
+> Task :app:testStandardDebugUnitTest
+
+UpdateCheckerAuthorReposTest > parseAuthorRepos filters forks and the app repo itself FAILED
+    java.lang.AssertionError at UpdateCheckerAuthorReposTest.kt:26
+
+DownloadBridgeCustomLocationTest > custom mode routes media blob into the configured directory FAILED
+    java.lang.RuntimeException at DownloadBridgeCustomLocationTest.kt:42
+
+DownloadBridgeCustomLocationTest > app private mode keeps media blob inside the app directory FAILED
+    java.lang.RuntimeException at DownloadBridgeCustomLocationTest.kt:42
+
+DownloadBridgeCustomLocationTest > custom mode routes chunked media download into the configured directory FAILED
+    java.lang.RuntimeException at DownloadBridgeCustomLocationTest.kt:42
+
+WebAppModelExtendedTest > AppType has all expected values FAILED
+    com.google.common.truth.AssertionErrorWithFacts at WebAppModelExtendedTest.kt:16
+
+1496 tests completed, 5 failed, 28 skipped
+
+> Task :app:testStandardDebugUnitTest FAILED
 
 [Incubating] Problems report is available at: file:///home/runner/work/code-to-app/code-to-app/build/reports/problems/problems-report.html
 
 FAILURE: Build failed with an exception.
 
 * What went wrong:
-Execution failed for task ':app:compileStandardDebugUnitTestKotlin'.
-> A failure occurred while executing org.jetbrains.kotlin.compilerRunner.GradleCompilerRunnerWithWorkers$GradleKotlinCompilerWorkAction
-   > Compilation error. See log for more details
+Execution failed for task ':app:testStandardDebugUnitTest'.
+> There were failing tests. See the report at: file:///home/runner/work/code-to-app/code-to-app/app/build/reports/tests/testStandardDebugUnitTest/index.html
 
 * Try:
-> Run with --stacktrace option to get the stack trace.
-> Run with --info or --debug option to get more log output.
 > Run with --scan to get full insights from a Build Scan (powered by Develocity).
-> Get more help at https://help.gradle.org.
 
-BUILD FAILED in 57s
-68 actionable tasks: 16 executed, 1 from cache, 51 up-to-date
+BUILD FAILED in 2m 7s
+70 actionable tasks: 18 executed, 1 from cache, 51 up-to-date
