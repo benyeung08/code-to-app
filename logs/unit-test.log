@@ -106,8 +106,8 @@ To suppress this warning, add android.generateSyncIssueWhenLibraryConstraintsAre
 
 > Task :clone-host:preBuild UP-TO-DATE
 > Task :app:checkKotlinGradlePluginConfigurationErrors SKIPPED
-> Task :app:protobufDummy UP-TO-DATE
 > Task :clone-host:preReleaseBuild UP-TO-DATE
+> Task :app:protobufDummy UP-TO-DATE
 > Task :app:extractDebugProto UP-TO-DATE
 > Task :clone-host:checkReleaseAarMetadata UP-TO-DATE
 > Task :clone-host:mergeReleaseJniLibFolders UP-TO-DATE
@@ -171,10 +171,8 @@ To suppress this warning, add android.generateSyncIssueWhenLibraryConstraintsAre
 > Task :app:extractTestDebugProto
 > Task :app:extractTestProto
 > Task :app:extractTestStandardDebugProto
-> Task :app:extractTestStandardProto
-> Task :app:preStandardDebugUnitTestBuild UP-TO-DATE
-> Task :app:javaPreCompileStandardDebugUnitTest FROM-CACHE
 > Task :app:javaPreCompileStandardDebug
+> Task :app:extractTestStandardProto
 
 > Task :app:compileStandardDebugJavaWithJavac
 /home/runner/work/code-to-app/code-to-app/app/build/generated/sources/proto/standardDebug/java/com/android/bundle/Config.java:3472: warning: [dep-ann] deprecated item is not annotated with @Deprecated
@@ -197,10 +195,12 @@ To suppress this warning, add android.generateSyncIssueWhenLibraryConstraintsAre
                  ^
 6 warnings
 
+> Task :app:preStandardDebugUnitTestBuild UP-TO-DATE
+> Task :app:javaPreCompileStandardDebugUnitTest FROM-CACHE
 > Task :app:generateStandardDebugAssets UP-TO-DATE
 > Task :app:bundleStandardDebugClassesToCompileJar
-> Task :app:bundleStandardDebugClassesToRuntimeJar
 > Task :app:mergeStandardDebugAssets
+> Task :app:bundleStandardDebugClassesToRuntimeJar
 > Task :app:extractIncludeStandardDebugUnitTestProto
 > Task :app:generateStandardDebugUnitTestProto NO-SOURCE
 > Task :app:packageStandardDebugUnitTestForUnitTest
@@ -259,5 +259,5 @@ w: file:///home/runner/work/code-to-app/code-to-app/app/src/test/java/com/webtoa
 
 [Incubating] Problems report is available at: file:///home/runner/work/code-to-app/code-to-app/build/reports/problems/problems-report.html
 
-BUILD SUCCESSFUL in 2m 39s
+BUILD SUCCESSFUL in 2m 38s
 70 actionable tasks: 18 executed, 1 from cache, 51 up-to-date
