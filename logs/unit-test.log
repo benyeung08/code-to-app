@@ -170,8 +170,11 @@ To suppress this warning, add android.generateSyncIssueWhenLibraryConstraintsAre
 > Task :app:compileStandardDebugKotlin UP-TO-DATE
 > Task :app:extractTestDebugProto
 > Task :app:extractTestProto
-> Task :app:javaPreCompileStandardDebug
 > Task :app:extractTestStandardDebugProto
+> Task :app:extractTestStandardProto
+> Task :app:preStandardDebugUnitTestBuild UP-TO-DATE
+> Task :app:javaPreCompileStandardDebugUnitTest FROM-CACHE
+> Task :app:javaPreCompileStandardDebug
 
 > Task :app:compileStandardDebugJavaWithJavac
 /home/runner/work/code-to-app/code-to-app/app/build/generated/sources/proto/standardDebug/java/com/android/bundle/Config.java:3472: warning: [dep-ann] deprecated item is not annotated with @Deprecated
@@ -194,12 +197,9 @@ To suppress this warning, add android.generateSyncIssueWhenLibraryConstraintsAre
                  ^
 6 warnings
 
-> Task :app:extractTestStandardProto
-> Task :app:preStandardDebugUnitTestBuild UP-TO-DATE
-> Task :app:javaPreCompileStandardDebugUnitTest FROM-CACHE
 > Task :app:generateStandardDebugAssets UP-TO-DATE
-> Task :app:bundleStandardDebugClassesToRuntimeJar
 > Task :app:bundleStandardDebugClassesToCompileJar
+> Task :app:bundleStandardDebugClassesToRuntimeJar
 > Task :app:mergeStandardDebugAssets
 > Task :app:extractIncludeStandardDebugUnitTestProto
 > Task :app:generateStandardDebugUnitTestProto NO-SOURCE
@@ -259,5 +259,5 @@ w: file:///home/runner/work/code-to-app/code-to-app/app/src/test/java/com/webtoa
 
 [Incubating] Problems report is available at: file:///home/runner/work/code-to-app/code-to-app/build/reports/problems/problems-report.html
 
-BUILD SUCCESSFUL in 2m 38s
+BUILD SUCCESSFUL in 2m 39s
 70 actionable tasks: 18 executed, 1 from cache, 51 up-to-date
