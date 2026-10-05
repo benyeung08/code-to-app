@@ -32,6 +32,10 @@ val localProperties = Properties().apply {
 val releaseSigningStoreFile = localProperties.getProperty("signing.storeFile")
     ?.takeIf { it.isNotBlank() }
     ?.let { rootProject.file(it) }
+// 仓库内自带的固定签名档（app/codetoapp-signing.p12）。
+// 存在就用来给 debug / release 签名，保证每次构建签名一致、可覆盖升级。
+val fixedSigningStoreFile = rootProject.file("app/codetoapp-signing.p12")
+
 val hasReleaseSigningConfig = releaseSigningStoreFile?.isFile == true &&
     !localProperties.getProperty("signing.storePassword").isNullOrBlank() &&
     !localProperties.getProperty("signing.keyAlias").isNullOrBlank() &&
@@ -46,6 +50,19 @@ android {
                 storePassword = localProperties.getProperty("signing.storePassword")
                 keyAlias = localProperties.getProperty("signing.keyAlias")
                 keyPassword = localProperties.getProperty("signing.keyPassword")
+            }
+        }
+        // ✅ 固定签名：用仓库内的 codetoapp-signing.p12 代替 Gradle 每次自动生成的
+        // debug.keystore。CI 每次都是全新环境，debug keystore 每次都不同，
+        // 导致「套件與現有的套件發生衝突，無法安裝」——签名不一致就无法覆盖升级。
+        // 有了这个固定 keystore，所有构建共用同一把钥匙，可以正常覆盖安装。
+        if (fixedSigningStoreFile?.isFile == true) {
+            create("fixed") {
+                storeFile = fixedSigningStoreFile
+                storeType = "PKCS12"
+                storePassword = "codetoapp"
+                keyAlias = "codetoapp"
+                keyPassword = "codetoapp"
             }
         }
     }
@@ -111,11 +128,20 @@ android {
     }
 
     buildTypes {
+        // ✅ debug 也用固定 keystore，否则每次 CI 跑出来的 debug 签名都不同，
+        // 装新包时会提示「套件與現有的套件發生衝突」，只能卸载重装。
+        getByName("debug") {
+            if (fixedSigningStoreFile?.isFile == true) {
+                signingConfig = signingConfigs.getByName("fixed")
+            }
+        }
         release {
             isMinifyEnabled = true
             isShrinkResources = true
             signingConfig = if (hasReleaseSigningConfig) {
                 signingConfigs.getByName("release")
+            } else if (fixedSigningStoreFile?.isFile == true) {
+                signingConfigs.getByName("fixed")
             } else {
                 val allowDebugSigned = (project.findProperty("allowDebugSignedRelease") as? String) == "true"
                 if (allowDebugSigned) {
