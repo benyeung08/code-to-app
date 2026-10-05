@@ -1,6 +1,24 @@
 To honour the JVM settings for this build a single-use Daemon process will be forked. For more on this, please refer to https://docs.gradle.org/9.4.1/userguide/gradle_daemon.html#sec:disabling_the_daemon in the Gradle documentation.
 Daemon will be stopped at the end of the build 
 
+> Configure project :feature-stacks:admob
+WARNING: API 'libraryVariants' is obsolete and has been replaced with 'AndroidComponentsExtension'.
+It will be removed in version 10.0 of the Android Gradle plugin.
+The legacy variant API is disabled by default in AGP 9.0, but can be re-enabled by adding 
+    android.newDsl=false
+to this project's gradle.properties file.
+For more information, see http://developer.android.com/build/r/new-dsl.
+
+To determine what is calling libraryVariants, use -Pandroid.debug.obsoleteApi=true on the command line to display more information.
+WARNING: The property android.dependency.excludeLibraryComponentsFromConstraints improves project import performance for very large projects. It should be enabled to improve performance.
+To suppress this warning, add android.generateSyncIssueWhenLibraryConstraintsAreEnabled=false to gradle.properties
+WARNING: The property android.dependency.excludeLibraryComponentsFromConstraints improves project import performance for very large projects. It should be enabled to improve performance.
+To suppress this warning, add android.generateSyncIssueWhenLibraryConstraintsAreEnabled=false to gradle.properties
+WARNING: The property android.dependency.excludeLibraryComponentsFromConstraints improves project import performance for very large projects. It should be enabled to improve performance.
+To suppress this warning, add android.generateSyncIssueWhenLibraryConstraintsAreEnabled=false to gradle.properties
+WARNING: The property android.dependency.excludeLibraryComponentsFromConstraints improves project import performance for very large projects. It should be enabled to improve performance.
+To suppress this warning, add android.generateSyncIssueWhenLibraryConstraintsAreEnabled=false to gradle.properties
+
 > Configure project :app
 WARNING: The option setting 'android.usesSdkInManifest.disallowed=false' is deprecated.
 The current default is 'true'.
@@ -47,26 +65,6 @@ to this project's gradle.properties file.
 For more information, see http://developer.android.com/build/r/new-dsl.
 
 To determine what is calling unitTestVariants, use -Pandroid.debug.obsoleteApi=true on the command line to display more information.
-
-> Configure project :feature-stacks:admob
-WARNING: API 'libraryVariants' is obsolete and has been replaced with 'AndroidComponentsExtension'.
-It will be removed in version 10.0 of the Android Gradle plugin.
-The legacy variant API is disabled by default in AGP 9.0, but can be re-enabled by adding 
-    android.newDsl=false
-to this project's gradle.properties file.
-For more information, see http://developer.android.com/build/r/new-dsl.
-
-To determine what is calling libraryVariants, use -Pandroid.debug.obsoleteApi=true on the command line to display more information.
-WARNING: The property android.dependency.excludeLibraryComponentsFromConstraints improves project import performance for very large projects. It should be enabled to improve performance.
-To suppress this warning, add android.generateSyncIssueWhenLibraryConstraintsAreEnabled=false to gradle.properties
-WARNING: The property android.dependency.excludeLibraryComponentsFromConstraints improves project import performance for very large projects. It should be enabled to improve performance.
-To suppress this warning, add android.generateSyncIssueWhenLibraryConstraintsAreEnabled=false to gradle.properties
-WARNING: The property android.dependency.excludeLibraryComponentsFromConstraints improves project import performance for very large projects. It should be enabled to improve performance.
-To suppress this warning, add android.generateSyncIssueWhenLibraryConstraintsAreEnabled=false to gradle.properties
-WARNING: The property android.dependency.excludeLibraryComponentsFromConstraints improves project import performance for very large projects. It should be enabled to improve performance.
-To suppress this warning, add android.generateSyncIssueWhenLibraryConstraintsAreEnabled=false to gradle.properties
-
-> Configure project :app
 WARNING: The property android.dependency.excludeLibraryComponentsFromConstraints improves project import performance for very large projects. It should be enabled to improve performance.
 To suppress this warning, add android.generateSyncIssueWhenLibraryConstraintsAreEnabled=false to gradle.properties
 WARNING: The property android.dependency.excludeLibraryComponentsFromConstraints improves project import performance for very large projects. It should be enabled to improve performance.
@@ -105,8 +103,8 @@ WARNING: The property android.dependency.excludeLibraryComponentsFromConstraints
 To suppress this warning, add android.generateSyncIssueWhenLibraryConstraintsAreEnabled=false to gradle.properties
 
 > Task :clone-host:preBuild UP-TO-DATE
-> Task :app:checkKotlinGradlePluginConfigurationErrors SKIPPED
 > Task :clone-host:preReleaseBuild UP-TO-DATE
+> Task :app:checkKotlinGradlePluginConfigurationErrors SKIPPED
 > Task :app:protobufDummy UP-TO-DATE
 > Task :app:extractDebugProto UP-TO-DATE
 > Task :clone-host:checkReleaseAarMetadata UP-TO-DATE
@@ -167,125 +165,53 @@ To suppress this warning, add android.generateSyncIssueWhenLibraryConstraintsAre
 > Task :app:processStandardDebugManifestForPackage UP-TO-DATE
 > Task :app:processStandardDebugResources UP-TO-DATE
 > Task :app:kspStandardDebugKotlin UP-TO-DATE
-> Task :app:compileStandardDebugKotlin UP-TO-DATE
 > Task :app:extractTestDebugProto
 > Task :app:extractTestProto
 > Task :app:extractTestStandardDebugProto
-> Task :app:javaPreCompileStandardDebug
 > Task :app:extractTestStandardProto
-
-> Task :app:compileStandardDebugJavaWithJavac
-/home/runner/work/code-to-app/code-to-app/app/build/generated/sources/proto/standardDebug/java/com/android/bundle/Config.java:3472: warning: [dep-ann] deprecated item is not annotated with @Deprecated
-    private void setInjectMinSdk(boolean value) {
-                 ^
-/home/runner/work/code-to-app/code-to-app/app/build/generated/sources/proto/standardDebug/java/com/android/bundle/Config.java:3481: warning: [dep-ann] deprecated item is not annotated with @Deprecated
-    private void clearInjectMinSdk() {
-                 ^
-/home/runner/work/code-to-app/code-to-app/app/build/generated/sources/proto/standardDebug/java/com/android/aapt/Resources.java:16925: warning: [dep-ann] deprecated item is not annotated with @Deprecated
-    private void setDimensionValueDeprecated(float value) {
-                 ^
-/home/runner/work/code-to-app/code-to-app/app/build/generated/sources/proto/standardDebug/java/com/android/aapt/Resources.java:16934: warning: [dep-ann] deprecated item is not annotated with @Deprecated
-    private void clearDimensionValueDeprecated() {
-                 ^
-/home/runner/work/code-to-app/code-to-app/app/build/generated/sources/proto/standardDebug/java/com/android/aapt/Resources.java:16971: warning: [dep-ann] deprecated item is not annotated with @Deprecated
-    private void setFractionValueDeprecated(float value) {
-                 ^
-/home/runner/work/code-to-app/code-to-app/app/build/generated/sources/proto/standardDebug/java/com/android/aapt/Resources.java:16980: warning: [dep-ann] deprecated item is not annotated with @Deprecated
-    private void clearFractionValueDeprecated() {
-                 ^
-6 warnings
-
 > Task :app:preStandardDebugUnitTestBuild UP-TO-DATE
+> Task :app:javaPreCompileStandardDebug
 > Task :app:javaPreCompileStandardDebugUnitTest FROM-CACHE
 > Task :app:generateStandardDebugAssets UP-TO-DATE
-> Task :app:bundleStandardDebugClassesToRuntimeJar
-> Task :app:bundleStandardDebugClassesToCompileJar
 > Task :app:mergeStandardDebugAssets
-> Task :app:extractIncludeStandardDebugUnitTestProto
-> Task :app:generateStandardDebugUnitTestProto NO-SOURCE
 > Task :app:packageStandardDebugUnitTestForUnitTest
 > Task :app:processStandardDebugUnitTestManifest
 > Task :app:generateStandardDebugUnitTestConfig
-> Task :app:processStandardDebugJavaRes
-> Task :app:kspStandardDebugUnitTestKotlin
-> Task :app:compileStandardDebugUnitTestKotlin
-w: file:///home/runner/work/code-to-app/code-to-app/app/src/test/java/com/webtoapp/core/apkbuilder/ArscPackageGrafterTest.kt:27:9 Only safe (?.) or non-null asserted (!!.) calls are allowed on a nullable receiver of type 'ClassLoader?'.
-w: file:///home/runner/work/code-to-app/code-to-app/app/src/test/java/com/webtoapp/core/apkbuilder/AxmlRebuilderFragmentTest.kt:26:9 Only safe (?.) or non-null asserted (!!.) calls are allowed on a nullable receiver of type 'ClassLoader?'.
-w: file:///home/runner/work/code-to-app/code-to-app/app/src/test/java/com/webtoapp/core/apkbuilder/DemoApkExportTest.kt:42:34 This property hides Java field 'field realPackageManager: PackageManager!' thus making it inaccessible.
-w: file:///home/runner/work/code-to-app/code-to-app/app/src/test/java/com/webtoapp/core/engine/GeckoRuntimeProvisionerTest.kt:18:15 'fun createTempDir(prefix: String = ..., suffix: String? = ..., directory: File? = ...): File' is deprecated. Avoid creating temporary directories in the default temp location with this function due to too wide permissions on the newly created directory. Use kotlin.io.path.createTempDirectory instead.
-w: file:///home/runner/work/code-to-app/code-to-app/app/src/test/java/com/webtoapp/core/golang/GoToolchainManagerUrlTest.kt:63:27 'constructor(p0: String!): Locale' is deprecated. Deprecated in Java.
-w: file:///home/runner/work/code-to-app/code-to-app/app/src/test/java/com/webtoapp/core/webview/GeolocationBridgeTest.kt:104:13 'fun setLastKnownLocation(p0: String!, p1: Location!): Unit' is deprecated. Deprecated in Java.
-w: file:///home/runner/work/code-to-app/code-to-app/app/src/test/java/com/webtoapp/core/webview/MediaPlaybackWakeLockTest.kt:42:20 'fun withIntent(p0: Intent!): ServiceController<WebMediaPlaybackService!>!' is deprecated. Deprecated in Java.
-w: file:///home/runner/work/code-to-app/code-to-app/app/src/test/java/com/webtoapp/core/webview/MediaPlaybackWakeLockTest.kt:54:20 'fun withIntent(p0: Intent!): ServiceController<WebMediaPlaybackService!>!' is deprecated. Deprecated in Java.
-w: file:///home/runner/work/code-to-app/code-to-app/app/src/test/java/com/webtoapp/core/webview/MediaPlaybackWakeLockTest.kt:60:20 'fun withIntent(p0: Intent!): ServiceController<WebMediaPlaybackService!>!' is deprecated. Deprecated in Java.
-w: file:///home/runner/work/code-to-app/code-to-app/app/src/test/java/com/webtoapp/core/webview/MediaPlaybackWakeLockTest.kt:72:20 'fun withIntent(p0: Intent!): ServiceController<WebMediaPlaybackService!>!' is deprecated. Deprecated in Java.
-w: file:///home/runner/work/code-to-app/code-to-app/app/src/test/java/com/webtoapp/core/webview/MediaPlaybackWakeLockTest.kt:76:20 'fun withIntent(p0: Intent!): ServiceController<WebMediaPlaybackService!>!' is deprecated. Deprecated in Java.
-w: file:///home/runner/work/code-to-app/code-to-app/app/src/test/java/com/webtoapp/core/webview/MediaSessionCoreTest.kt:82:52 'fun advanceBy(p0: Long): Boolean' is deprecated. Deprecated in Java.
-w: file:///home/runner/work/code-to-app/code-to-app/app/src/test/java/com/webtoapp/core/webview/WebViewMemoryTrimmerTest.kt:16:64 'static field TRIM_MEMORY_COMPLETE: Int' is deprecated. Deprecated in Java.
-w: file:///home/runner/work/code-to-app/code-to-app/app/src/test/java/com/webtoapp/core/webview/WebViewMemoryTrimmerTest.kt:19:76 'static field TRIM_MEMORY_COMPLETE: Int' is deprecated. Deprecated in Java.
-w: file:///home/runner/work/code-to-app/code-to-app/app/src/test/java/com/webtoapp/core/webview/WebViewMemoryTrimmerTest.kt:27:33 'static field TRIM_MEMORY_MODERATE: Int' is deprecated. Deprecated in Java.
-w: file:///home/runner/work/code-to-app/code-to-app/app/src/test/java/com/webtoapp/core/webview/WebViewMemoryTrimmerTest.kt:45:33 'static field TRIM_MEMORY_RUNNING_MODERATE: Int' is deprecated. Deprecated in Java.
-w: file:///home/runner/work/code-to-app/code-to-app/app/src/test/java/com/webtoapp/core/webview/WebViewMemoryTrimmerTest.kt:46:33 'static field TRIM_MEMORY_RUNNING_LOW: Int' is deprecated. Deprecated in Java.
-w: file:///home/runner/work/code-to-app/code-to-app/app/src/test/java/com/webtoapp/core/webview/WebViewMemoryTrimmerTest.kt:47:33 'static field TRIM_MEMORY_RUNNING_CRITICAL: Int' is deprecated. Deprecated in Java.
-w: file:///home/runner/work/code-to-app/code-to-app/app/src/test/java/com/webtoapp/core/webview/WebViewMemoryTrimmerTest.kt:52:64 'static field TRIM_MEMORY_RUNNING_CRITICAL: Int' is deprecated. Deprecated in Java.
-w: file:///home/runner/work/code-to-app/code-to-app/app/src/test/java/com/webtoapp/core/webview/WebViewMemoryTrimmerTest.kt:55:64 'static field TRIM_MEMORY_RUNNING_MODERATE: Int' is deprecated. Deprecated in Java.
-w: file:///home/runner/work/code-to-app/code-to-app/app/src/test/java/com/webtoapp/ui/shared/WindowHelperKeyboardModeTest.kt:16:41 'var systemUiVisibility: Int' is deprecated. Deprecated in Java.
-w: file:///home/runner/work/code-to-app/code-to-app/app/src/test/java/com/webtoapp/ui/shared/WindowHelperKeyboardModeTest.kt:17:25 'static field SYSTEM_UI_FLAG_LAYOUT_STABLE: Int' is deprecated. Deprecated in Java.
-w: file:///home/runner/work/code-to-app/code-to-app/app/src/test/java/com/webtoapp/ui/shared/WindowHelperKeyboardModeTest.kt:18:22 'static field SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN: Int' is deprecated. Deprecated in Java.
-w: file:///home/runner/work/code-to-app/code-to-app/app/src/test/java/com/webtoapp/ui/shared/WindowHelperKeyboardModeTest.kt:19:22 'static field SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION: Int' is deprecated. Deprecated in Java.
-w: file:///home/runner/work/code-to-app/code-to-app/app/src/test/java/com/webtoapp/ui/shared/WindowHelperKeyboardModeTest.kt:39:36 'static fun <T : Activity!> setupActivity(p0: Class<T!>!): T!' is deprecated. Deprecated in Java.
-w: file:///home/runner/work/code-to-app/code-to-app/app/src/test/java/com/webtoapp/ui/shared/WindowHelperKeyboardModeTest.kt:48:56 'static field SOFT_INPUT_ADJUST_RESIZE: Int' is deprecated. Deprecated in Java.
-w: file:///home/runner/work/code-to-app/code-to-app/app/src/test/java/com/webtoapp/ui/shared/WindowHelperKeyboardModeTest.kt:54:36 'static fun <T : Activity!> setupActivity(p0: Class<T!>!): T!' is deprecated. Deprecated in Java.
-w: file:///home/runner/work/code-to-app/code-to-app/app/src/test/java/com/webtoapp/ui/shared/WindowHelperKeyboardModeTest.kt:65:48 'var statusBarColor: Int' is deprecated. Deprecated in Java.
-w: file:///home/runner/work/code-to-app/code-to-app/app/src/test/java/com/webtoapp/ui/shared/WindowHelperKeyboardModeTest.kt:66:36 'var navigationBarColor: Int' is deprecated. Deprecated in Java.
-w: file:///home/runner/work/code-to-app/code-to-app/app/src/test/java/com/webtoapp/ui/shared/WindowHelperKeyboardModeTest.kt:67:40 'var statusBarColor: Int' is deprecated. Deprecated in Java.
-w: file:///home/runner/work/code-to-app/code-to-app/app/src/test/java/com/webtoapp/ui/shared/WindowHelperKeyboardModeTest.kt:72:36 'static fun <T : Activity!> setupActivity(p0: Class<T!>!): T!' is deprecated. Deprecated in Java.
-w: file:///home/runner/work/code-to-app/code-to-app/app/src/test/java/com/webtoapp/ui/shared/WindowHelperKeyboardModeTest.kt:89:56 'static field SOFT_INPUT_ADJUST_RESIZE: Int' is deprecated. Deprecated in Java.
-w: file:///home/runner/work/code-to-app/code-to-app/app/src/test/java/com/webtoapp/ui/shared/WindowHelperKeyboardModeTest.kt:94:36 'static fun <T : Activity!> setupActivity(p0: Class<T!>!): T!' is deprecated. Deprecated in Java.
-w: file:///home/runner/work/code-to-app/code-to-app/app/src/test/java/com/webtoapp/ui/shared/WindowHelperKeyboardModeTest.kt:109:36 'static fun <T : Activity!> setupActivity(p0: Class<T!>!): T!' is deprecated. Deprecated in Java.
-w: file:///home/runner/work/code-to-app/code-to-app/app/src/test/java/com/webtoapp/ui/shared/WindowHelperKeyboardModeTest.kt:122:84 'static field FLAG_FULLSCREEN: Int' is deprecated. Deprecated in Java.
-w: file:///home/runner/work/code-to-app/code-to-app/app/src/test/java/com/webtoapp/ui/shared/WindowHelperKeyboardModeTest.kt:128:36 'static fun <T : Activity!> setupActivity(p0: Class<T!>!): T!' is deprecated. Deprecated in Java.
-w: file:///home/runner/work/code-to-app/code-to-app/app/src/test/java/com/webtoapp/ui/shared/WindowHelperKeyboardModeTest.kt:143:84 'static field FLAG_FULLSCREEN: Int' is deprecated. Deprecated in Java.
-w: file:///home/runner/work/code-to-app/code-to-app/app/src/test/java/com/webtoapp/ui/shared/WindowHelperKeyboardModeTest.kt:157:84 'static field FLAG_FULLSCREEN: Int' is deprecated. Deprecated in Java.
-w: file:///home/runner/work/code-to-app/code-to-app/app/src/test/java/com/webtoapp/ui/shared/WindowHelperKeyboardModeTest.kt:163:36 'static fun <T : Activity!> setupActivity(p0: Class<T!>!): T!' is deprecated. Deprecated in Java.
-w: file:///home/runner/work/code-to-app/code-to-app/app/src/test/java/com/webtoapp/ui/shared/WindowHelperKeyboardModeTest.kt:184:36 'static fun <T : Activity!> setupActivity(p0: Class<T!>!): T!' is deprecated. Deprecated in Java.
-w: file:///home/runner/work/code-to-app/code-to-app/app/src/test/java/com/webtoapp/ui/shared/WindowHelperKeyboardModeTest.kt:199:36 'static fun <T : Activity!> setupActivity(p0: Class<T!>!): T!' is deprecated. Deprecated in Java.
-w: file:///home/runner/work/code-to-app/code-to-app/app/src/test/java/com/webtoapp/ui/shared/WindowHelperKeyboardModeTest.kt:210:84 'static field FLAG_FULLSCREEN: Int' is deprecated. Deprecated in Java.
-w: file:///home/runner/work/code-to-app/code-to-app/app/src/test/java/com/webtoapp/ui/shared/WindowHelperKeyboardModeTest.kt:216:36 'static fun <T : Activity!> setupActivity(p0: Class<T!>!): T!' is deprecated. Deprecated in Java.
+> Task :app:compileStandardDebugKotlin
+e: file:///home/runner/work/code-to-app/code-to-app/app/src/main/java/com/webtoapp/core/update/UpdateCheckerAuthorReposTest.kt:3:12 Unresolved reference 'junit'.
+e: file:///home/runner/work/code-to-app/code-to-app/app/src/main/java/com/webtoapp/core/update/UpdateCheckerAuthorReposTest.kt:4:12 Unresolved reference 'junit'.
+e: file:///home/runner/work/code-to-app/code-to-app/app/src/main/java/com/webtoapp/core/update/UpdateCheckerAuthorReposTest.kt:5:12 Unresolved reference 'junit'.
+e: file:///home/runner/work/code-to-app/code-to-app/app/src/main/java/com/webtoapp/core/update/UpdateCheckerAuthorReposTest.kt:6:12 Unresolved reference 'junit'.
+e: file:///home/runner/work/code-to-app/code-to-app/app/src/main/java/com/webtoapp/core/update/UpdateCheckerAuthorReposTest.kt:7:12 Unresolved reference 'junit'.
+e: file:///home/runner/work/code-to-app/code-to-app/app/src/main/java/com/webtoapp/core/update/UpdateCheckerAuthorReposTest.kt:8:12 Unresolved reference 'robolectric'.
+e: file:///home/runner/work/code-to-app/code-to-app/app/src/main/java/com/webtoapp/core/update/UpdateCheckerAuthorReposTest.kt:10:2 Unresolved reference 'RunWith'.
+e: file:///home/runner/work/code-to-app/code-to-app/app/src/main/java/com/webtoapp/core/update/UpdateCheckerAuthorReposTest.kt:10:10 Unresolved reference 'RobolectricTestRunner'.
+e: file:///home/runner/work/code-to-app/code-to-app/app/src/main/java/com/webtoapp/core/update/UpdateCheckerAuthorReposTest.kt:13:6 Unresolved reference 'Test'.
+e: file:///home/runner/work/code-to-app/code-to-app/app/src/main/java/com/webtoapp/core/update/UpdateCheckerAuthorReposTest.kt:26:9 Unresolved reference 'assertEquals'.
+e: file:///home/runner/work/code-to-app/code-to-app/app/src/main/java/com/webtoapp/core/update/UpdateCheckerAuthorReposTest.kt:27:9 Unresolved reference 'assertEquals'.
+e: file:///home/runner/work/code-to-app/code-to-app/app/src/main/java/com/webtoapp/core/update/UpdateCheckerAuthorReposTest.kt:28:9 Unresolved reference 'assertEquals'.
+e: file:///home/runner/work/code-to-app/code-to-app/app/src/main/java/com/webtoapp/core/update/UpdateCheckerAuthorReposTest.kt:29:9 Unresolved reference 'assertEquals'.
+e: file:///home/runner/work/code-to-app/code-to-app/app/src/main/java/com/webtoapp/core/update/UpdateCheckerAuthorReposTest.kt:30:9 Unresolved reference 'assertEquals'.
+e: file:///home/runner/work/code-to-app/code-to-app/app/src/main/java/com/webtoapp/core/update/UpdateCheckerAuthorReposTest.kt:31:9 Unresolved reference 'assertEquals'.
+e: file:///home/runner/work/code-to-app/code-to-app/app/src/main/java/com/webtoapp/core/update/UpdateCheckerAuthorReposTest.kt:32:9 Unresolved reference 'assertEquals'.
+e: file:///home/runner/work/code-to-app/code-to-app/app/src/main/java/com/webtoapp/core/update/UpdateCheckerAuthorReposTest.kt:33:9 Unresolved reference 'assertNull'.
+e: file:///home/runner/work/code-to-app/code-to-app/app/src/main/java/com/webtoapp/core/update/UpdateCheckerAuthorReposTest.kt:36:6 Unresolved reference 'Test'.
+e: file:///home/runner/work/code-to-app/code-to-app/app/src/main/java/com/webtoapp/core/update/UpdateCheckerAuthorReposTest.kt:38:9 Unresolved reference 'assertTrue'.
 
-> Task :app:compileStandardDebugUnitTestJavaWithJavac NO-SOURCE
-> Task :app:processStandardDebugUnitTestJavaRes
-> Task :app:testStandardDebugUnitTest
-
-UpdateCheckerAuthorReposTest > parseAuthorRepos filters forks and the app repo itself FAILED
-    java.lang.AssertionError at UpdateCheckerAuthorReposTest.kt:26
-
-DownloadBridgeCustomLocationTest > custom mode routes media blob into the configured directory FAILED
-    java.lang.RuntimeException at DownloadBridgeCustomLocationTest.kt:42
-
-DownloadBridgeCustomLocationTest > app private mode keeps media blob inside the app directory FAILED
-    java.lang.RuntimeException at DownloadBridgeCustomLocationTest.kt:42
-
-DownloadBridgeCustomLocationTest > custom mode routes chunked media download into the configured directory FAILED
-    java.lang.RuntimeException at DownloadBridgeCustomLocationTest.kt:42
-
-WebAppModelExtendedTest > AppType has all expected values FAILED
-    com.google.common.truth.AssertionErrorWithFacts at WebAppModelExtendedTest.kt:16
-
-1496 tests completed, 5 failed, 28 skipped
-
-> Task :app:testStandardDebugUnitTest FAILED
-
-[Incubating] Problems report is available at: file:///home/runner/work/code-to-app/code-to-app/build/reports/problems/problems-report.html
+> Task :app:compileStandardDebugKotlin FAILED
 
 FAILURE: Build failed with an exception.
 
 * What went wrong:
-Execution failed for task ':app:testStandardDebugUnitTest'.
-> There were failing tests. See the report at: file:///home/runner/work/code-to-app/code-to-app/app/build/reports/tests/testStandardDebugUnitTest/index.html
+Execution failed for task ':app:compileStandardDebugKotlin'.
+> A failure occurred while executing org.jetbrains.kotlin.compilerRunner.GradleCompilerRunnerWithWorkers$GradleKotlinCompilerWorkAction
+   > Compilation error. See log for more details
 
 * Try:
+> Run with --stacktrace option to get the stack trace.
+> Run with --info or --debug option to get more log output.
 > Run with --scan to get full insights from a Build Scan (powered by Develocity).
+> Get more help at https://help.gradle.org.
 
-BUILD FAILED in 2m 43s
-70 actionable tasks: 18 executed, 1 from cache, 51 up-to-date
+BUILD FAILED in 53s
+61 actionable tasks: 10 executed, 1 from cache, 50 up-to-date

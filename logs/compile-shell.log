@@ -1,6 +1,24 @@
 To honour the JVM settings for this build a single-use Daemon process will be forked. For more on this, please refer to https://docs.gradle.org/9.4.1/userguide/gradle_daemon.html#sec:disabling_the_daemon in the Gradle documentation.
 Daemon will be stopped at the end of the build 
 
+> Configure project :feature-stacks:admob
+WARNING: API 'libraryVariants' is obsolete and has been replaced with 'AndroidComponentsExtension'.
+It will be removed in version 10.0 of the Android Gradle plugin.
+The legacy variant API is disabled by default in AGP 9.0, but can be re-enabled by adding 
+    android.newDsl=false
+to this project's gradle.properties file.
+For more information, see http://developer.android.com/build/r/new-dsl.
+
+To determine what is calling libraryVariants, use -Pandroid.debug.obsoleteApi=true on the command line to display more information.
+WARNING: The property android.dependency.excludeLibraryComponentsFromConstraints improves project import performance for very large projects. It should be enabled to improve performance.
+To suppress this warning, add android.generateSyncIssueWhenLibraryConstraintsAreEnabled=false to gradle.properties
+WARNING: The property android.dependency.excludeLibraryComponentsFromConstraints improves project import performance for very large projects. It should be enabled to improve performance.
+To suppress this warning, add android.generateSyncIssueWhenLibraryConstraintsAreEnabled=false to gradle.properties
+WARNING: The property android.dependency.excludeLibraryComponentsFromConstraints improves project import performance for very large projects. It should be enabled to improve performance.
+To suppress this warning, add android.generateSyncIssueWhenLibraryConstraintsAreEnabled=false to gradle.properties
+WARNING: The property android.dependency.excludeLibraryComponentsFromConstraints improves project import performance for very large projects. It should be enabled to improve performance.
+To suppress this warning, add android.generateSyncIssueWhenLibraryConstraintsAreEnabled=false to gradle.properties
+
 > Configure project :app
 WARNING: The option setting 'android.usesSdkInManifest.disallowed=false' is deprecated.
 The current default is 'true'.
@@ -47,26 +65,6 @@ to this project's gradle.properties file.
 For more information, see http://developer.android.com/build/r/new-dsl.
 
 To determine what is calling unitTestVariants, use -Pandroid.debug.obsoleteApi=true on the command line to display more information.
-
-> Configure project :feature-stacks:admob
-WARNING: API 'libraryVariants' is obsolete and has been replaced with 'AndroidComponentsExtension'.
-It will be removed in version 10.0 of the Android Gradle plugin.
-The legacy variant API is disabled by default in AGP 9.0, but can be re-enabled by adding 
-    android.newDsl=false
-to this project's gradle.properties file.
-For more information, see http://developer.android.com/build/r/new-dsl.
-
-To determine what is calling libraryVariants, use -Pandroid.debug.obsoleteApi=true on the command line to display more information.
-WARNING: The property android.dependency.excludeLibraryComponentsFromConstraints improves project import performance for very large projects. It should be enabled to improve performance.
-To suppress this warning, add android.generateSyncIssueWhenLibraryConstraintsAreEnabled=false to gradle.properties
-WARNING: The property android.dependency.excludeLibraryComponentsFromConstraints improves project import performance for very large projects. It should be enabled to improve performance.
-To suppress this warning, add android.generateSyncIssueWhenLibraryConstraintsAreEnabled=false to gradle.properties
-WARNING: The property android.dependency.excludeLibraryComponentsFromConstraints improves project import performance for very large projects. It should be enabled to improve performance.
-To suppress this warning, add android.generateSyncIssueWhenLibraryConstraintsAreEnabled=false to gradle.properties
-WARNING: The property android.dependency.excludeLibraryComponentsFromConstraints improves project import performance for very large projects. It should be enabled to improve performance.
-To suppress this warning, add android.generateSyncIssueWhenLibraryConstraintsAreEnabled=false to gradle.properties
-
-> Configure project :app
 WARNING: The property android.dependency.excludeLibraryComponentsFromConstraints improves project import performance for very large projects. It should be enabled to improve performance.
 To suppress this warning, add android.generateSyncIssueWhenLibraryConstraintsAreEnabled=false to gradle.properties
 WARNING: The property android.dependency.excludeLibraryComponentsFromConstraints improves project import performance for very large projects. It should be enabled to improve performance.
@@ -125,9 +123,9 @@ generateShellStrings: facade 818/5113 members, splits 813/5110 members, toplevel
 > Task :shell:extractDeepLinksDebug
 > Task :shell:parseDebugLocalResources
 > Task :shell:processDebugMainManifest
-> Task :shell:mergeDebugResources
 > Task :shell:processDebugManifest
 > Task :shell:processDebugManifestForPackage
+> Task :shell:mergeDebugResources
 > Task :shell:processDebugResources
 > Task :shell:compileDebugKotlin
 w: file:///home/runner/work/code-to-app/code-to-app/shell/build/generated/shellRuntimeSrc/com/webtoapp/core/engine/GeckoViewEngine.kt:1672:33 Condition is always 'true'.
@@ -219,5 +217,5 @@ w: file:///home/runner/work/code-to-app/code-to-app/shell/src/main/java-override
 w: file:///home/runner/work/code-to-app/code-to-app/shell/src/main/java-overrides/com/webtoapp/WebToAppApplication.kt:100:33 'static field TRIM_MEMORY_MODERATE: Int' is deprecated. Deprecated in Java.
 w: file:///home/runner/work/code-to-app/code-to-app/shell/src/main/java-overrides/com/webtoapp/WebToAppApplication.kt:101:33 'static field TRIM_MEMORY_COMPLETE: Int' is deprecated. Deprecated in Java.
 
-BUILD SUCCESSFUL in 1m 52s
+BUILD SUCCESSFUL in 1m 2s
 20 actionable tasks: 18 executed, 2 from cache
