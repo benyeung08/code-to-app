@@ -61,16 +61,15 @@ android {
         minSdk = 23
 
         targetSdk = 36
-        // 升级自 code-to-app-v1.0.0-beta1-run129-debug.apk（versionCode 1）。
-        // 包名不变（com.codetoapp.app），所以只要 versionCode 比 1 大，
+        // 升级自 code-to-app-v1.0.0-beta2-run1xx-debug.apk（versionCode 3）。
+        // 包名不变（com.codetoapp.app），所以只要 versionCode 比 3 大，
         // 安装时就会被识别为「覆盖升级」，旧数据保留、不会变成第二个 app。
-        versionCode = 3
-        // ⚠️ 必须是连字符 -beta2，不能写成空格 "1.0.0 beta2"：
-        // 1) 带空格时 APK 文件名会出现空格（code-to-app-v1.0.0 beta2-run139-debug.apk）
-        // 2) Version.parse() 会把 "1.0.0 beta2" 的 patch 段 "0 beta2" 解析失败归零，
-        //    结果被当成【正式版 1.0.0】，比 Release 的 v1.0.0-beta2 还新，
-        //    导致更新提示永远不触发、「当前版本」也显示成 v1.0.0
-        versionName = "1.0.0-beta2"
+        versionCode = 4
+        // ⚠️ 必须是连字符，不能写成空格 "1.0.1 beta"：
+        // 1) 带空格时 APK 文件名会出现空格（code-to-app-v1.0.1 beta-run1xx-debug.apk）
+        // 2) Version.parse() 会把空格版的 patch 段解析失败归零，
+        //    导致版本号被误判成正式版，更新提示失效、「当前版本」显示错误
+        versionName = "1.0.1"
         buildConfigField("boolean", "SHELL_RUNTIME_ONLY", "false")
 
         vectorDrawables {
