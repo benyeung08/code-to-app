@@ -25,7 +25,8 @@ class WebAppModelExtendedTest {
             AppType.PHP_APP,
             AppType.PYTHON_APP,
             AppType.GO_APP,
-            AppType.MULTI_WEB
+            AppType.MULTI_WEB,
+            AppType.CODETOAPP
         )
     }
 
