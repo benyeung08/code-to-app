@@ -140,8 +140,8 @@ To suppress this warning, add android.generateSyncIssueWhenLibraryConstraintsAre
 WARNING: The property android.dependency.excludeLibraryComponentsFromConstraints improves project import performance for very large projects. It should be enabled to improve performance.
 To suppress this warning, add android.generateSyncIssueWhenLibraryConstraintsAreEnabled=false to gradle.properties
 
-> Task :app:checkKotlinGradlePluginConfigurationErrors SKIPPED
 > Task :clone-host:preBuild UP-TO-DATE
+> Task :app:checkKotlinGradlePluginConfigurationErrors SKIPPED
 > Task :clone-host:preReleaseBuild UP-TO-DATE
 > Task :app:protobufDummy UP-TO-DATE
 > Task :app:extractDebugProto
@@ -158,17 +158,22 @@ To suppress this warning, add android.generateSyncIssueWhenLibraryConstraintsAre
 > Task :clone-host:processReleaseNavigationResources
 > Task :clone-host:generateReleaseAssets UP-TO-DATE
 > Task :clone-host:mergeReleaseAssets
-> Task :clone-host:prepareLintJarForPublish
 > Task :clone-host:javaPreCompileRelease
+> Task :clone-host:prepareLintJarForPublish
 > Task :clone-host:prepareReleaseArtProfile
 > Task :clone-host:writeReleaseAarMetadata
-> Task :clone-host:mapReleaseSourceSetPaths
 > Task :clone-host:parseReleaseLocalResources
+> Task :clone-host:mapReleaseSourceSetPaths
 > Task :clone-host:mergeReleaseResources
 > Task :clone-host:generateReleaseRFile
 > Task :clone-host:processReleaseManifest
 > Task :clone-host:verifyReleaseResources
 > Task :clone-host:compileReleaseKotlin
+> Task :app:extractIncludeStandardDebugProto
+> Task :app:extractProto
+> Task :app:extractStandardDebugProto
+> Task :app:extractStandardProto
+> Task :app:generateStandardDebugProto
 > Task :clone-host:extractReleaseAnnotations
 > Task :clone-host:compileReleaseJavaWithJavac NO-SOURCE
 > Task :clone-host:mergeReleaseGeneratedProguardFiles
@@ -178,15 +183,10 @@ To suppress this warning, add android.generateSyncIssueWhenLibraryConstraintsAre
 > Task :clone-host:syncReleaseLibJars
 > Task :clone-host:bundleReleaseAar
 > Task :clone-host:assembleRelease
-> Task :app:extractIncludeStandardDebugProto
 > Task :app:syncCloneHostDex SKIPPED
 > Task :app:preBuild UP-TO-DATE
 > Task :app:preStandardDebugBuild UP-TO-DATE
 > Task :app:generateStandardDebugBuildConfig
-> Task :app:extractProto
-> Task :app:extractStandardDebugProto
-> Task :app:extractStandardProto
-> Task :app:generateStandardDebugProto
 > Task :app:checkStandardDebugAarMetadata
 > Task :app:generateStandardDebugResValues FROM-CACHE
 > Task :app:mapStandardDebugSourceSetPaths
@@ -477,5 +477,5 @@ w: file:///home/runner/work/code-to-app/code-to-app/app/src/main/java/com/webtoa
 w: file:///home/runner/work/code-to-app/code-to-app/app/src/main/java/com/webtoapp/util/SvgIconMapper.kt:135:49 'val Icons.Outlined.MenuBook: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Outlined.MenuBook.
 w: file:///home/runner/work/code-to-app/code-to-app/app/src/main/java/com/webtoapp/util/SvgIconMapper.kt:151:49 'val Icons.Outlined.HelpOutline: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Outlined.HelpOutline.
 
-BUILD SUCCESSFUL in 4m 58s
+BUILD SUCCESSFUL in 5m 3s
 51 actionable tasks: 50 executed, 1 from cache
