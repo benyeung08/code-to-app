@@ -51,6 +51,7 @@ import com.webtoapp.core.apkbuilder.ApkExportPreflight
 import com.webtoapp.core.apkbuilder.BuildResult
 import com.webtoapp.core.i18n.Strings
 import com.webtoapp.data.model.WebApp
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import java.io.File
 
@@ -111,7 +112,7 @@ fun CodeToAppBuildScreen(
             com.webtoapp.data.repository.WebAppRepository::class.java
         )
         val loaded = runCatching {
-            repo.getWebAppById(appId).kotlinx.coroutines.flow.first()
+            repo.getWebAppById(appId).first()
         }.getOrNull()
         app = loaded
         loading = false
