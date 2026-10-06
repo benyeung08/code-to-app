@@ -1494,6 +1494,773 @@ object StringsA {
         AppLanguage.KOREAN -> "프레임워크 감지됨"
     }
 
+    val ctaBuildTitle: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "构建 APK"
+        AppLanguage.ENGLISH -> "Build APK"
+        AppLanguage.ARABIC -> "بناء APK"
+        AppLanguage.PORTUGUESE -> "Construir APK"
+        AppLanguage.SPANISH -> "Compilar APK"
+        AppLanguage.FRENCH -> "Compiler APK"
+        AppLanguage.GERMAN -> "APK erstellen"
+        AppLanguage.RUSSIAN -> "Сборка APK"
+        AppLanguage.JAPANESE -> "APK ビルド"
+        AppLanguage.KOREAN -> "APK 빌드"
+    }
+
+    val ctaBuildPreflight: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "导出预检"
+        AppLanguage.ENGLISH -> "Preflight"
+        AppLanguage.ARABIC -> "فحص مسبق"
+        AppLanguage.PORTUGUESE -> "Verificação"
+        AppLanguage.SPANISH -> "Preflight"
+        AppLanguage.FRENCH -> "Pré-vol"
+        AppLanguage.GERMAN -> "Vorprüfung"
+        AppLanguage.RUSSIAN -> "Предпроверка"
+        AppLanguage.JAPANESE -> "事前チェック"
+        AppLanguage.KOREAN -> "사전 점검"
+    }
+
+    val ctaBuildPreflightPassed: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "预检通过"
+        AppLanguage.ENGLISH -> "Preflight passed"
+        AppLanguage.ARABIC -> "اجتاز الفحص"
+        AppLanguage.PORTUGUESE -> "Verificação ok"
+        AppLanguage.SPANISH -> "Preflight correcto"
+        AppLanguage.FRENCH -> "Pré-vol OK"
+        AppLanguage.GERMAN -> "Vorprüfung bestanden"
+        AppLanguage.RUSSIAN -> "Проверка пройдена"
+        AppLanguage.JAPANESE -> "事前チェックOK"
+        AppLanguage.KOREAN -> "사전 점검 통과"
+    }
+
+    val ctaBuildPreflightFailed: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "预检未通过"
+        AppLanguage.ENGLISH -> "Preflight failed"
+        AppLanguage.ARABIC -> "فشل الفحص"
+        AppLanguage.PORTUGUESE -> "Falha na verificação"
+        AppLanguage.SPANISH -> "Preflight fallido"
+        AppLanguage.FRENCH -> "Pré-vol échoué"
+        AppLanguage.GERMAN -> "Vorprüfung fehlgeschlagen"
+        AppLanguage.RUSSIAN -> "Проверка не пройдена"
+        AppLanguage.JAPANESE -> "事前チェック失敗"
+        AppLanguage.KOREAN -> "사전 점검 실패"
+    }
+
+    val ctaBuildWarnings: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "%s 项警告"
+        AppLanguage.ENGLISH -> "%s warnings"
+        AppLanguage.ARABIC -> "%s تحذيرات"
+        AppLanguage.PORTUGUESE -> "%s avisos"
+        AppLanguage.SPANISH -> "%s advertencias"
+        AppLanguage.FRENCH -> "%s avertissements"
+        AppLanguage.GERMAN -> "%s Warnungen"
+        AppLanguage.RUSSIAN -> "%s предупреждений"
+        AppLanguage.JAPANESE -> "警告 %s 件"
+        AppLanguage.KOREAN -> "경고 %s개"
+    }
+
+    val ctaBuildForceFull: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "强制完整重建（不使用增量缓存）"
+        AppLanguage.ENGLISH -> "Force full rebuild (ignore incremental cache)"
+        AppLanguage.ARABIC -> "إعادة بناء كاملة (تجاهل الذاكرة المؤقتة)"
+        AppLanguage.PORTUGUESE -> "Reconstrução completa (ignorar cache)"
+        AppLanguage.SPANISH -> "Reconstrucción completa (ignorar caché)"
+        AppLanguage.FRENCH -> "Reconstruction complète (ignorer le cache)"
+        AppLanguage.GERMAN -> "Komplett neu bauen (Cache ignorieren)"
+        AppLanguage.RUSSIAN -> "Полная пересборка (игнорировать кэш)"
+        AppLanguage.JAPANESE -> "フルリビルド（増分キャッシュ無視）"
+        AppLanguage.KOREAN -> "전체 재빌드(증분 캐시 무시)"
+    }
+
+    val ctaBuildStart: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "开始构建"
+        AppLanguage.ENGLISH -> "Start build"
+        AppLanguage.ARABIC -> "ابدأ البناء"
+        AppLanguage.PORTUGUESE -> "Iniciar build"
+        AppLanguage.SPANISH -> "Iniciar compilación"
+        AppLanguage.FRENCH -> "Démarrer le build"
+        AppLanguage.GERMAN -> "Build starten"
+        AppLanguage.RUSSIAN -> "Начать сборку"
+        AppLanguage.JAPANESE -> "ビルド開始"
+        AppLanguage.KOREAN -> "빌드 시작"
+    }
+
+    val ctaBuildBuilding: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "正在构建…"
+        AppLanguage.ENGLISH -> "Building…"
+        AppLanguage.ARABIC -> "جارٍ البناء…"
+        AppLanguage.PORTUGUESE -> "Compilando…"
+        AppLanguage.SPANISH -> "Compilando…"
+        AppLanguage.FRENCH -> "Compilation…"
+        AppLanguage.GERMAN -> "Wird gebaut…"
+        AppLanguage.RUSSIAN -> "Сборка…"
+        AppLanguage.JAPANESE -> "ビルド中…"
+        AppLanguage.KOREAN -> "빌드 중…"
+    }
+
+    val ctaBuildSuccess: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "构建完成"
+        AppLanguage.ENGLISH -> "Build finished"
+        AppLanguage.ARABIC -> "اكتمل البناء"
+        AppLanguage.PORTUGUESE -> "Build concluído"
+        AppLanguage.SPANISH -> "Compilación terminada"
+        AppLanguage.FRENCH -> "Build terminé"
+        AppLanguage.GERMAN -> "Build fertig"
+        AppLanguage.RUSSIAN -> "Сборка завершена"
+        AppLanguage.JAPANESE -> "ビルド完了"
+        AppLanguage.KOREAN -> "빌드 완료"
+    }
+
+    val ctaBuildFailed: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "构建失败"
+        AppLanguage.ENGLISH -> "Build failed"
+        AppLanguage.ARABIC -> "فشل البناء"
+        AppLanguage.PORTUGUESE -> "Falha no build"
+        AppLanguage.SPANISH -> "Error de compilación"
+        AppLanguage.FRENCH -> "Échec du build"
+        AppLanguage.GERMAN -> "Build fehlgeschlagen"
+        AppLanguage.RUSSIAN -> "Сборка не удалась"
+        AppLanguage.JAPANESE -> "ビルド失敗"
+        AppLanguage.KOREAN -> "빌드 실패"
+    }
+
+    val ctaBuildInstall: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "安装"
+        AppLanguage.ENGLISH -> "Install"
+        AppLanguage.ARABIC -> "تثبيت"
+        AppLanguage.PORTUGUESE -> "Instalar"
+        AppLanguage.SPANISH -> "Instalar"
+        AppLanguage.FRENCH -> "Installer"
+        AppLanguage.GERMAN -> "Installieren"
+        AppLanguage.RUSSIAN -> "Установить"
+        AppLanguage.JAPANESE -> "インストール"
+        AppLanguage.KOREAN -> "설치"
+    }
+
+    val ctaBuildShare: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "分享"
+        AppLanguage.ENGLISH -> "Share"
+        AppLanguage.ARABIC -> "مشاركة"
+        AppLanguage.PORTUGUESE -> "Compartilhar"
+        AppLanguage.SPANISH -> "Compartir"
+        AppLanguage.FRENCH -> "Partager"
+        AppLanguage.GERMAN -> "Teilen"
+        AppLanguage.RUSSIAN -> "Поделиться"
+        AppLanguage.JAPANESE -> "共有"
+        AppLanguage.KOREAN -> "공유"
+    }
+
+    val ctaBuildNoApp: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "找不到这个应用"
+        AppLanguage.ENGLISH -> "App not found"
+        AppLanguage.ARABIC -> "لم يتم العثور على التطبيق"
+        AppLanguage.PORTUGUESE -> "App não encontrado"
+        AppLanguage.SPANISH -> "App no encontrada"
+        AppLanguage.FRENCH -> "Application introuvable"
+        AppLanguage.GERMAN -> "App nicht gefunden"
+        AppLanguage.RUSSIAN -> "Приложение не найдено"
+        AppLanguage.JAPANESE -> "アプリが見つかりません"
+        AppLanguage.KOREAN -> "앱을 찾을 수 없음"
+    }
+
+    val ctaBuildLog: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "日志：%s"
+        AppLanguage.ENGLISH -> "Log: %s"
+        AppLanguage.ARABIC -> "السجل: %s"
+        AppLanguage.PORTUGUESE -> "Log: %s"
+        AppLanguage.SPANISH -> "Registro: %s"
+        AppLanguage.FRENCH -> "Journal : %s"
+        AppLanguage.GERMAN -> "Protokoll: %s"
+        AppLanguage.RUSSIAN -> "Лог: %s"
+        AppLanguage.JAPANESE -> "ログ: %s"
+        AppLanguage.KOREAN -> "로그: %s"
+    }
+
+    val ctaBuildAppInfo: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "运行时：%s"
+        AppLanguage.ENGLISH -> "Runtime: %s"
+        AppLanguage.ARABIC -> "وقت التشغيل: %s"
+        AppLanguage.PORTUGUESE -> "Runtime: %s"
+        AppLanguage.SPANISH -> "Runtime: %s"
+        AppLanguage.FRENCH -> "Runtime : %s"
+        AppLanguage.GERMAN -> "Laufzeit: %s"
+        AppLanguage.RUSSIAN -> "Среда: %s"
+        AppLanguage.JAPANESE -> "ランタイム: %s"
+        AppLanguage.KOREAN -> "런타임: %s"
+    }
+
+    val ctaUiDesigner: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "UI 设计器"
+        AppLanguage.ENGLISH -> "UI Designer"
+        AppLanguage.ARABIC -> "مصمم الواجهة"
+        AppLanguage.PORTUGUESE -> "Designer de UI"
+        AppLanguage.SPANISH -> "Diseñador UI"
+        AppLanguage.FRENCH -> "Designer UI"
+        AppLanguage.GERMAN -> "UI-Designer"
+        AppLanguage.RUSSIAN -> "UI-конструктор"
+        AppLanguage.JAPANESE -> "UIデザイナー"
+        AppLanguage.KOREAN -> "UI 디자이너"
+    }
+
+    val ctaUiPalette: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "元件库"
+        AppLanguage.ENGLISH -> "Palette"
+        AppLanguage.ARABIC -> "المكونات"
+        AppLanguage.PORTUGUESE -> "Componentes"
+        AppLanguage.SPANISH -> "Componentes"
+        AppLanguage.FRENCH -> "Composants"
+        AppLanguage.GERMAN -> "Bausteine"
+        AppLanguage.RUSSIAN -> "Компоненты"
+        AppLanguage.JAPANESE -> "パレット"
+        AppLanguage.KOREAN -> "팔레트"
+    }
+
+    val ctaUiTree: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "结构"
+        AppLanguage.ENGLISH -> "Tree"
+        AppLanguage.ARABIC -> "الشجرة"
+        AppLanguage.PORTUGUESE -> "Árvore"
+        AppLanguage.SPANISH -> "Árbol"
+        AppLanguage.FRENCH -> "Arbre"
+        AppLanguage.GERMAN -> "Struktur"
+        AppLanguage.RUSSIAN -> "Дерево"
+        AppLanguage.JAPANESE -> "構造"
+        AppLanguage.KOREAN -> "구조"
+    }
+
+    val ctaUiProps: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "属性"
+        AppLanguage.ENGLISH -> "Props"
+        AppLanguage.ARABIC -> "الخصائص"
+        AppLanguage.PORTUGUESE -> "Propriedades"
+        AppLanguage.SPANISH -> "Propiedades"
+        AppLanguage.FRENCH -> "Propriétés"
+        AppLanguage.GERMAN -> "Eigenschaften"
+        AppLanguage.RUSSIAN -> "Свойства"
+        AppLanguage.JAPANESE -> "プロパティ"
+        AppLanguage.KOREAN -> "속성"
+    }
+
+    val ctaUiSave: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "保存"
+        AppLanguage.ENGLISH -> "Save"
+        AppLanguage.ARABIC -> "حفظ"
+        AppLanguage.PORTUGUESE -> "Salvar"
+        AppLanguage.SPANISH -> "Guardar"
+        AppLanguage.FRENCH -> "Enregistrer"
+        AppLanguage.GERMAN -> "Speichern"
+        AppLanguage.RUSSIAN -> "Сохранить"
+        AppLanguage.JAPANESE -> "保存"
+        AppLanguage.KOREAN -> "저장"
+    }
+
+    val ctaUiSaved: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "已保存"
+        AppLanguage.ENGLISH -> "Saved"
+        AppLanguage.ARABIC -> "تم الحفظ"
+        AppLanguage.PORTUGUESE -> "Salvo"
+        AppLanguage.SPANISH -> "Guardado"
+        AppLanguage.FRENCH -> "Enregistré"
+        AppLanguage.GERMAN -> "Gespeichert"
+        AppLanguage.RUSSIAN -> "Сохранено"
+        AppLanguage.JAPANESE -> "保存しました"
+        AppLanguage.KOREAN -> "저장됨"
+    }
+
+    val ctaUiSaveFailed: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "保存失败"
+        AppLanguage.ENGLISH -> "Save failed"
+        AppLanguage.ARABIC -> "فشل الحفظ"
+        AppLanguage.PORTUGUESE -> "Falha ao salvar"
+        AppLanguage.SPANISH -> "Error al guardar"
+        AppLanguage.FRENCH -> "Échec"
+        AppLanguage.GERMAN -> "Speichern fehlgeschlagen"
+        AppLanguage.RUSSIAN -> "Ошибка сохранения"
+        AppLanguage.JAPANESE -> "保存に失敗"
+        AppLanguage.KOREAN -> "저장 실패"
+    }
+
+    val ctaUiContainer: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "容器"
+        AppLanguage.ENGLISH -> "container"
+        AppLanguage.ARABIC -> "حاوية"
+        AppLanguage.PORTUGUESE -> "contêiner"
+        AppLanguage.SPANISH -> "contenedor"
+        AppLanguage.FRENCH -> "conteneur"
+        AppLanguage.GERMAN -> "Container"
+        AppLanguage.RUSSIAN -> "контейнер"
+        AppLanguage.JAPANESE -> "コンテナ"
+        AppLanguage.KOREAN -> "컨테이너"
+    }
+
+    val ctaUiTreeHint: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "点选项目后可用箭头调整位置"
+        AppLanguage.ENGLISH -> "Select an item, then use the arrows to reorder"
+        AppLanguage.ARABIC -> "حدد عنصرًا ثم استخدم الأسهم"
+        AppLanguage.PORTUGUESE -> "Selecione um item e use as setas"
+        AppLanguage.SPANISH -> "Selecciona un elemento y usa las flechas"
+        AppLanguage.FRENCH -> "Sélectionnez un élément puis utilisez les flèches"
+        AppLanguage.GERMAN -> "Element auswählen, dann Pfeile nutzen"
+        AppLanguage.RUSSIAN -> "Выберите элемент и используйте стрелки"
+        AppLanguage.JAPANESE -> "項目を選択して矢印で並べ替え"
+        AppLanguage.KOREAN -> "항목을 선택한 뒤 화살표로 이동"
+    }
+
+    val ctaUiNoSelection: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "未选中任何元件"
+        AppLanguage.ENGLISH -> "Nothing selected"
+        AppLanguage.ARABIC -> "لم يتم تحديد شيء"
+        AppLanguage.PORTUGUESE -> "Nada selecionado"
+        AppLanguage.SPANISH -> "Nada seleccionado"
+        AppLanguage.FRENCH -> "Rien de sélectionné"
+        AppLanguage.GERMAN -> "Nichts ausgewählt"
+        AppLanguage.RUSSIAN -> "Ничего не выбрано"
+        AppLanguage.JAPANESE -> "未選択"
+        AppLanguage.KOREAN -> "선택 없음"
+    }
+
+    val ctaUiColumn: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "纵向排列"
+        AppLanguage.ENGLISH -> "Column"
+        AppLanguage.ARABIC -> "عمود"
+        AppLanguage.PORTUGUESE -> "Coluna"
+        AppLanguage.SPANISH -> "Columna"
+        AppLanguage.FRENCH -> "Colonne"
+        AppLanguage.GERMAN -> "Spalte"
+        AppLanguage.RUSSIAN -> "Колонка"
+        AppLanguage.JAPANESE -> "カラム"
+        AppLanguage.KOREAN -> "세로 정렬"
+    }
+
+    val ctaUiRow: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "横向排列"
+        AppLanguage.ENGLISH -> "Row"
+        AppLanguage.ARABIC -> "صف"
+        AppLanguage.PORTUGUESE -> "Linha"
+        AppLanguage.SPANISH -> "Fila"
+        AppLanguage.FRENCH -> "Ligne"
+        AppLanguage.GERMAN -> "Zeile"
+        AppLanguage.RUSSIAN -> "Строка"
+        AppLanguage.JAPANESE -> "ロウ"
+        AppLanguage.KOREAN -> "가로 정렬"
+    }
+
+    val ctaUiCard: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "卡片"
+        AppLanguage.ENGLISH -> "Card"
+        AppLanguage.ARABIC -> "بطاقة"
+        AppLanguage.PORTUGUESE -> "Cartão"
+        AppLanguage.SPANISH -> "Tarjeta"
+        AppLanguage.FRENCH -> "Carte"
+        AppLanguage.GERMAN -> "Karte"
+        AppLanguage.RUSSIAN -> "Карточка"
+        AppLanguage.JAPANESE -> "カード"
+        AppLanguage.KOREAN -> "카드"
+    }
+
+    val ctaUiText: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "文字"
+        AppLanguage.ENGLISH -> "Text"
+        AppLanguage.ARABIC -> "نص"
+        AppLanguage.PORTUGUESE -> "Texto"
+        AppLanguage.SPANISH -> "Texto"
+        AppLanguage.FRENCH -> "Texte"
+        AppLanguage.GERMAN -> "Text"
+        AppLanguage.RUSSIAN -> "Текст"
+        AppLanguage.JAPANESE -> "テキスト"
+        AppLanguage.KOREAN -> "텍스트"
+    }
+
+    val ctaUiButton: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "按钮"
+        AppLanguage.ENGLISH -> "Button"
+        AppLanguage.ARABIC -> "زر"
+        AppLanguage.PORTUGUESE -> "Botão"
+        AppLanguage.SPANISH -> "Botón"
+        AppLanguage.FRENCH -> "Bouton"
+        AppLanguage.GERMAN -> "Schaltfläche"
+        AppLanguage.RUSSIAN -> "Кнопка"
+        AppLanguage.JAPANESE -> "ボタン"
+        AppLanguage.KOREAN -> "버튼"
+    }
+
+    val ctaUiInput: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "输入框"
+        AppLanguage.ENGLISH -> "Input"
+        AppLanguage.ARABIC -> "إدخال"
+        AppLanguage.PORTUGUESE -> "Entrada"
+        AppLanguage.SPANISH -> "Entrada"
+        AppLanguage.FRENCH -> "Champ"
+        AppLanguage.GERMAN -> "Eingabe"
+        AppLanguage.RUSSIAN -> "Поле ввода"
+        AppLanguage.JAPANESE -> "入力欄"
+        AppLanguage.KOREAN -> "입력창"
+    }
+
+    val ctaUiImage: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "图片"
+        AppLanguage.ENGLISH -> "Image"
+        AppLanguage.ARABIC -> "صورة"
+        AppLanguage.PORTUGUESE -> "Imagem"
+        AppLanguage.SPANISH -> "Imagen"
+        AppLanguage.FRENCH -> "Image"
+        AppLanguage.GERMAN -> "Bild"
+        AppLanguage.RUSSIAN -> "Изображение"
+        AppLanguage.JAPANESE -> "画像"
+        AppLanguage.KOREAN -> "이미지"
+    }
+
+    val ctaUiCheckbox: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "复选框"
+        AppLanguage.ENGLISH -> "Checkbox"
+        AppLanguage.ARABIC -> "خانة اختيار"
+        AppLanguage.PORTUGUESE -> "Caixa"
+        AppLanguage.SPANISH -> "Casilla"
+        AppLanguage.FRENCH -> "Case à cocher"
+        AppLanguage.GERMAN -> "Kontrollkästchen"
+        AppLanguage.RUSSIAN -> "Чекбокс"
+        AppLanguage.JAPANESE -> "チェックボックス"
+        AppLanguage.KOREAN -> "체크박스"
+    }
+
+    val ctaUiSwitch: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "开关"
+        AppLanguage.ENGLISH -> "Switch"
+        AppLanguage.ARABIC -> "مفتاح"
+        AppLanguage.PORTUGUESE -> "Interruptor"
+        AppLanguage.SPANISH -> "Interruptor"
+        AppLanguage.FRENCH -> "Interrupteur"
+        AppLanguage.GERMAN -> "Schalter"
+        AppLanguage.RUSSIAN -> "Переключатель"
+        AppLanguage.JAPANESE -> "スイッチ"
+        AppLanguage.KOREAN -> "스위치"
+    }
+
+    val ctaUiDivider: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "分隔线"
+        AppLanguage.ENGLISH -> "Divider"
+        AppLanguage.ARABIC -> "فاصل"
+        AppLanguage.PORTUGUESE -> "Divisor"
+        AppLanguage.SPANISH -> "Divisor"
+        AppLanguage.FRENCH -> "Séparateur"
+        AppLanguage.GERMAN -> "Trennlinie"
+        AppLanguage.RUSSIAN -> "Разделитель"
+        AppLanguage.JAPANESE -> "区切り線"
+        AppLanguage.KOREAN -> "구분선"
+    }
+
+    val ctaUiSpacer: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "间距"
+        AppLanguage.ENGLISH -> "Spacer"
+        AppLanguage.ARABIC -> "مسافة"
+        AppLanguage.PORTUGUESE -> "Espaço"
+        AppLanguage.SPANISH -> "Espacio"
+        AppLanguage.FRENCH -> "Espace"
+        AppLanguage.GERMAN -> "Abstand"
+        AppLanguage.RUSSIAN -> "Отступ"
+        AppLanguage.JAPANESE -> "スペーサー"
+        AppLanguage.KOREAN -> "여백"
+    }
+
+    val ctaUiPropPadding: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "内边距"
+        AppLanguage.ENGLISH -> "Padding"
+        AppLanguage.ARABIC -> "الحشو"
+        AppLanguage.PORTUGUESE -> "Preenchimento"
+        AppLanguage.SPANISH -> "Relleno"
+        AppLanguage.FRENCH -> "Rembourrage"
+        AppLanguage.GERMAN -> "Innenabstand"
+        AppLanguage.RUSSIAN -> "Внутренний отступ"
+        AppLanguage.JAPANESE -> "パディング"
+        AppLanguage.KOREAN -> "패딩"
+    }
+
+    val ctaUiPropGap: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "间距"
+        AppLanguage.ENGLISH -> "Gap"
+        AppLanguage.ARABIC -> "الفجوة"
+        AppLanguage.PORTUGUESE -> "Espaçamento"
+        AppLanguage.SPANISH -> "Espacio"
+        AppLanguage.FRENCH -> "Écart"
+        AppLanguage.GERMAN -> "Abstand"
+        AppLanguage.RUSSIAN -> "Зазор"
+        AppLanguage.JAPANESE -> "間隔"
+        AppLanguage.KOREAN -> "간격"
+    }
+
+    val ctaUiPropRadius: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "圆角"
+        AppLanguage.ENGLISH -> "Radius"
+        AppLanguage.ARABIC -> "نصف القطر"
+        AppLanguage.PORTUGUESE -> "Raio"
+        AppLanguage.SPANISH -> "Radio"
+        AppLanguage.FRENCH -> "Rayon"
+        AppLanguage.GERMAN -> "Radius"
+        AppLanguage.RUSSIAN -> "Радиус"
+        AppLanguage.JAPANESE -> "角丸"
+        AppLanguage.KOREAN -> "라운드"
+    }
+
+    val ctaUiPropBackground: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "背景色"
+        AppLanguage.ENGLISH -> "Background"
+        AppLanguage.ARABIC -> "الخلفية"
+        AppLanguage.PORTUGUESE -> "Fundo"
+        AppLanguage.SPANISH -> "Fondo"
+        AppLanguage.FRENCH -> "Arrière-plan"
+        AppLanguage.GERMAN -> "Hintergrund"
+        AppLanguage.RUSSIAN -> "Фон"
+        AppLanguage.JAPANESE -> "背景"
+        AppLanguage.KOREAN -> "배경"
+    }
+
+    val ctaUiPropText: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "内容"
+        AppLanguage.ENGLISH -> "Text"
+        AppLanguage.ARABIC -> "النص"
+        AppLanguage.PORTUGUESE -> "Texto"
+        AppLanguage.SPANISH -> "Texto"
+        AppLanguage.FRENCH -> "Texte"
+        AppLanguage.GERMAN -> "Text"
+        AppLanguage.RUSSIAN -> "Текст"
+        AppLanguage.JAPANESE -> "テキスト"
+        AppLanguage.KOREAN -> "텍스트"
+    }
+
+    val ctaUiPropSize: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "字号"
+        AppLanguage.ENGLISH -> "Size"
+        AppLanguage.ARABIC -> "الحجم"
+        AppLanguage.PORTUGUESE -> "Tamanho"
+        AppLanguage.SPANISH -> "Tamaño"
+        AppLanguage.FRENCH -> "Taille"
+        AppLanguage.GERMAN -> "Größe"
+        AppLanguage.RUSSIAN -> "Размер"
+        AppLanguage.JAPANESE -> "サイズ"
+        AppLanguage.KOREAN -> "크기"
+    }
+
+    val ctaUiPropColor: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "颜色"
+        AppLanguage.ENGLISH -> "Color"
+        AppLanguage.ARABIC -> "اللون"
+        AppLanguage.PORTUGUESE -> "Cor"
+        AppLanguage.SPANISH -> "Color"
+        AppLanguage.FRENCH -> "Couleur"
+        AppLanguage.GERMAN -> "Farbe"
+        AppLanguage.RUSSIAN -> "Цвет"
+        AppLanguage.JAPANESE -> "色"
+        AppLanguage.KOREAN -> "색상"
+    }
+
+    val ctaUiPropWeight: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "字重"
+        AppLanguage.ENGLISH -> "Weight"
+        AppLanguage.ARABIC -> "السماكة"
+        AppLanguage.PORTUGUESE -> "Peso"
+        AppLanguage.SPANISH -> "Peso"
+        AppLanguage.FRENCH -> "Graisse"
+        AppLanguage.GERMAN -> "Schriftstärke"
+        AppLanguage.RUSSIAN -> "Насыщенность"
+        AppLanguage.JAPANESE -> "太さ"
+        AppLanguage.KOREAN -> "굵기"
+    }
+
+    val ctaUiPropAlign: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "对齐"
+        AppLanguage.ENGLISH -> "Align"
+        AppLanguage.ARABIC -> "محاذاة"
+        AppLanguage.PORTUGUESE -> "Alinhamento"
+        AppLanguage.SPANISH -> "Alineación"
+        AppLanguage.FRENCH -> "Alignement"
+        AppLanguage.GERMAN -> "Ausrichtung"
+        AppLanguage.RUSSIAN -> "Выравнивание"
+        AppLanguage.JAPANESE -> "配置"
+        AppLanguage.KOREAN -> "정렬"
+    }
+
+    val ctaUiPropHint: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "提示文字"
+        AppLanguage.ENGLISH -> "Hint"
+        AppLanguage.ARABIC -> "تلميح"
+        AppLanguage.PORTUGUESE -> "Dica"
+        AppLanguage.SPANISH -> "Pista"
+        AppLanguage.FRENCH -> "Indice"
+        AppLanguage.GERMAN -> "Hinweis"
+        AppLanguage.RUSSIAN -> "Подсказка"
+        AppLanguage.JAPANESE -> "ヒント"
+        AppLanguage.KOREAN -> "힌트"
+    }
+
+    val ctaUiPropSrc: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "图片网址"
+        AppLanguage.ENGLISH -> "Image URL"
+        AppLanguage.ARABIC -> "رابط الصورة"
+        AppLanguage.PORTUGUESE -> "URL da imagem"
+        AppLanguage.SPANISH -> "URL de imagen"
+        AppLanguage.FRENCH -> "URL de l'image"
+        AppLanguage.GERMAN -> "Bild-URL"
+        AppLanguage.RUSSIAN -> "URL изображения"
+        AppLanguage.JAPANESE -> "画像URL"
+        AppLanguage.KOREAN -> "이미지 URL"
+    }
+
+    val ctaUiPropHeight: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "高度"
+        AppLanguage.ENGLISH -> "Height"
+        AppLanguage.ARABIC -> "الارتفاع"
+        AppLanguage.PORTUGUESE -> "Altura"
+        AppLanguage.SPANISH -> "Altura"
+        AppLanguage.FRENCH -> "Hauteur"
+        AppLanguage.GERMAN -> "Höhe"
+        AppLanguage.RUSSIAN -> "Высота"
+        AppLanguage.JAPANESE -> "高さ"
+        AppLanguage.KOREAN -> "높이"
+    }
+
+    val ctaUiPropChecked: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "默认选中"
+        AppLanguage.ENGLISH -> "Checked by default"
+        AppLanguage.ARABIC -> "محدد افتراضيًا"
+        AppLanguage.PORTUGUESE -> "Marcado por padrão"
+        AppLanguage.SPANISH -> "Activado por defecto"
+        AppLanguage.FRENCH -> "Coché par défaut"
+        AppLanguage.GERMAN -> "Standardmäßig aktiv"
+        AppLanguage.RUSSIAN -> "Включено по умолчанию"
+        AppLanguage.JAPANESE -> "既定で選択"
+        AppLanguage.KOREAN -> "기본 선택"
+    }
+
+    val ctaUiOpenDesigner: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "UI 设计器"
+        AppLanguage.ENGLISH -> "UI Designer"
+        AppLanguage.ARABIC -> "مصمم الواجهة"
+        AppLanguage.PORTUGUESE -> "Designer de UI"
+        AppLanguage.SPANISH -> "Diseñador UI"
+        AppLanguage.FRENCH -> "Designer UI"
+        AppLanguage.GERMAN -> "UI-Designer"
+        AppLanguage.RUSSIAN -> "UI-конструктор"
+        AppLanguage.JAPANESE -> "UIデザイナー"
+        AppLanguage.KOREAN -> "UI 디자이너"
+    }
+
+    val ctaRun: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "运行"
+        AppLanguage.ENGLISH -> "Run"
+        AppLanguage.ARABIC -> "تشغيل"
+        AppLanguage.PORTUGUESE -> "Executar"
+        AppLanguage.SPANISH -> "Ejecutar"
+        AppLanguage.FRENCH -> "Exécuter"
+        AppLanguage.GERMAN -> "Ausführen"
+        AppLanguage.RUSSIAN -> "Запустить"
+        AppLanguage.JAPANESE -> "実行"
+        AppLanguage.KOREAN -> "실행"
+    }
+
+    val ctaConsole: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "控制台"
+        AppLanguage.ENGLISH -> "Console"
+        AppLanguage.ARABIC -> "وحدة التحكم"
+        AppLanguage.PORTUGUESE -> "Console"
+        AppLanguage.SPANISH -> "Consola"
+        AppLanguage.FRENCH -> "Console"
+        AppLanguage.GERMAN -> "Konsole"
+        AppLanguage.RUSSIAN -> "Консоль"
+        AppLanguage.JAPANESE -> "コンソール"
+        AppLanguage.KOREAN -> "콘솔"
+    }
+
+    val ctaClear: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "清空"
+        AppLanguage.ENGLISH -> "Clear"
+        AppLanguage.ARABIC -> "مسح"
+        AppLanguage.PORTUGUESE -> "Limpar"
+        AppLanguage.SPANISH -> "Limpiar"
+        AppLanguage.FRENCH -> "Effacer"
+        AppLanguage.GERMAN -> "Leeren"
+        AppLanguage.RUSSIAN -> "Очистить"
+        AppLanguage.JAPANESE -> "クリア"
+        AppLanguage.KOREAN -> "지우기"
+    }
+
+    val ctaRunJs: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "执行"
+        AppLanguage.ENGLISH -> "Run"
+        AppLanguage.ARABIC -> "تنفيذ"
+        AppLanguage.PORTUGUESE -> "Executar"
+        AppLanguage.SPANISH -> "Ejecutar"
+        AppLanguage.FRENCH -> "Exécuter"
+        AppLanguage.GERMAN -> "Ausführen"
+        AppLanguage.RUSSIAN -> "Выполнить"
+        AppLanguage.JAPANESE -> "実行"
+        AppLanguage.KOREAN -> "실행"
+    }
+
+    val ctaJsHint: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "输入 JS，例如 1 + 1"
+        AppLanguage.ENGLISH -> "Enter JS, e.g. 1 + 1"
+        AppLanguage.ARABIC -> "أدخل JS"
+        AppLanguage.PORTUGUESE -> "Digite JS"
+        AppLanguage.SPANISH -> "Introduce JS"
+        AppLanguage.FRENCH -> "Saisir du JS"
+        AppLanguage.GERMAN -> "JS eingeben"
+        AppLanguage.RUSSIAN -> "Введите JS"
+        AppLanguage.JAPANESE -> "JS を入力"
+        AppLanguage.KOREAN -> "JS 입력"
+    }
+
+    val ctaConsoleEmpty: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "暂无日志，页面输出会显示在这里"
+        AppLanguage.ENGLISH -> "No output yet — page logs appear here"
+        AppLanguage.ARABIC -> "لا مخرجات بعد"
+        AppLanguage.PORTUGUESE -> "Sem saída ainda"
+        AppLanguage.SPANISH -> "Sin salida aún"
+        AppLanguage.FRENCH -> "Aucune sortie"
+        AppLanguage.GERMAN -> "Noch keine Ausgabe"
+        AppLanguage.RUSSIAN -> "Вывода пока нет"
+        AppLanguage.JAPANESE -> "出力はまだありません"
+        AppLanguage.KOREAN -> "출력이 아직 없습니다"
+    }
+
+    val ctaModeStatic: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "静态预览"
+        AppLanguage.ENGLISH -> "Static"
+        AppLanguage.ARABIC -> "ثابت"
+        AppLanguage.PORTUGUESE -> "Estático"
+        AppLanguage.SPANISH -> "Estático"
+        AppLanguage.FRENCH -> "Statique"
+        AppLanguage.GERMAN -> "Statisch"
+        AppLanguage.RUSSIAN -> "Статика"
+        AppLanguage.JAPANESE -> "静的"
+        AppLanguage.KOREAN -> "정적"
+    }
+
+    val ctaStartingRuntime: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "正在启动运行时…"
+        AppLanguage.ENGLISH -> "Starting runtime…"
+        AppLanguage.ARABIC -> "جارٍ بدء التشغيل"
+        AppLanguage.PORTUGUESE -> "Iniciando runtime"
+        AppLanguage.SPANISH -> "Iniciando runtime"
+        AppLanguage.FRENCH -> "Démarrage du runtime"
+        AppLanguage.GERMAN -> "Runtime startet…"
+        AppLanguage.RUSSIAN -> "Запуск среды…"
+        AppLanguage.JAPANESE -> "ランタイム起動中…"
+        AppLanguage.KOREAN -> "런타임 시작 중…"
+    }
+
+    val ctaSourceMissing: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "源码目录不存在，请先上传代码"
+        AppLanguage.ENGLISH -> "Source directory missing — upload code first"
+        AppLanguage.ARABIC -> "دليل المصدر مفقود"
+        AppLanguage.PORTUGUESE -> "Diretório-fonte ausente"
+        AppLanguage.SPANISH -> "Falta el directorio fuente"
+        AppLanguage.FRENCH -> "Répertoire source manquant"
+        AppLanguage.GERMAN -> "Quellverzeichnis fehlt"
+        AppLanguage.RUSSIAN -> "Исходная папка отсутствует"
+        AppLanguage.JAPANESE -> "ソースディレクトリがありません"
+        AppLanguage.KOREAN -> "소스 디렉터리가 없습니다"
+    }
+
     val ctaUploadCode: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "上传代码"
         AppLanguage.ENGLISH -> "Upload Code"
