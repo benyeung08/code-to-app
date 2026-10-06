@@ -1,5 +1,6 @@
 package com.webtoapp.core.codetoapp
 
+import com.webtoapp.data.model.CodeToAppConfig
 import java.io.File
 import java.io.FileInputStream
 import java.io.FileOutputStream
@@ -220,6 +221,56 @@ object CodeToAppRuntimeDetector {
             }
         }
         return destDir
+    }
+
+    /**
+     * 求出「真正要交给 WebView / 本地服务器」的源码根目录。
+     *
+     * CodeToApp 保存的是 [CodeToAppConfig]，跟 HTML / FRONTEND 用的 `htmlConfig`
+     * 不是同一份配置。若把 CODETOAPP 挂在 HTML 分支上，读到的 `htmlConfig` 恒为
+     * null，目录就变成 `filesDir/html_projects/`（空 projectId），必然不存在，
+     * 结果就是打开白屏。因此这里必须独立解析。
+     *
+     * 解析顺序：
+     * 1. [CodeToAppConfig.sourcePath]（保存的绝对路径，最可靠）
+     * 2. `filesDir/codetoapp/<projectId>`（换机 / 路径失效时按 id 回推）
+     * 3. 命中根目录后再套用 staticDir（例如 Vite 的 `dist`）
+     */
+    fun resolveSourceDir(config: CodeToAppConfig?, filesDir: File): File? {
+        val root = listOfNotNull(
+            config?.sourcePath?.takeIf { it.isNotBlank() }?.let(::File),
+            config?.projectId?.takeIf { it.isNotBlank() }?.let { File(filesDir, "codetoapp/$it") }
+        ).firstOrNull { it.exists() && it.isDirectory } ?: return null
+
+        val static = config?.staticDir
+            ?.trim()
+            ?.removePrefix("./")
+            ?.removePrefix("/")
+            ?.takeIf { it.isNotBlank() && it != "." }
+            ?: return root
+
+        return File(root, static).takeIf { it.exists() && it.isDirectory } ?: root
+    }
+
+    /**
+     * 求出实际要加载的入口文件（相对 [root] 的路径）。
+     * 配置的入口不存在时，退而求其次在根目录里找第一个 index.html / index.htm，
+     * 仍找不到才回退到配置值（让 WebView 至少尝试加载，失败也只有一张空白图）。
+     */
+    fun resolveEntryFile(root: File, config: CodeToAppConfig?): String {
+        val preferred = config?.entryFile
+            ?.trim()
+            ?.removePrefix("/")
+            ?.takeIf { it.isNotBlank() }
+            ?: "index.html"
+        if (File(root, preferred).isFile) return preferred
+
+        root.listFiles()
+            ?.filter { it.isFile }
+            ?.firstOrNull { it.name.equals("index.html", true) || it.name.equals("index.htm", true) }
+            ?.let { return it.name }
+
+        return preferred
     }
 
     /** 统计目录里的文件数与总大小，仅用于界面展示。 */
