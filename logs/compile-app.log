@@ -142,8 +142,8 @@ To suppress this warning, add android.generateSyncIssueWhenLibraryConstraintsAre
 
 > Task :clone-host:preBuild UP-TO-DATE
 > Task :app:checkKotlinGradlePluginConfigurationErrors SKIPPED
-> Task :app:protobufDummy UP-TO-DATE
 > Task :clone-host:preReleaseBuild UP-TO-DATE
+> Task :app:protobufDummy UP-TO-DATE
 > Task :app:extractDebugProto
 > Task :clone-host:checkReleaseAarMetadata
 > Task :clone-host:mergeReleaseJniLibFolders
@@ -165,10 +165,15 @@ To suppress this warning, add android.generateSyncIssueWhenLibraryConstraintsAre
 > Task :clone-host:mapReleaseSourceSetPaths
 > Task :clone-host:parseReleaseLocalResources
 > Task :clone-host:mergeReleaseResources
-> Task :clone-host:processReleaseManifest
 > Task :clone-host:generateReleaseRFile
+> Task :clone-host:processReleaseManifest
 > Task :clone-host:verifyReleaseResources
 > Task :clone-host:compileReleaseKotlin
+> Task :app:extractIncludeStandardDebugProto
+> Task :app:extractProto
+> Task :app:extractStandardDebugProto
+> Task :app:extractStandardProto
+> Task :app:generateStandardDebugProto
 > Task :clone-host:extractReleaseAnnotations
 > Task :clone-host:compileReleaseJavaWithJavac NO-SOURCE
 > Task :clone-host:mergeReleaseGeneratedProguardFiles
@@ -178,21 +183,16 @@ To suppress this warning, add android.generateSyncIssueWhenLibraryConstraintsAre
 > Task :clone-host:syncReleaseLibJars
 > Task :clone-host:bundleReleaseAar
 > Task :clone-host:assembleRelease
-> Task :app:extractIncludeStandardDebugProto
 > Task :app:syncCloneHostDex SKIPPED
 > Task :app:preBuild UP-TO-DATE
 > Task :app:preStandardDebugBuild UP-TO-DATE
 > Task :app:generateStandardDebugBuildConfig
-> Task :app:extractProto
-> Task :app:extractStandardDebugProto
-> Task :app:extractStandardProto
-> Task :app:generateStandardDebugProto
-> Task :app:checkStandardDebugAarMetadata
 > Task :app:generateStandardDebugResValues FROM-CACHE
+> Task :app:checkStandardDebugAarMetadata
 > Task :app:mapStandardDebugSourceSetPaths
 > Task :app:processStandardDebugNavigationResources
-> Task :app:generateStandardDebugResources
 > Task :app:compileStandardDebugNavigationResources
+> Task :app:generateStandardDebugResources
 > Task :app:packageStandardDebugResources
 > Task :app:createStandardDebugCompatibleScreenManifests
 > Task :app:extractDeepLinksStandardDebug
@@ -367,7 +367,7 @@ w: file:///home/runner/work/code-to-app/code-to-app/app/src/main/java/com/webtoa
 w: file:///home/runner/work/code-to-app/code-to-app/app/src/main/java/com/webtoapp/ui/screens/AiSettingsScreen.kt:881:52 'val Icons.Outlined.OpenInNew: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Outlined.OpenInNew.
 w: file:///home/runner/work/code-to-app/code-to-app/app/src/main/java/com/webtoapp/ui/screens/AiSettingsScreen.kt:944:34 'fun Modifier.menuAnchor(): Modifier' is deprecated. Use overload that takes ExposedDropdownMenuAnchorType and enabled parameters.
 w: file:///home/runner/work/code-to-app/code-to-app/app/src/main/java/com/webtoapp/ui/screens/AiSettingsScreen.kt:1151:30 'fun Modifier.menuAnchor(): Modifier' is deprecated. Use overload that takes ExposedDropdownMenuAnchorType and enabled parameters.
-w: file:///home/runner/work/code-to-app/code-to-app/app/src/main/java/com/webtoapp/ui/screens/AppPreviewResolver.kt:253:42 Condition is always 'true'.
+w: file:///home/runner/work/code-to-app/code-to-app/app/src/main/java/com/webtoapp/ui/screens/AppPreviewResolver.kt:267:42 Condition is always 'true'.
 w: file:///home/runner/work/code-to-app/code-to-app/app/src/main/java/com/webtoapp/ui/screens/BrowserKernelScreen.kt:656:36 'val Icons.Outlined.HelpOutline: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Outlined.HelpOutline.
 w: file:///home/runner/work/code-to-app/code-to-app/app/src/main/java/com/webtoapp/ui/screens/BuildApkScreen.kt:104:53 'val repository: WebAppRepository' is deprecated. 编辑器侧请使用 Koin 注入: val repo: WebAppRepository by inject().
 w: file:///home/runner/work/code-to-app/code-to-app/app/src/main/java/com/webtoapp/ui/screens/BuildApkScreen.kt:134:53 'val repository: WebAppRepository' is deprecated. 编辑器侧请使用 Koin 注入: val repo: WebAppRepository by inject().
@@ -464,7 +464,7 @@ w: file:///home/runner/work/code-to-app/code-to-app/app/src/main/java/com/webtoa
 w: file:///home/runner/work/code-to-app/code-to-app/app/src/main/java/com/webtoapp/ui/webview/WebViewActivity.kt:2890:63 'static field ANCHOR_TYPE: Int' is deprecated. Deprecated in Java.
 w: file:///home/runner/work/code-to-app/code-to-app/app/src/main/java/com/webtoapp/ui/webview/WebViewActivity.kt:2924:43 'static field ANCHOR_TYPE: Int' is deprecated. Deprecated in Java.
 w: file:///home/runner/work/code-to-app/code-to-app/app/src/main/java/com/webtoapp/ui/webview/WebViewActivity.kt:2979:55 'val LocalLifecycleOwner: ProvidableCompositionLocal<LifecycleOwner>' is deprecated. Moved to lifecycle-runtime-compose library in androidx.lifecycle.compose package.
-w: file:///home/runner/work/code-to-app/code-to-app/app/src/main/java/com/webtoapp/ui/webview/WebViewActivity.kt:3659:82 'val adBlock: AdBlocker' is deprecated. 编辑器侧请使用 Koin 注入: val blocker: AdBlocker by inject().
+w: file:///home/runner/work/code-to-app/code-to-app/app/src/main/java/com/webtoapp/ui/webview/WebViewActivity.kt:3708:82 'val adBlock: AdBlocker' is deprecated. 编辑器侧请使用 Koin 注入: val blocker: AdBlocker by inject().
 w: file:///home/runner/work/code-to-app/code-to-app/app/src/main/java/com/webtoapp/util/SvgIconMapper.kt:14:49 'val Icons.Outlined.InsertDriveFile: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Outlined.InsertDriveFile.
 w: file:///home/runner/work/code-to-app/code-to-app/app/src/main/java/com/webtoapp/util/SvgIconMapper.kt:15:49 'val Icons.Outlined.Assignment: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Outlined.Assignment.
 w: file:///home/runner/work/code-to-app/code-to-app/app/src/main/java/com/webtoapp/util/SvgIconMapper.kt:20:49 'val Icons.Outlined.MenuBook: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Outlined.MenuBook.
@@ -477,5 +477,5 @@ w: file:///home/runner/work/code-to-app/code-to-app/app/src/main/java/com/webtoa
 w: file:///home/runner/work/code-to-app/code-to-app/app/src/main/java/com/webtoapp/util/SvgIconMapper.kt:135:49 'val Icons.Outlined.MenuBook: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Outlined.MenuBook.
 w: file:///home/runner/work/code-to-app/code-to-app/app/src/main/java/com/webtoapp/util/SvgIconMapper.kt:151:49 'val Icons.Outlined.HelpOutline: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Outlined.HelpOutline.
 
-BUILD SUCCESSFUL in 5m 9s
+BUILD SUCCESSFUL in 5m 4s
 51 actionable tasks: 50 executed, 1 from cache
