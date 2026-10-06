@@ -35,6 +35,9 @@ import com.webtoapp.ui.screens.CreateFrontendAppScreen
 import com.webtoapp.ui.screens.CreateGalleryAppScreenV2
 import com.webtoapp.ui.screens.CreateGoAppScreen
 import com.webtoapp.ui.screens.CreateCodeToAppScreen
+import com.webtoapp.ui.screens.CodeToAppBuildScreen
+import com.webtoapp.ui.screens.CodeToAppDesignerScreen
+import com.webtoapp.ui.screens.CodeToAppRunScreen
 import com.webtoapp.ui.screens.CodeToAppWorkspaceScreen
 import com.webtoapp.ui.screens.CreateHtmlAppScreen
 import com.webtoapp.ui.screens.CreateMediaAppScreen
@@ -90,7 +93,10 @@ object Routes {
     const val EDIT_PYTHON_APP = "edit_python_app/{appId}"
     const val EDIT_GO_APP = "edit_go_app/{appId}"
     const val EDIT_CODETOAPP_APP = "edit_codetoapp_app/{appId}"
-    const val CODETOAPP_WORKSPACE = "codetoapp_workspace/{projectId}"
+    const val CODETOAPP_WORKSPACE = "codetoapp_workspace/{projectId}?appId={appId}"
+    const val CODETOAPP_RUN = "codetoapp_run/{projectId}"
+    const val CODETOAPP_DESIGNER = "codetoapp_designer/{projectId}"
+    const val CODETOAPP_BUILD = "codetoapp_build/{appId}"
     const val EDIT_MULTI_WEB_APP = "edit_multi_web_app/{appId}"
 
     const val PREVIEW = "preview/{appId}"
@@ -133,7 +139,11 @@ object Routes {
     fun editPythonApp(appId: Long) = "edit_python_app/$appId"
     fun editGoApp(appId: Long) = "edit_go_app/$appId"
         fun editCodeToAppApp(appId: Long) = "edit_codetoapp_app/$appId"
-        fun codetoappWorkspace(projectId: String) = "codetoapp_workspace/$projectId"
+        fun codetoappRun(projectId: String) = "codetoapp_run/$projectId"
+        fun codetoappDesigner(projectId: String) = "codetoapp_designer/$projectId"
+        fun codetoappBuild(appId: Long) = "codetoapp_build/$appId"
+        fun codetoappWorkspace(projectId: String, appId: Long = -1L) =
+            "codetoapp_workspace/$projectId?appId=$appId"
     fun editMultiWebApp(appId: Long) = "edit_multi_web_app/$appId"
     fun preview(appId: Long) = "preview/$appId"
     fun editPlugin(pluginId: String) = "plugin_editor/$pluginId"
@@ -494,10 +504,52 @@ fun AppNavigation() {
 
             composable(
                 route = Routes.CODETOAPP_WORKSPACE,
+                arguments = listOf(
+                    navArgument("projectId") { type = NavType.StringType },
+                    navArgument("appId") { type = NavType.LongType; defaultValue = -1L }
+                )
+            ) { backStackEntry ->
+                val projectId = backStackEntry.arguments?.getString("projectId").orEmpty()
+                val ownerAppId = backStackEntry.arguments?.getLong("appId") ?: -1L
+                CodeToAppWorkspaceScreen(
+                    projectId = projectId,
+                    onBack = { navController.popBackStackSafely() },
+                    onRun = { navController.navigate(Routes.codetoappRun(projectId)) },
+                    onDesign = { navController.navigate(Routes.codetoappDesigner(projectId)) },
+                    onBuild = if (ownerAppId > 0L) {
+                        { navController.navigate(Routes.codetoappBuild(ownerAppId)) }
+                    } else null
+                )
+            }
+
+            composable(
+                route = Routes.CODETOAPP_BUILD,
+                arguments = listOf(navArgument("appId") { type = NavType.LongType })
+            ) { backStackEntry ->
+                val buildAppId = backStackEntry.arguments?.getLong("appId") ?: 0L
+                CodeToAppBuildScreen(
+                    appId = buildAppId,
+                    onBack = { navController.popBackStackSafely() }
+                )
+            }
+
+            composable(
+                route = Routes.CODETOAPP_DESIGNER,
                 arguments = listOf(navArgument("projectId") { type = NavType.StringType })
             ) { backStackEntry ->
                 val projectId = backStackEntry.arguments?.getString("projectId").orEmpty()
-                CodeToAppWorkspaceScreen(
+                CodeToAppDesignerScreen(
+                    projectId = projectId,
+                    onBack = { navController.popBackStackSafely() }
+                )
+            }
+
+            composable(
+                route = Routes.CODETOAPP_RUN,
+                arguments = listOf(navArgument("projectId") { type = NavType.StringType })
+            ) { backStackEntry ->
+                val projectId = backStackEntry.arguments?.getString("projectId").orEmpty()
+                CodeToAppRunScreen(
                     projectId = projectId,
                     onBack = { navController.popBackStackSafely() }
                 )
@@ -525,7 +577,7 @@ fun AppNavigation() {
                     existingAppId = appId,
                     onBack = { navController.popBackStackSafely() },
                     onOpenWorkspace = { pid ->
-                        navController.navigate(Routes.codetoappWorkspace(pid))
+                        navController.navigate(Routes.codetoappWorkspace(pid, appId))
                     },
                     onCreated = { name, codeToAppConfig, iconUri, themeType ->
                         viewModel.updateCodeToApp(appId, name, codeToAppConfig, iconUri, themeType)
