@@ -31,7 +31,8 @@ internal fun resolveAppPreviewSpec(context: Context, app: WebApp): AppPreviewSpe
             AppPreviewSpec(previewFilePath = previewFile?.absolutePath)
         }
         AppType.HTML,
-        AppType.FRONTEND, AppType.CODETOAPP -> resolveHtmlPreviewSpec(context, app)
+        AppType.FRONTEND -> resolveHtmlPreviewSpec(context, app)
+        AppType.CODETOAPP -> resolveCodeToAppPreviewSpec(context, app)
         AppType.WORDPRESS -> resolveWordPressPreviewSpec(context, app)
         AppType.NODEJS_APP -> resolveNodePreviewSpec(context, app)
         AppType.PHP_APP -> resolvePhpPreviewSpec(context, app)
@@ -96,6 +97,19 @@ private fun resolveHtmlPreviewSpec(context: Context, app: WebApp): AppPreviewSpe
         ?: findStaticHtmlEntry(rootDir, listOf(""))
         ?: File(rootDir, entryFile)
     return AppPreviewSpec(captureUrl = entry.toFileUrl())
+}
+
+private fun resolveCodeToAppPreviewSpec(context: Context, app: WebApp): AppPreviewSpec {
+    // 与 WebViewActivity 的 CODETOAPP 分支同源：必须读 codeToAppConfig，
+    // 走 resolveHtmlPreviewSpec（读 htmlConfig）会拿到 null，缩略图退化成
+    // “</>” 占位且没有刷新入口。
+    val config = app.codeToAppConfig
+    val rootDir = com.webtoapp.core.codetoapp.CodeToAppRuntimeDetector
+        .resolveSourceDir(config, context.filesDir)
+        ?: return AppPreviewSpec()
+    val entry = com.webtoapp.core.codetoapp.CodeToAppRuntimeDetector
+        .resolveEntryFile(rootDir, config)
+    return AppPreviewSpec(captureUrl = File(rootDir, entry).toFileUrl())
 }
 
 private fun resolveWordPressPreviewSpec(context: Context, app: WebApp): AppPreviewSpec {
