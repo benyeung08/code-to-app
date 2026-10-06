@@ -106,8 +106,8 @@ To suppress this warning, add android.generateSyncIssueWhenLibraryConstraintsAre
 
 > Task :clone-host:preBuild UP-TO-DATE
 > Task :app:checkKotlinGradlePluginConfigurationErrors SKIPPED
-> Task :app:protobufDummy UP-TO-DATE
 > Task :clone-host:preReleaseBuild UP-TO-DATE
+> Task :app:protobufDummy UP-TO-DATE
 > Task :clone-host:checkReleaseAarMetadata UP-TO-DATE
 > Task :app:extractDebugProto UP-TO-DATE
 > Task :clone-host:mergeReleaseJniLibFolders UP-TO-DATE
@@ -169,12 +169,12 @@ To suppress this warning, add android.generateSyncIssueWhenLibraryConstraintsAre
 > Task :app:kspStandardDebugKotlin UP-TO-DATE
 > Task :app:extractTestDebugProto
 > Task :app:extractTestProto
+> Task :app:javaPreCompileStandardDebug
 > Task :app:extractTestStandardDebugProto
 > Task :app:extractTestStandardProto
 > Task :app:preStandardDebugUnitTestBuild UP-TO-DATE
 > Task :app:javaPreCompileStandardDebugUnitTest FROM-CACHE
 > Task :app:generateStandardDebugAssets UP-TO-DATE
-> Task :app:javaPreCompileStandardDebug
 > Task :app:mergeStandardDebugAssets
 > Task :app:packageStandardDebugUnitTestForUnitTest
 > Task :app:processStandardDebugUnitTestManifest
@@ -202,5 +202,5 @@ Execution failed for task ':app:compileStandardDebugKotlin'.
 > Run with --scan to get full insights from a Build Scan (powered by Develocity).
 > Get more help at https://help.gradle.org.
 
-BUILD FAILED in 1m 37s
+BUILD FAILED in 1m 29s
 61 actionable tasks: 10 executed, 1 from cache, 50 up-to-date
