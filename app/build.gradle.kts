@@ -78,16 +78,16 @@ android {
         minSdk = 23
 
         targetSdk = 36
-        // 升级自 code-to-app-v1.0.2-run20x-debug.apk（versionCode 5）。
+        // 升级自 code-to-app-v1.0.3-run2xx-debug.apk（versionCode 6）。
         // 包名不变（com.codetoapp.app）、签名也固定为 codetoapp-signing.p12，
-        // 所以只要 versionCode 比 5 大，安装时就会被识别为「覆盖升级」，
+        // 所以只要 versionCode 比 6 大，安装时就会被识别为「覆盖升级」，
         // 旧数据保留、不会变成第二个 app、也不必卸载。
-        versionCode = 6
+        versionCode = 7
         // ⚠️ 必须是连字符，不能写成空格：
-        // 1) 带空格时 APK 文件名会出现空格（code-to-app-v1.0.3 beta-run1xx-debug.apk）
+        // 1) 带空格时 APK 文件名会出现空格（code-to-app-v1.0.4 beta-run1xx-debug.apk）
         // 2) Version.parse() 会把空格版的 patch 段解析失败归零，
         //    导致版本号被误判成正式版，更新提示失效、「当前版本」显示错误
-        versionName = "1.0.3"
+        versionName = "1.0.4"
         buildConfigField("boolean", "SHELL_RUNTIME_ONLY", "false")
 
         vectorDrawables {
