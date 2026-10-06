@@ -16,7 +16,7 @@ Execution failed for task ':app:compileStandardDebugKotlin'.
 > Run with --scan to get full insights from a Build Scan (powered by Develocity).
 > Get more help at https://help.gradle.org.
 
-BUILD FAILED in 3m 29s
+BUILD FAILED in 3m 55s
 51 actionable tasks: 50 executed, 1 from cache
 ```
 **编译错误 (6)**
@@ -32,7 +32,7 @@ e: file:///home/runner/work/code-to-app/code-to-app/app/src/main/java/com/webtoa
 ```
 > Task :app:compileStandardDebugKotlin FAILED
 Execution failed for task ':app:compileStandardDebugKotlin'.
-BUILD FAILED in 3m 29s
+BUILD FAILED in 3m 55s
 ```
 
 ### compile-shell.log
@@ -62,7 +62,7 @@ Execution failed for task ':app:compileStandardDebugKotlin'.
 > Run with --scan to get full insights from a Build Scan (powered by Develocity).
 > Get more help at https://help.gradle.org.
 
-BUILD FAILED in 1m 35s
+BUILD FAILED in 1m 55s
 61 actionable tasks: 10 executed, 1 from cache, 50 up-to-date
 ```
 **编译错误 (6)**
@@ -78,5 +78,5 @@ e: file:///home/runner/work/code-to-app/code-to-app/app/src/main/java/com/webtoa
 ```
 > Task :app:compileStandardDebugKotlin FAILED
 Execution failed for task ':app:compileStandardDebugKotlin'.
-BUILD FAILED in 1m 35s
+BUILD FAILED in 1m 55s
 ```
