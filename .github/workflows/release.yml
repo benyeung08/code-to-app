@@ -1,16 +1,11 @@
-
 name: Release APK - Self Update
 
+# 触发：推送 v* 标签（如 v1.0.3），或手动在 Actions 页面点 Run workflow
 on:
   push:
     tags:
       - 'v*'
   workflow_dispatch:
-    inputs:
-      tag:
-        description: 'Manual tag (e.g. v1.0.1)'
-        required: false
-        default: 'v1.0.1'
 
 permissions:
   contents: write
@@ -18,6 +13,16 @@ permissions:
 jobs:
   build:
     runs-on: ubuntu-latest
+
+    env:
+      # ubuntu-latest 镜像已预装完整 Android SDK，无需 android-actions/setup-android。
+      # 该 action 会尝试安装已废弃的 `tools` 包，在 2026 年后的 runner 上会直接失败
+      # （7 秒内报错，整个 job 还没开始构建就中止）。这里改为显式声明路径。
+      ANDROID_HOME: /usr/local/lib/android/sdk
+      ANDROID_SDK_ROOT: /usr/local/lib/android/sdk
+      ANDROID_NDK_HOME: /usr/local/lib/android/sdk/ndk/28.2.13676358
+      GRADLE_OPTS: -Dorg.gradle.daemon=false -Dorg.gradle.parallel=false
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -31,33 +36,42 @@ jobs:
           java-version: '17'
           cache: gradle
 
-      - name: Set up Android SDK
-        uses: android-actions/setup-android@v3
+      # ⚠️ 已删除 `android-actions/setup-android@v3`：runner 自带 SDK，
+      # 这个 action 反而会失败。下面的步骤只需要补齐镜像里没有的组件。
 
-      - name: Install NDK + CMake + Build Tools
+      - name: Install missing SDK components
         run: |
           set -x
-          sdkmanager --install "ndk;27.0.11718014" "cmake;3.22.1" "platforms;android-36" "build-tools;36.0.0" "platform-tools"
-          echo "ANDROID_NDK_HOME=$ANDROID_HOME/ndk/27.0.11718014" >> $GITHUB_ENV
-          echo "NDK_HOME=$ANDROID_HOME/ndk/27.0.11718014" >> $GITHUB_ENV
-          ls -lh $ANDROID_HOME/ndk/27.0.11718014 || true
-          cmake --version || true
+          echo "ANDROID_HOME=$ANDROID_HOME"
+          ls "$ANDROID_HOME"
+
+          # 镜像已预装：platforms;android-36、build-tools;36.0.0、platform-tools、
+          # ndk;28.2.13676358。只有 cmake;3.22.1 不在默认清单里（预装的是 3.31.5 / 4.1.2）。
+          # 项目 externalNativeBuild 里写死了 3.22.1，必须补装。
+          yes | sdkmanager --sdk_root="$ANDROID_HOME" --install "cmake;3.22.1" \
+            || echo "::warning::cmake 3.22.1 install returned non-zero, continuing"
+
+          yes | sdkmanager --sdk_root="$ANDROID_HOME" --licenses > /dev/null 2>&1 || true
+
+          ls "$ANDROID_HOME/cmake" || true
+          ls "$ANDROID_HOME/ndk" || true
 
       - name: Grant gradlew permission
         run: chmod +x gradlew
 
       - name: Show versions
         run: |
-          ./gradlew --version
-          ./gradlew printVersion || echo "printVersion task not found, skip"
-          cat app/build.gradle.kts | grep -n "versionName\|versionCode" | head -20
+          java -version
+          ./gradlew --version | head -20
+          grep -n "versionCode\|versionName" app/build.gradle.kts | head -10
 
       - name: Build standardRelease APK
         run: |
           set -x
-          # 你的 flavor 是 standard，任務名是 assembleStandardRelease
-          # 如果失敗，會嘗試 assembleRelease 作為後備
-          ./gradlew assembleStandardRelease --stacktrace --info || ./gradlew assembleRelease --stacktrace --info
+          # 固定签名档 app/codetoapp-signing.p12 已入库，
+          # release / debug 两个 variant 都会用它，无需 -PallowDebugSignedRelease。
+          ./gradlew assembleStandardRelease --stacktrace --no-daemon --no-configuration-cache \
+            || ./gradlew assembleRelease --stacktrace --no-daemon --no-configuration-cache
 
       - name: Find APK
         id: find_apk
@@ -68,14 +82,28 @@ jobs:
           if [ -z "$APK" ]; then
             APK=$(find app/build/outputs -name "*.apk" -type f | head -n 1)
           fi
-          echo "APK=$APK"
-          echo "apk_path=$APK" >> $GITHUB_OUTPUT
+          if [ -z "$APK" ] || [ ! -f "$APK" ]; then
+            echo "::error::No APK produced under app/build/outputs"
+            exit 1
+          fi
+          echo "apk_path=$APK" >> "$GITHUB_OUTPUT"
           ls -lh "$APK"
+
+      - name: Rename APK to a stable name
+        id: rename
+        run: |
+          APK="${{ steps.find_apk.outputs.apk_path }}"
+          VERSION=$(grep -m1 'versionName' app/build.gradle.kts | sed 's/.*"\([^"]*\)".*/\1/')
+          OUT="CodeToApp_${VERSION:-dev}.apk"
+          mkdir -p apk-out
+          cp "$APK" "apk-out/$OUT"
+          echo "apk_file=apk-out/$OUT" >> "$GITHUB_OUTPUT"
+          ls -lh apk-out
 
       - name: Create Release and Upload APK
         uses: softprops/action-gh-release@v2
         with:
-          files: ${{ steps.find_apk.outputs.apk_path }}
+          files: ${{ steps.rename.outputs.apk_file }}
           generate_release_notes: true
           fail_on_unmatched_files: true
         env:
@@ -87,6 +115,8 @@ jobs:
         with:
           name: apk-and-logs
           path: |
+            apk-out/
             app/build/outputs/
             app/build/reports/
             apk_list.txt
+          if-no-files-found: warn
