@@ -35,6 +35,7 @@ import com.webtoapp.ui.screens.CreateFrontendAppScreen
 import com.webtoapp.ui.screens.CreateGalleryAppScreenV2
 import com.webtoapp.ui.screens.CreateGoAppScreen
 import com.webtoapp.ui.screens.CreateCodeToAppScreen
+import com.webtoapp.ui.screens.CodeToAppWorkspaceScreen
 import com.webtoapp.ui.screens.CreateHtmlAppScreen
 import com.webtoapp.ui.screens.CreateMediaAppScreen
 import com.webtoapp.ui.screens.CreateMultiWebAppScreen
@@ -89,6 +90,7 @@ object Routes {
     const val EDIT_PYTHON_APP = "edit_python_app/{appId}"
     const val EDIT_GO_APP = "edit_go_app/{appId}"
     const val EDIT_CODETOAPP_APP = "edit_codetoapp_app/{appId}"
+    const val CODETOAPP_WORKSPACE = "codetoapp_workspace/{projectId}"
     const val EDIT_MULTI_WEB_APP = "edit_multi_web_app/{appId}"
 
     const val PREVIEW = "preview/{appId}"
@@ -131,6 +133,7 @@ object Routes {
     fun editPythonApp(appId: Long) = "edit_python_app/$appId"
     fun editGoApp(appId: Long) = "edit_go_app/$appId"
         fun editCodeToAppApp(appId: Long) = "edit_codetoapp_app/$appId"
+        fun codetoappWorkspace(projectId: String) = "codetoapp_workspace/$projectId"
     fun editMultiWebApp(appId: Long) = "edit_multi_web_app/$appId"
     fun preview(appId: Long) = "preview/$appId"
     fun editPlugin(pluginId: String) = "plugin_editor/$pluginId"
@@ -489,9 +492,23 @@ fun AppNavigation() {
                 )
             }
 
+            composable(
+                route = Routes.CODETOAPP_WORKSPACE,
+                arguments = listOf(navArgument("projectId") { type = NavType.StringType })
+            ) { backStackEntry ->
+                val projectId = backStackEntry.arguments?.getString("projectId").orEmpty()
+                CodeToAppWorkspaceScreen(
+                    projectId = projectId,
+                    onBack = { navController.popBackStackSafely() }
+                )
+            }
+
             composable(Routes.CREATE_CODETOAPP_APP) {
                 CreateCodeToAppScreen(
                     onBack = { navController.popBackStackSafely() },
+                    onOpenWorkspace = { pid ->
+                        navController.navigate(Routes.codetoappWorkspace(pid))
+                    },
                     onCreated = { name, codeToAppConfig, iconUri, themeType ->
                         viewModel.saveCodeToApp(name, codeToAppConfig, iconUri, themeType)
                         navController.popBackStackSafely()
@@ -507,6 +524,9 @@ fun AppNavigation() {
                 CreateCodeToAppScreen(
                     existingAppId = appId,
                     onBack = { navController.popBackStackSafely() },
+                    onOpenWorkspace = { pid ->
+                        navController.navigate(Routes.codetoappWorkspace(pid))
+                    },
                     onCreated = { name, codeToAppConfig, iconUri, themeType ->
                         viewModel.updateCodeToApp(appId, name, codeToAppConfig, iconUri, themeType)
                         navController.popBackStackSafely()
