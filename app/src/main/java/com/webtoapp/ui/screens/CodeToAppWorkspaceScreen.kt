@@ -1,6 +1,5 @@
 package com.webtoapp.ui.screens
 
-import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.clickable
@@ -45,6 +44,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import com.webtoapp.core.codetoapp.CodeToAppDetection
 import com.webtoapp.core.codetoapp.CodeToAppRuntimeDetector
 import com.webtoapp.core.codetoapp.CodeToAppWorkspace
 import com.webtoapp.core.i18n.Strings
@@ -86,9 +86,18 @@ fun CodeToAppWorkspaceScreen(
     var errorMessage by remember { mutableStateOf<String?>(null) }
     var isBusy by remember { mutableStateOf(false) }
     var summary by remember { mutableStateOf<Pair<Int, Long>?>(null) }
+    var detected by remember { mutableStateOf<CodeToAppDetection?>(null) }
 
     val entries = remember(currentDir, bump, projectId) {
         if (root.exists()) CodeToAppWorkspace.listChildren(root, currentDir) else emptyList()
+    }
+
+    // 进入页面时先算一次侦测结果（放到 IO 线程，避免大项目卡住主线程）
+    androidx.compose.runtime.LaunchedEffect(projectId) {
+        val result = withContext(Dispatchers.IO) {
+            if (root.exists()) CodeToAppRuntimeDetector.detect(root) else null
+        }
+        detected = result
     }
 
     // ---------------- 编辑器状态 ----------------
@@ -97,6 +106,12 @@ fun CodeToAppWorkspaceScreen(
     var editorLanguage by remember { mutableStateOf<String?>(null) }
 
     fun refreshSummary() {
+        scope.launch {
+            val result = withContext(Dispatchers.IO) {
+                if (root.exists()) CodeToAppRuntimeDetector.detect(root) else null
+            }
+            detected = result
+        }
         summary = if (root.exists()) CodeToAppWorkspace.summarize(root) else null
         bump++
         onChanged?.invoke()
@@ -280,9 +295,7 @@ fun CodeToAppWorkspaceScreen(
             }
 
             // ---------- 侦测结果（导入后即时反馈） ----------
-            remember(bump, projectId) {
-                if (root.exists()) CodeToAppRuntimeDetector.detect(root) else null
-            }?.let { det ->
+            detected?.let { det ->
                 WtaCreateFlowSection(title = Strings.ctaDetectedRuntime) {
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
