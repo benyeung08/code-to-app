@@ -19,6 +19,7 @@ import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Folder
 import androidx.compose.material.icons.filled.FolderZip
+import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.UploadFile
 import androidx.compose.material3.AlertDialog
@@ -73,6 +74,9 @@ fun CodeToAppWorkspaceScreen(
     projectId: String,
     title: String = Strings.appTypeCodeToApp,
     onBack: () -> Unit,
+    onRun: (() -> Unit)? = null,
+    onDesign: (() -> Unit)? = null,
+    onBuild: (() -> Unit)? = null,
     onChanged: (() -> Unit)? = null
 ) {
     val context = LocalContext.current
@@ -200,6 +204,21 @@ fun CodeToAppWorkspaceScreen(
         actions = {
             IconButton(onClick = ::refreshSummary, enabled = !isBusy) {
                 Icon(Icons.Filled.Refresh, contentDescription = null)
+            }
+            if (onRun != null) {
+                IconButton(onClick = onRun, enabled = !isBusy) {
+                    Icon(Icons.Filled.PlayArrow, contentDescription = null)
+                }
+            }
+            if (onDesign != null) {
+                TextButton(onClick = onDesign, enabled = !isBusy) {
+                    Text(Strings.ctaUiOpenDesigner, fontSize = 12.sp)
+                }
+            }
+            if (onBuild != null) {
+                TextButton(onClick = onBuild, enabled = !isBusy) {
+                    Text(Strings.ctaBuildTitle, fontSize = 12.sp)
+                }
             }
         }
     ) {
