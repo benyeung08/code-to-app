@@ -161,14 +161,19 @@ To suppress this warning, add android.generateSyncIssueWhenLibraryConstraintsAre
 > Task :clone-host:javaPreCompileRelease
 > Task :clone-host:prepareReleaseArtProfile
 > Task :clone-host:prepareLintJarForPublish
+> Task :clone-host:parseReleaseLocalResources
 > Task :clone-host:writeReleaseAarMetadata
 > Task :clone-host:mapReleaseSourceSetPaths
-> Task :clone-host:parseReleaseLocalResources
 > Task :clone-host:mergeReleaseResources
 > Task :clone-host:generateReleaseRFile
 > Task :clone-host:processReleaseManifest
 > Task :clone-host:verifyReleaseResources
 > Task :clone-host:compileReleaseKotlin
+> Task :app:extractIncludeStandardDebugProto
+> Task :app:extractProto
+> Task :app:extractStandardDebugProto
+> Task :app:extractStandardProto
+> Task :app:generateStandardDebugProto
 > Task :clone-host:extractReleaseAnnotations
 > Task :clone-host:compileReleaseJavaWithJavac NO-SOURCE
 > Task :clone-host:mergeReleaseGeneratedProguardFiles
@@ -178,17 +183,12 @@ To suppress this warning, add android.generateSyncIssueWhenLibraryConstraintsAre
 > Task :clone-host:syncReleaseLibJars
 > Task :clone-host:bundleReleaseAar
 > Task :clone-host:assembleRelease
-> Task :app:extractIncludeStandardDebugProto
 > Task :app:syncCloneHostDex SKIPPED
 > Task :app:preBuild UP-TO-DATE
 > Task :app:preStandardDebugBuild UP-TO-DATE
 > Task :app:generateStandardDebugBuildConfig
-> Task :app:extractProto
-> Task :app:extractStandardDebugProto
-> Task :app:extractStandardProto
-> Task :app:generateStandardDebugProto
-> Task :app:checkStandardDebugAarMetadata
 > Task :app:generateStandardDebugResValues FROM-CACHE
+> Task :app:checkStandardDebugAarMetadata
 > Task :app:mapStandardDebugSourceSetPaths
 > Task :app:processStandardDebugNavigationResources
 > Task :app:compileStandardDebugNavigationResources
@@ -226,5 +226,5 @@ Execution failed for task ':app:compileStandardDebugKotlin'.
 > Run with --scan to get full insights from a Build Scan (powered by Develocity).
 > Get more help at https://help.gradle.org.
 
-BUILD FAILED in 3m 55s
+BUILD FAILED in 3m 28s
 51 actionable tasks: 50 executed, 1 from cache
