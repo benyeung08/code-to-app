@@ -63,6 +63,7 @@ import java.util.UUID
 fun CreateCodeToAppScreen(
     existingAppId: Long = 0L,
     onBack: () -> Unit,
+    onOpenWorkspace: ((String) -> Unit)? = null,
     onCreated: (
         name: String,
         codeToAppConfig: CodeToAppConfig,
@@ -268,6 +269,18 @@ fun CreateCodeToAppScreen(
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.error
                     )
+                }
+                if (projectId != null) {
+                    OutlinedButton(
+                        onClick = { projectId?.let { onOpenWorkspace?.invoke(it) } },
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Icon(Icons.Filled.Edit, null, modifier = Modifier.size(18.dp))
+                        Text(
+                            Strings.ctaUploadCode,
+                            modifier = Modifier.padding(start = 8.dp)
+                        )
+                    }
                 }
             }
 
