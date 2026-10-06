@@ -167,6 +167,17 @@ object Strings {
     val dirNotExists: String get() = StringsA.dirNotExists
     val projectImportFailed: String get() = StringsA.projectImportFailed
     val frameworkDetected: String get() = StringsA.frameworkDetected
+    val ctaUploadCode: String get() = StringsA.ctaUploadCode
+    val ctaImportSingleFile: String get() = StringsA.ctaImportSingleFile
+    val ctaNewFile: String get() = StringsA.ctaNewFile
+    val ctaNewFolder: String get() = StringsA.ctaNewFolder
+    val ctaSourceFiles: String get() = StringsA.ctaSourceFiles
+    val ctaFilesCount: String get() = StringsA.ctaFilesCount
+    val ctaNoFilesYet: String get() = StringsA.ctaNoFilesYet
+    val ctaFileNameHint: String get() = StringsA.ctaFileNameHint
+    val ctaFolderNameHint: String get() = StringsA.ctaFolderNameHint
+    val ctaConfirmDelete: String get() = StringsA.ctaConfirmDelete
+    val ctaFileReadFailed: String get() = StringsA.ctaFileReadFailed
     val ctaSelectProjectZip: String get() = StringsA.ctaSelectProjectZip
     val ctaDetectedRuntime: String get() = StringsA.ctaDetectedRuntime
     val ctaRuntimeSettings: String get() = StringsA.ctaRuntimeSettings

@@ -1494,6 +1494,149 @@ object StringsA {
         AppLanguage.KOREAN -> "프레임워크 감지됨"
     }
 
+    val ctaUploadCode: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "上传代码"
+        AppLanguage.ENGLISH -> "Upload Code"
+        AppLanguage.ARABIC -> "رفع الكود"
+        AppLanguage.PORTUGUESE -> "Enviar Código"
+        AppLanguage.SPANISH -> "Subir Código"
+        AppLanguage.FRENCH -> "Téléverser le code"
+        AppLanguage.GERMAN -> "Code hochladen"
+        AppLanguage.RUSSIAN -> "Загрузить код"
+        AppLanguage.JAPANESE -> "コードをアップロード"
+        AppLanguage.KOREAN -> "코드 업로드"
+    }
+
+    val ctaImportSingleFile: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "导入单个文件"
+        AppLanguage.ENGLISH -> "Import Single File"
+        AppLanguage.ARABIC -> "استيراد ملف واحد"
+        AppLanguage.PORTUGUESE -> "Importar Arquivo Único"
+        AppLanguage.SPANISH -> "Importar Archivo Único"
+        AppLanguage.FRENCH -> "Importer un fichier"
+        AppLanguage.GERMAN -> "Einzelne Datei importieren"
+        AppLanguage.RUSSIAN -> "Импортировать один файл"
+        AppLanguage.JAPANESE -> "単一ファイルをインポート"
+        AppLanguage.KOREAN -> "단일 파일 가져오기"
+    }
+
+    val ctaNewFile: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "新建文件"
+        AppLanguage.ENGLISH -> "New File"
+        AppLanguage.ARABIC -> "ملف جديد"
+        AppLanguage.PORTUGUESE -> "Novo Arquivo"
+        AppLanguage.SPANISH -> "Nuevo Archivo"
+        AppLanguage.FRENCH -> "Nouveau fichier"
+        AppLanguage.GERMAN -> "Neue Datei"
+        AppLanguage.RUSSIAN -> "Новый файл"
+        AppLanguage.JAPANESE -> "新しいファイル"
+        AppLanguage.KOREAN -> "새 파일"
+    }
+
+    val ctaNewFolder: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "新建目录"
+        AppLanguage.ENGLISH -> "New Folder"
+        AppLanguage.ARABIC -> "مجلد جديد"
+        AppLanguage.PORTUGUESE -> "Nova Pasta"
+        AppLanguage.SPANISH -> "Nueva Carpeta"
+        AppLanguage.FRENCH -> "Nouveau dossier"
+        AppLanguage.GERMAN -> "Neuer Ordner"
+        AppLanguage.RUSSIAN -> "Новая папка"
+        AppLanguage.JAPANESE -> "新しいフォルダ"
+        AppLanguage.KOREAN -> "새 폴더"
+    }
+
+    val ctaSourceFiles: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "源码文件"
+        AppLanguage.ENGLISH -> "Source Files"
+        AppLanguage.ARABIC -> "ملفات المصدر"
+        AppLanguage.PORTUGUESE -> "Arquivos-fonte"
+        AppLanguage.SPANISH -> "Archivos Fuente"
+        AppLanguage.FRENCH -> "Fichiers source"
+        AppLanguage.GERMAN -> "Quelldateien"
+        AppLanguage.RUSSIAN -> "Исходные файлы"
+        AppLanguage.JAPANESE -> "ソースファイル"
+        AppLanguage.KOREAN -> "소스 파일"
+    }
+
+    val ctaFilesCount: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "个文件"
+        AppLanguage.ENGLISH -> "files"
+        AppLanguage.ARABIC -> "ملفات"
+        AppLanguage.PORTUGUESE -> "arquivos"
+        AppLanguage.SPANISH -> "archivos"
+        AppLanguage.FRENCH -> "fichiers"
+        AppLanguage.GERMAN -> "Dateien"
+        AppLanguage.RUSSIAN -> "файлов"
+        AppLanguage.JAPANESE -> "ファイル"
+        AppLanguage.KOREAN -> "개 파일"
+    }
+
+    val ctaNoFilesYet: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "还没有文件，先上传或新建一个吧"
+        AppLanguage.ENGLISH -> "No files yet — upload one or create a new file"
+        AppLanguage.ARABIC -> "لا توجد ملفات بعد"
+        AppLanguage.PORTUGUESE -> "Ainda sem arquivos"
+        AppLanguage.SPANISH -> "Aún no hay archivos"
+        AppLanguage.FRENCH -> "Aucun fichier pour l'instant"
+        AppLanguage.GERMAN -> "Noch keine Dateien"
+        AppLanguage.RUSSIAN -> "Файлов пока нет"
+        AppLanguage.JAPANESE -> "ファイルはまだありません"
+        AppLanguage.KOREAN -> "파일이 아직 없습니다"
+    }
+
+    val ctaFileNameHint: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "文件名，例如 index.html"
+        AppLanguage.ENGLISH -> "File name, e.g. index.html"
+        AppLanguage.ARABIC -> "اسم الملف"
+        AppLanguage.PORTUGUESE -> "Nome do arquivo"
+        AppLanguage.SPANISH -> "Nombre del archivo"
+        AppLanguage.FRENCH -> "Nom du fichier"
+        AppLanguage.GERMAN -> "Dateiname"
+        AppLanguage.RUSSIAN -> "Имя файла"
+        AppLanguage.JAPANESE -> "ファイル名"
+        AppLanguage.KOREAN -> "파일 이름"
+    }
+
+    val ctaFolderNameHint: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "目录名，例如 src"
+        AppLanguage.ENGLISH -> "Folder name, e.g. src"
+        AppLanguage.ARABIC -> "اسم المجلد"
+        AppLanguage.PORTUGUESE -> "Nome da pasta"
+        AppLanguage.SPANISH -> "Nombre de la carpeta"
+        AppLanguage.FRENCH -> "Nom du dossier"
+        AppLanguage.GERMAN -> "Ordnername"
+        AppLanguage.RUSSIAN -> "Имя папки"
+        AppLanguage.JAPANESE -> "フォルダ名"
+        AppLanguage.KOREAN -> "폴더 이름"
+    }
+
+    val ctaConfirmDelete: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "确定删除？"
+        AppLanguage.ENGLISH -> "Delete this item?"
+        AppLanguage.ARABIC -> "تأكيد الحذف"
+        AppLanguage.PORTUGUESE -> "Confirmar exclusão"
+        AppLanguage.SPANISH -> "¿Eliminar?"
+        AppLanguage.FRENCH -> "Confirmer la suppression"
+        AppLanguage.GERMAN -> "Löschen bestätigen?"
+        AppLanguage.RUSSIAN -> "Удалить?"
+        AppLanguage.JAPANESE -> "削除しますか?"
+        AppLanguage.KOREAN -> "삭제하시겠습니까?"
+    }
+
+    val ctaFileReadFailed: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "读取文件失败（可能是二进制文件或权限不足）"
+        AppLanguage.ENGLISH -> "Failed to read the file (binary or permission denied)"
+        AppLanguage.ARABIC -> "فشل قراءة الملف"
+        AppLanguage.PORTUGUESE -> "Falha ao ler o arquivo"
+        AppLanguage.SPANISH -> "Error al leer el archivo"
+        AppLanguage.FRENCH -> "Échec de lecture du fichier"
+        AppLanguage.GERMAN -> "Datei konnte nicht gelesen werden"
+        AppLanguage.RUSSIAN -> "Не удалось прочитать файл"
+        AppLanguage.JAPANESE -> "ファイルの読み取りに失敗"
+        AppLanguage.KOREAN -> "파일을 읽을 수 없습니다"
+    }
+
     val ctaSelectProjectZip: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "选择项目 ZIP"
         AppLanguage.ENGLISH -> "Select Project ZIP"
