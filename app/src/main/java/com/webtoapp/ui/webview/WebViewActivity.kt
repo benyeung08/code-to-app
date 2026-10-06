@@ -3075,9 +3075,58 @@ fun WebViewScreen(
                 val firstSite = app.multiWebConfig?.sites?.firstOrNull { it.enabled && (it.url.isNotBlank() || it.localFilePath.isNotBlank()) }
                 (firstSite?.getEffectiveUrl() ?: "about:blank") to null
             }
-            app?.appType == com.webtoapp.data.model.AppType.HTML ||
-            app?.appType == com.webtoapp.data.model.AppType.FRONTEND ||
             app?.appType == AppType.CODETOAPP -> {
+                // 独立分支：CodeToApp 的配置存放在 codeToAppConfig，而不是
+                // htmlConfig。若沿用 HTML/FRONTEND 分支，读到的 htmlConfig 恒为
+                // null，目录会退化成 filesDir/html_projects/（空 projectId），
+                // 必然不存在，直接导致打开白屏。
+                val codeCfg = app.codeToAppConfig
+                val codeDir = com.webtoapp.core.codetoapp.CodeToAppRuntimeDetector
+                    .resolveSourceDir(codeCfg, context.filesDir)
+
+                AppLogger.d("WebViewActivity", "========== CodeToApp Debug Info ==========")
+                AppLogger.d("WebViewActivity", "projectId: '${codeCfg?.projectId}'")
+                AppLogger.d("WebViewActivity", "sourcePath: '${codeCfg?.sourcePath}'")
+                AppLogger.d("WebViewActivity", "detectedRuntime: '${codeCfg?.detectedRuntime}'")
+                AppLogger.d("WebViewActivity", "resolvedDir: ${codeDir?.absolutePath}")
+                AppLogger.d("WebViewActivity", "==========================================")
+
+                if (codeDir == null) {
+                    AppLogger.w(
+                        "WebViewActivity",
+                        "CodeToApp source dir missing: sourcePath='${codeCfg?.sourcePath}', projectId='${codeCfg?.projectId}'"
+                    )
+                    "" to Strings.dirNotExists
+                } else {
+                    val entryFile = com.webtoapp.core.codetoapp.CodeToAppRuntimeDetector
+                        .resolveEntryFile(codeDir, codeCfg)
+                    try {
+                        val enableLocalIsolation = app.webViewConfig.enableCrossOriginIsolation ||
+                            LocalHttpServer.shouldEnableCrossOriginIsolation(codeDir)
+                        val owner = codeCfg?.projectId?.takeIf { it.isNotBlank() } ?: "codetoapp-${app.id}"
+                        val baseUrl = localHttpServer.start(
+                            rootDir = codeDir,
+                            enableCrossOriginIsolation = enableLocalIsolation,
+                            owner = owner,
+                            conflictPolicy = PortManager.ConflictPolicy.fromName(codeCfg?.portConflictMode?.name),
+                            preferredPort = codeCfg?.serverPort?.takeIf { it > 0 }
+                                ?: LocalHttpServer.stablePortForPackageName("codetoapp:$owner")
+                        )
+                        val targetUrl = "$baseUrl/${Uri.encode(entryFile, "/")}"
+                        AppLogger.d("WebViewActivity", "CodeToApp target URL: $targetUrl")
+                        targetUrl to null
+                    } catch (e: Exception) {
+                        AppLogger.e("WebViewActivity", "CodeToApp failed to start local server", e)
+                        val msg = when (e) {
+                            is PortConflictException -> "${Strings.portConflictTitle}: ${e.port}"
+                            else -> e.message ?: Strings.serverStartFailed
+                        }
+                        "" to msg
+                    }
+                }
+            }
+            app?.appType == com.webtoapp.data.model.AppType.HTML ||
+            app?.appType == com.webtoapp.data.model.AppType.FRONTEND -> {
 
                 val projectId = app.htmlConfig?.projectId ?: ""
                 val entryFile = app.htmlConfig?.getValidEntryFile() ?: "index.html"
