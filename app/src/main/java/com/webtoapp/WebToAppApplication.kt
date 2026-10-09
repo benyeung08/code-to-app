@@ -132,6 +132,14 @@ class WebToAppApplication : Application(), ImageLoaderFactory {
     override fun onLowMemory() {
         super.onLowMemory()
         AppLogger.w("WebToAppApplication", "onLowMemory triggered")
+        // [内存] 系统即将杀进程前的最后通牒：先释放预热用的 WebView 池。
+        // 池上限只有 2 个（MAX_POOL_SIZE），平时保留以保证切回来快；
+        // 但真的内存告急时必须让出，否则就是「后台被杀」。
+        // onLowMemory 只在极端情况触发，不会抵消平时的预热效果。
+        runCatching {
+            com.webtoapp.core.webview.WebViewPool.release()
+            AppLogger.i("WebToAppApplication", "WebView pool released on low memory")
+        }
         clearAppCaches()
     }
 
