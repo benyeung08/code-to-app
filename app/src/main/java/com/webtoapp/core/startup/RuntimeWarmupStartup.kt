@@ -8,6 +8,14 @@ class RuntimeWarmupStartup(
 ) {
 
     fun initialize(appScope: CoroutineScope) {
+        // [性能] 预热 WebView 池。
+        // 此前 WebViewPool.prewarm() 在全仓库从未被调用过 —— 只有 shutdown() 里
+        // 调了 WebViewPool.release()。于是池恒为空，每次点开一个 App 都要在主线程
+        // 冷创建 WebView（首次还要初始化 WebView 引擎），这是「打开网页慢」的主要来源。
+        // prewarm() 内部：mainHandler.post 异步、try/catch 兜底、isPrewarmed 幂等，
+        // 因此在这里调用既不会拖慢启动，重复调用也安全，失败只记日志。
+        runCatching { com.webtoapp.core.webview.WebViewPool.prewarm(appContext) }
+
         appScope.launch {
             com.webtoapp.core.perf.SystemPerfOptimizer.initSystem(appContext)
             com.webtoapp.core.perf.SystemPerfOptimizer.readaheadCriticalFiles(appContext)
