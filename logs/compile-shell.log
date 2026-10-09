@@ -130,94 +130,22 @@ generateShellStrings: facade 818/5191 members, splits 813/5188 members, toplevel
 > Task :shell:mergeDebugResources
 > Task :shell:processDebugResources
 > Task :shell:compileDebugKotlin
-w: file:///home/runner/work/code-to-app/code-to-app/shell/build/generated/shellRuntimeSrc/com/webtoapp/core/engine/GeckoViewEngine.kt:1672:33 Condition is always 'true'.
-w: file:///home/runner/work/code-to-app/code-to-app/shell/build/generated/shellRuntimeSrc/com/webtoapp/core/engine/SystemWebViewEngine.kt:40:56 The corresponding parameter in the supertype 'WebViewCallbacks' is named 'callback'. This may cause problems when calling this function with named arguments.
-w: file:///home/runner/work/code-to-app/code-to-app/shell/build/generated/shellRuntimeSrc/com/webtoapp/core/engine/SystemWebViewEngine.kt:46:67 The corresponding parameter in the supertype 'WebViewCallbacks' is named 'callback'. This may cause problems when calling this function with named arguments.
-w: file:///home/runner/work/code-to-app/code-to-app/shell/build/generated/shellRuntimeSrc/com/webtoapp/core/extension/ChromeExtensionRuntime.kt:54:17 'var databaseEnabled: Boolean' is deprecated. Deprecated in Java.
-w: file:///home/runner/work/code-to-app/code-to-app/shell/build/generated/shellRuntimeSrc/com/webtoapp/core/extension/ExtensionPopupManager.kt:30:17 'var databaseEnabled: Boolean' is deprecated. Deprecated in Java.
-w: file:///home/runner/work/code-to-app/code-to-app/shell/build/generated/shellRuntimeSrc/com/webtoapp/core/floatingwindow/FloatingWindowManager.kt:195:56 'static field SOFT_INPUT_ADJUST_RESIZE: Int' is deprecated. Deprecated in Java.
-w: file:///home/runner/work/code-to-app/code-to-app/shell/build/generated/shellRuntimeSrc/com/webtoapp/core/floatingwindow/FloatingWindowService.kt:487:14 'fun addAction(p0: Int, p1: CharSequence!, p2: PendingIntent!): Notification.Builder!' is deprecated. Deprecated in Java.
-w: file:///home/runner/work/code-to-app/code-to-app/shell/build/generated/shellRuntimeSrc/com/webtoapp/core/golang/GoToolchainManager.kt:397:29 'val nextTarEntry: TarArchiveEntry!' is deprecated. Deprecated in Java.
-w: file:///home/runner/work/code-to-app/code-to-app/shell/build/generated/shellRuntimeSrc/com/webtoapp/core/golang/GoToolchainManager.kt:405:33 'val nextTarEntry: TarArchiveEntry!' is deprecated. Deprecated in Java.
-w: file:///home/runner/work/code-to-app/code-to-app/shell/build/generated/shellRuntimeSrc/com/webtoapp/core/golang/GoToolchainManager.kt:410:33 'val nextTarEntry: TarArchiveEntry!' is deprecated. Deprecated in Java.
-w: file:///home/runner/work/code-to-app/code-to-app/shell/build/generated/shellRuntimeSrc/com/webtoapp/core/golang/GoToolchainManager.kt:415:33 'val nextTarEntry: TarArchiveEntry!' is deprecated. Deprecated in Java.
-w: file:///home/runner/work/code-to-app/code-to-app/shell/build/generated/shellRuntimeSrc/com/webtoapp/core/golang/GoToolchainManager.kt:452:29 'val nextTarEntry: TarArchiveEntry!' is deprecated. Deprecated in Java.
-w: file:///home/runner/work/code-to-app/code-to-app/shell/build/generated/shellRuntimeSrc/com/webtoapp/core/i18n/LanguageManager.kt:24:39 'constructor(p0: String!): Locale' is deprecated. Deprecated in Java.
-w: file:///home/runner/work/code-to-app/code-to-app/shell/build/generated/shellRuntimeSrc/com/webtoapp/core/i18n/LanguageManager.kt:25:49 'constructor(p0: String!): Locale' is deprecated. Deprecated in Java.
-w: file:///home/runner/work/code-to-app/code-to-app/shell/build/generated/shellRuntimeSrc/com/webtoapp/core/i18n/LanguageManager.kt:26:41 'constructor(p0: String!): Locale' is deprecated. Deprecated in Java.
-w: file:///home/runner/work/code-to-app/code-to-app/shell/build/generated/shellRuntimeSrc/com/webtoapp/core/i18n/LanguageManager.kt:27:40 'constructor(p0: String!): Locale' is deprecated. Deprecated in Java.
-w: file:///home/runner/work/code-to-app/code-to-app/shell/build/generated/shellRuntimeSrc/com/webtoapp/core/i18n/LanguageManager.kt:28:39 'constructor(p0: String!): Locale' is deprecated. Deprecated in Java.
-w: file:///home/runner/work/code-to-app/code-to-app/shell/build/generated/shellRuntimeSrc/com/webtoapp/core/i18n/LanguageManager.kt:29:41 'constructor(p0: String!): Locale' is deprecated. Deprecated in Java.
-w: file:///home/runner/work/code-to-app/code-to-app/shell/build/generated/shellRuntimeSrc/com/webtoapp/core/kernel/BrowserIdentity.kt:152:27 Condition is always 'true'.
-w: file:///home/runner/work/code-to-app/code-to-app/shell/build/generated/shellRuntimeSrc/com/webtoapp/core/kernel/BrowserIdentity.kt:176:45 Condition is always 'true'.
-w: file:///home/runner/work/code-to-app/code-to-app/shell/build/generated/shellRuntimeSrc/com/webtoapp/core/linux/LocalBuildEnvironment.kt:853:33 'val nextTarEntry: TarArchiveEntry!' is deprecated. Deprecated in Java.
-w: file:///home/runner/work/code-to-app/code-to-app/shell/build/generated/shellRuntimeSrc/com/webtoapp/core/linux/LocalBuildEnvironment.kt:858:37 'val nextTarEntry: TarArchiveEntry!' is deprecated. Deprecated in Java.
-w: file:///home/runner/work/code-to-app/code-to-app/shell/build/generated/shellRuntimeSrc/com/webtoapp/core/linux/LocalBuildEnvironment.kt:870:33 'val nextTarEntry: TarArchiveEntry!' is deprecated. Deprecated in Java.
-w: file:///home/runner/work/code-to-app/code-to-app/shell/build/generated/shellRuntimeSrc/com/webtoapp/core/linux/NativeNodeEngine.kt:135:33 'val nextTarEntry: TarArchiveEntry!' is deprecated. Deprecated in Java.
-w: file:///home/runner/work/code-to-app/code-to-app/shell/build/generated/shellRuntimeSrc/com/webtoapp/core/linux/NativeNodeEngine.kt:143:33 'val nextTarEntry: TarArchiveEntry!' is deprecated. Deprecated in Java.
-w: file:///home/runner/work/code-to-app/code-to-app/shell/build/generated/shellRuntimeSrc/com/webtoapp/core/logging/AppLogger.kt:445:69 'val id: Long' is deprecated. Deprecated in Java.
-w: file:///home/runner/work/code-to-app/code-to-app/shell/build/generated/shellRuntimeSrc/com/webtoapp/core/port/WtaAppPortDiscovery.kt:78:31 'fun get(p0: String!): Any?' is deprecated. Deprecated in Java.
-w: file:///home/runner/work/code-to-app/code-to-app/shell/build/generated/shellRuntimeSrc/com/webtoapp/core/port/WtaAppPortDiscovery.kt:185:31 'fun get(p0: String!): Any?' is deprecated. Deprecated in Java.
-w: file:///home/runner/work/code-to-app/code-to-app/shell/build/generated/shellRuntimeSrc/com/webtoapp/core/webview/CronetForwarder.kt:12:8 'class UploadDataProviders : Any' is deprecated. Deprecated in Java.
-w: file:///home/runner/work/code-to-app/code-to-app/shell/build/generated/shellRuntimeSrc/com/webtoapp/core/webview/CronetForwarder.kt:338:50 'class UploadDataProviders : Any' is deprecated. Deprecated in Java.
-w: file:///home/runner/work/code-to-app/code-to-app/shell/build/generated/shellRuntimeSrc/com/webtoapp/core/webview/LongPressHandler.kt:146:35 'static field ANCHOR_TYPE: Int' is deprecated. Deprecated in Java.
-w: file:///home/runner/work/code-to-app/code-to-app/shell/build/generated/shellRuntimeSrc/com/webtoapp/core/webview/LongPressHandler.kt:158:29 'val scale: Float' is deprecated. Deprecated in Java.
-w: file:///home/runner/work/code-to-app/code-to-app/shell/build/generated/shellRuntimeSrc/com/webtoapp/core/webview/NativeBridge.kt:936:134 'field versionCode: Int' is deprecated. Deprecated in Java.
-w: file:///home/runner/work/code-to-app/code-to-app/shell/build/generated/shellRuntimeSrc/com/webtoapp/core/webview/WebViewManager.kt:1656:17 'var databaseEnabled: Boolean' is deprecated. Deprecated in Java.
-w: file:///home/runner/work/code-to-app/code-to-app/shell/build/generated/shellRuntimeSrc/com/webtoapp/core/webview/WebViewManager.kt:1789:17 'var allowFileAccessFromFileURLs: Boolean' is deprecated. Deprecated in Java.
-w: file:///home/runner/work/code-to-app/code-to-app/shell/build/generated/shellRuntimeSrc/com/webtoapp/core/webview/WebViewManager.kt:1790:17 'var allowUniversalAccessFromFileURLs: Boolean' is deprecated. Deprecated in Java.
-w: file:///home/runner/work/code-to-app/code-to-app/shell/build/generated/shellRuntimeSrc/com/webtoapp/core/webview/WebViewManager.kt:2637:21 Condition is always 'true'.
-w: file:///home/runner/work/code-to-app/code-to-app/shell/build/generated/shellRuntimeSrc/com/webtoapp/core/webview/WebViewManager.kt:2644:21 Condition is always 'true'.
-w: file:///home/runner/work/code-to-app/code-to-app/shell/build/generated/shellRuntimeSrc/com/webtoapp/core/webview/WebViewManager.kt:2659:44 Condition is always 'true'.
-w: file:///home/runner/work/code-to-app/code-to-app/shell/build/generated/shellRuntimeSrc/com/webtoapp/core/webview/WebViewManager.kt:3127:44 'fun getHttpAuthUsernamePassword(p0: String!, p1: String!): Array<(out) String!>?' is deprecated. Deprecated in Java.
-w: file:///home/runner/work/code-to-app/code-to-app/shell/build/generated/shellRuntimeSrc/com/webtoapp/core/webview/WebViewManager.kt:3208:34 'fun setHttpAuthUsernamePassword(p0: String!, p1: String!, p2: String!, p3: String!): Unit' is deprecated. Deprecated in Java.
-w: file:///home/runner/work/code-to-app/code-to-app/shell/build/generated/shellRuntimeSrc/com/webtoapp/core/webview/WebViewMemoryTrimmer.kt:35:38 'static field TRIM_MEMORY_COMPLETE: Int' is deprecated. Deprecated in Java.
-w: file:///home/runner/work/code-to-app/code-to-app/shell/build/generated/shellRuntimeSrc/com/webtoapp/core/webview/WebViewMemoryTrimmer.kt:38:38 'static field TRIM_MEMORY_RUNNING_LOW: Int' is deprecated. Deprecated in Java.
-w: file:///home/runner/work/code-to-app/code-to-app/shell/build/generated/shellRuntimeSrc/com/webtoapp/core/webview/WebViewPool.kt:135:13 'var databaseEnabled: Boolean' is deprecated. Deprecated in Java.
-w: file:///home/runner/work/code-to-app/code-to-app/shell/build/generated/shellRuntimeSrc/com/webtoapp/ui/shared/WindowHelper.kt:47:33 'var statusBarColor: Int' is deprecated. Deprecated in Java.
-w: file:///home/runner/work/code-to-app/code-to-app/shell/build/generated/shellRuntimeSrc/com/webtoapp/ui/shared/WindowHelper.kt:57:33 'var statusBarColor: Int' is deprecated. Deprecated in Java.
-w: file:///home/runner/work/code-to-app/code-to-app/shell/build/generated/shellRuntimeSrc/com/webtoapp/ui/shared/WindowHelper.kt:64:37 'var statusBarColor: Int' is deprecated. Deprecated in Java.
-w: file:///home/runner/work/code-to-app/code-to-app/shell/build/generated/shellRuntimeSrc/com/webtoapp/ui/shared/WindowHelper.kt:68:37 'var statusBarColor: Int' is deprecated. Deprecated in Java.
-w: file:///home/runner/work/code-to-app/code-to-app/shell/build/generated/shellRuntimeSrc/com/webtoapp/ui/shared/WindowHelper.kt:141:73 'static field FLAG_FULLSCREEN: Int' is deprecated. Deprecated in Java.
-w: file:///home/runner/work/code-to-app/code-to-app/shell/build/generated/shellRuntimeSrc/com/webtoapp/ui/shared/WindowHelper.kt:143:75 'static field FLAG_FULLSCREEN: Int' is deprecated. Deprecated in Java.
-w: file:///home/runner/work/code-to-app/code-to-app/shell/build/generated/shellRuntimeSrc/com/webtoapp/ui/shared/WindowHelper.kt:148:41 'var navigationBarColor: Int' is deprecated. Deprecated in Java.
-w: file:///home/runner/work/code-to-app/code-to-app/shell/build/generated/shellRuntimeSrc/com/webtoapp/ui/shared/WindowHelper.kt:158:45 'var statusBarColor: Int' is deprecated. Deprecated in Java.
-w: file:///home/runner/work/code-to-app/code-to-app/shell/build/generated/shellRuntimeSrc/com/webtoapp/ui/shared/WindowHelper.kt:169:53 'var statusBarColor: Int' is deprecated. Deprecated in Java.
-w: file:///home/runner/work/code-to-app/code-to-app/shell/build/generated/shellRuntimeSrc/com/webtoapp/ui/shared/WindowHelper.kt:174:53 'var statusBarColor: Int' is deprecated. Deprecated in Java.
-w: file:///home/runner/work/code-to-app/code-to-app/shell/build/generated/shellRuntimeSrc/com/webtoapp/ui/shared/WindowHelper.kt:180:57 'var statusBarColor: Int' is deprecated. Deprecated in Java.
-w: file:///home/runner/work/code-to-app/code-to-app/shell/build/generated/shellRuntimeSrc/com/webtoapp/ui/shared/WindowHelper.kt:183:57 'var statusBarColor: Int' is deprecated. Deprecated in Java.
-w: file:///home/runner/work/code-to-app/code-to-app/shell/build/generated/shellRuntimeSrc/com/webtoapp/ui/shared/WindowHelper.kt:192:41 'var statusBarColor: Int' is deprecated. Deprecated in Java.
-w: file:///home/runner/work/code-to-app/code-to-app/shell/build/generated/shellRuntimeSrc/com/webtoapp/ui/shared/WindowHelper.kt:226:41 'var navigationBarColor: Int' is deprecated. Deprecated in Java.
-w: file:///home/runner/work/code-to-app/code-to-app/shell/build/generated/shellRuntimeSrc/com/webtoapp/ui/shared/WindowHelper.kt:230:41 'var statusBarColor: Int' is deprecated. Deprecated in Java.
-w: file:///home/runner/work/code-to-app/code-to-app/shell/build/generated/shellRuntimeSrc/com/webtoapp/ui/shared/WindowHelper.kt:242:49 'var statusBarColor: Int' is deprecated. Deprecated in Java.
-w: file:///home/runner/work/code-to-app/code-to-app/shell/build/generated/shellRuntimeSrc/com/webtoapp/ui/shared/WindowHelper.kt:248:49 'var statusBarColor: Int' is deprecated. Deprecated in Java.
-w: file:///home/runner/work/code-to-app/code-to-app/shell/build/generated/shellRuntimeSrc/com/webtoapp/ui/shared/WindowHelper.kt:271:37 'var navigationBarColor: Int' is deprecated. Deprecated in Java.
-w: file:///home/runner/work/code-to-app/code-to-app/shell/build/generated/shellRuntimeSrc/com/webtoapp/ui/shared/WindowHelper.kt:271:74 'var statusBarColor: Int' is deprecated. Deprecated in Java.
-w: file:///home/runner/work/code-to-app/code-to-app/shell/build/generated/shellRuntimeSrc/com/webtoapp/ui/shared/WindowHelper.kt:332:79 'static field SOFT_INPUT_ADJUST_RESIZE: Int' is deprecated. Deprecated in Java.
-w: file:///home/runner/work/code-to-app/code-to-app/shell/build/generated/shellRuntimeSrc/com/webtoapp/ui/shell/ConsolePanel.kt:52:28 'val LocalClipboardManager: ProvidableCompositionLocal<ClipboardManager>' is deprecated. Use LocalClipboard instead which supports suspend functions.
-w: file:///home/runner/work/code-to-app/code-to-app/shell/build/generated/shellRuntimeSrc/com/webtoapp/ui/shell/ShellActivity.kt:254:16 Check for instance is always 'true'.
-w: file:///home/runner/work/code-to-app/code-to-app/shell/build/generated/shellRuntimeSrc/com/webtoapp/ui/shell/ShellActivity.kt:1229:58 'static field TRIM_MEMORY_RUNNING_LOW: Int' is deprecated. Deprecated in Java.
-w: file:///home/runner/work/code-to-app/code-to-app/shell/build/generated/shellRuntimeSrc/com/webtoapp/ui/shell/ShellPermissionDelegate.kt:512:9 'var onFileChooserResult: ((Array<Uri>) -> Unit)?' is deprecated. Use handleFileChooser() instead.
-w: file:///home/runner/work/code-to-app/code-to-app/shell/build/generated/shellRuntimeSrc/com/webtoapp/ui/shell/ShellScreen.kt:431:55 'val LocalLifecycleOwner: ProvidableCompositionLocal<LifecycleOwner>' is deprecated. Moved to lifecycle-runtime-compose library in androidx.lifecycle.compose package.
-w: file:///home/runner/work/code-to-app/code-to-app/shell/build/generated/shellRuntimeSrc/com/webtoapp/ui/shell/ShellStartupPermissions.kt:186:33 'static field PROCESS_OUTGOING_CALLS: String' is deprecated. Deprecated in Java.
-w: file:///home/runner/work/code-to-app/code-to-app/shell/build/generated/shellRuntimeSrc/com/webtoapp/ui/shell/ShellWebViewCallbacks.kt:255:59 'static field ANCHOR_TYPE: Int' is deprecated. Deprecated in Java.
-w: file:///home/runner/work/code-to-app/code-to-app/shell/build/generated/shellRuntimeSrc/com/webtoapp/ui/shell/ShellWebViewCallbacks.kt:285:39 'static field ANCHOR_TYPE: Int' is deprecated. Deprecated in Java.
-w: file:///home/runner/work/code-to-app/code-to-app/shell/build/generated/shellRuntimeSrc/com/webtoapp/util/SvgIconMapper.kt:14:49 'val Icons.Outlined.InsertDriveFile: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Outlined.InsertDriveFile.
-w: file:///home/runner/work/code-to-app/code-to-app/shell/build/generated/shellRuntimeSrc/com/webtoapp/util/SvgIconMapper.kt:15:49 'val Icons.Outlined.Assignment: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Outlined.Assignment.
-w: file:///home/runner/work/code-to-app/code-to-app/shell/build/generated/shellRuntimeSrc/com/webtoapp/util/SvgIconMapper.kt:20:49 'val Icons.Outlined.MenuBook: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Outlined.MenuBook.
-w: file:///home/runner/work/code-to-app/code-to-app/shell/build/generated/shellRuntimeSrc/com/webtoapp/util/SvgIconMapper.kt:52:48 'val Icons.Outlined.Help: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Outlined.Help.
-w: file:///home/runner/work/code-to-app/code-to-app/shell/build/generated/shellRuntimeSrc/com/webtoapp/util/SvgIconMapper.kt:66:49 'val Icons.Outlined.VolumeUp: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Outlined.VolumeUp.
-w: file:///home/runner/work/code-to-app/code-to-app/shell/build/generated/shellRuntimeSrc/com/webtoapp/util/SvgIconMapper.kt:104:49 'val Icons.Outlined.Chat: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Outlined.Chat.
-w: file:///home/runner/work/code-to-app/code-to-app/shell/build/generated/shellRuntimeSrc/com/webtoapp/util/SvgIconMapper.kt:120:32 'val Icons.Outlined.InsertDriveFile: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Outlined.InsertDriveFile.
-w: file:///home/runner/work/code-to-app/code-to-app/shell/build/generated/shellRuntimeSrc/com/webtoapp/util/SvgIconMapper.kt:121:32 'val Icons.Outlined.MenuBook: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Outlined.MenuBook.
-w: file:///home/runner/work/code-to-app/code-to-app/shell/build/generated/shellRuntimeSrc/com/webtoapp/util/SvgIconMapper.kt:130:49 'val Icons.Outlined.List: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Outlined.List.
-w: file:///home/runner/work/code-to-app/code-to-app/shell/build/generated/shellRuntimeSrc/com/webtoapp/util/SvgIconMapper.kt:135:49 'val Icons.Outlined.MenuBook: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Outlined.MenuBook.
-w: file:///home/runner/work/code-to-app/code-to-app/shell/build/generated/shellRuntimeSrc/com/webtoapp/util/SvgIconMapper.kt:151:49 'val Icons.Outlined.HelpOutline: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Outlined.HelpOutline.
-w: file:///home/runner/work/code-to-app/code-to-app/shell/src/main/java-overrides/com/webtoapp/WebToAppApplication.kt:95:33 'static field TRIM_MEMORY_RUNNING_MODERATE: Int' is deprecated. Deprecated in Java.
-w: file:///home/runner/work/code-to-app/code-to-app/shell/src/main/java-overrides/com/webtoapp/WebToAppApplication.kt:96:33 'static field TRIM_MEMORY_RUNNING_LOW: Int' is deprecated. Deprecated in Java.
-w: file:///home/runner/work/code-to-app/code-to-app/shell/src/main/java-overrides/com/webtoapp/WebToAppApplication.kt:97:33 'static field TRIM_MEMORY_RUNNING_CRITICAL: Int' is deprecated. Deprecated in Java.
-w: file:///home/runner/work/code-to-app/code-to-app/shell/src/main/java-overrides/com/webtoapp/WebToAppApplication.kt:100:33 'static field TRIM_MEMORY_MODERATE: Int' is deprecated. Deprecated in Java.
-w: file:///home/runner/work/code-to-app/code-to-app/shell/src/main/java-overrides/com/webtoapp/WebToAppApplication.kt:101:33 'static field TRIM_MEMORY_COMPLETE: Int' is deprecated. Deprecated in Java.
+e: file:///home/runner/work/code-to-app/code-to-app/shell/build/generated/shellRuntimeSrc/com/webtoapp/core/webview/WebViewPool.kt:107:34 Argument type mismatch: actual type is 'WebView', but 'WtaWebView' was expected.
 
-BUILD SUCCESSFUL in 1m 44s
+> Task :shell:compileDebugKotlin FAILED
+
+FAILURE: Build failed with an exception.
+
+* What went wrong:
+Execution failed for task ':shell:compileDebugKotlin'.
+> A failure occurred while executing org.jetbrains.kotlin.compilerRunner.GradleCompilerRunnerWithWorkers$GradleKotlinCompilerWorkAction
+   > Compilation error. See log for more details
+
+* Try:
+> Run with --stacktrace option to get the stack trace.
+> Run with --info or --debug option to get more log output.
+> Run with --scan to get full insights from a Build Scan (powered by Develocity).
+> Get more help at https://help.gradle.org.
+
+BUILD FAILED in 50s
 20 actionable tasks: 18 executed, 2 from cache
