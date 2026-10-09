@@ -171,10 +171,8 @@ To suppress this warning, add android.generateSyncIssueWhenLibraryConstraintsAre
 > Task :app:extractTestDebugProto
 > Task :app:extractTestProto
 > Task :app:extractTestStandardDebugProto
-> Task :app:extractTestStandardProto
-> Task :app:preStandardDebugUnitTestBuild UP-TO-DATE
 > Task :app:javaPreCompileStandardDebug
-> Task :app:javaPreCompileStandardDebugUnitTest FROM-CACHE
+> Task :app:extractTestStandardProto
 
 > Task :app:compileStandardDebugJavaWithJavac
 /home/runner/work/code-to-app/code-to-app/app/build/generated/sources/proto/standardDebug/java/com/android/bundle/Config.java:3472: warning: [dep-ann] deprecated item is not annotated with @Deprecated
@@ -197,6 +195,8 @@ To suppress this warning, add android.generateSyncIssueWhenLibraryConstraintsAre
                  ^
 6 warnings
 
+> Task :app:preStandardDebugUnitTestBuild UP-TO-DATE
+> Task :app:javaPreCompileStandardDebugUnitTest FROM-CACHE
 > Task :app:generateStandardDebugAssets UP-TO-DATE
 > Task :app:bundleStandardDebugClassesToRuntimeJar
 > Task :app:bundleStandardDebugClassesToCompileJar
@@ -208,7 +208,6 @@ To suppress this warning, add android.generateSyncIssueWhenLibraryConstraintsAre
 > Task :app:generateStandardDebugUnitTestConfig
 > Task :app:processStandardDebugJavaRes
 > Task :app:kspStandardDebugUnitTestKotlin
-
 > Task :app:compileStandardDebugUnitTestKotlin
 w: file:///home/runner/work/code-to-app/code-to-app/app/src/test/java/com/webtoapp/core/apkbuilder/ArscPackageGrafterTest.kt:27:9 Only safe (?.) or non-null asserted (!!.) calls are allowed on a nullable receiver of type 'ClassLoader?'.
 w: file:///home/runner/work/code-to-app/code-to-app/app/src/test/java/com/webtoapp/core/apkbuilder/AxmlRebuilderFragmentTest.kt:26:9 Only safe (?.) or non-null asserted (!!.) calls are allowed on a nullable receiver of type 'ClassLoader?'.
@@ -260,5 +259,5 @@ w: file:///home/runner/work/code-to-app/code-to-app/app/src/test/java/com/webtoa
 
 [Incubating] Problems report is available at: file:///home/runner/work/code-to-app/code-to-app/build/reports/problems/problems-report.html
 
-BUILD SUCCESSFUL in 1m 52s
+BUILD SUCCESSFUL in 3m 10s
 70 actionable tasks: 18 executed, 1 from cache, 51 up-to-date
