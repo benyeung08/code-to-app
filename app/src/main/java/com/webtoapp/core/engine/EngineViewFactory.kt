@@ -92,7 +92,12 @@ object EngineViewFactory {
             return BrowserSurface.fromEngine(geckoEngine, view)
         }
 
-        val webView = com.webtoapp.core.webview.WtaWebView(context).apply {
+        // [性能] 改为从预热池取用。
+        // 此前这里每次都直接 new WtaWebView(context)：WebViewPool 定义了预热的
+        // WebView 却没有任何消费点，池恒为空，于是每次打开 App 都要在主线程冷
+        // 创建 WebView（首次还要付一次 WebView 引擎初始化）。
+        // acquireWta 池空时自动退回新建，行为与原来完全一致，失败也只记日志。
+        val webView = com.webtoapp.core.webview.WebViewPool.acquireWta(context).apply {
             layoutParams = ViewGroup.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT,
                 ViewGroup.LayoutParams.MATCH_PARENT
