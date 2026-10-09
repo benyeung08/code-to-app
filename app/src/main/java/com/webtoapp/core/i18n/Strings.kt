@@ -39,13 +39,20 @@ object Strings {
             appContext
         }
         contextVersion.intValue++
+        // 只有当语言真的变了才通知界面。此前 Activity 一重建就 contextVersion++，
+        // 会让整棵 Compose 树里所有字符串读取点全部失效重组。
+        if (_currentLanguage.value != language) {
+            _currentLanguage.value = language
+        }
     }
 
+    // 性能：此前这里会额外读取 contextVersion（一个 mutableIntStateOf），
+    // 于是每个 Strings.xxx 都会同时订阅 contextVersion 与 _currentLanguage 两个 State。
+    // 而 attachContext() 在每次 Activity 重建（旋转/配置变化/语言切换）都会
+    // contextVersion.intValue++，导致所有读过字符串的 composable 全部失效重组。
+    // 语言切换本身由 _currentLanguage 驱动，因此这里只读它即可。
     internal val lang: AppLanguage
-        get() {
-            contextVersion.intValue
-            return _currentLanguage.value
-        }
+        get() = _currentLanguage.value
 
     val appTitle: String get() = StringsA.appTitle
     val translationInProgressBadge: String get() = StringsA.translationInProgressBadge
