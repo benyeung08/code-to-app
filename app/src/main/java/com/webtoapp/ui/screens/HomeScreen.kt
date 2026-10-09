@@ -453,7 +453,7 @@ fun HomeScreen(
                         try { org.koin.java.KoinJavaComponent.get(com.webtoapp.core.stats.AppHealthMonitor::class.java) }
                         catch (e: Exception) { null }
                     }
-                    val healthRecordsState = healthMonitor?.allHealthRecords?.collectAsState(initial = emptyList<com.webtoapp.core.stats.AppHealthRecord>())
+                    val healthRecordsState = healthMonitor?.allHealthRecords?.collectAsStateWithLifecycle(initialValue = emptyList<com.webtoapp.core.stats.AppHealthRecord>())
                     val healthRecords: List<com.webtoapp.core.stats.AppHealthRecord> = healthRecordsState?.value ?: emptyList()
                     val healthMap = remember(healthRecords) { healthRecords.associateBy { it.appId } }
 
