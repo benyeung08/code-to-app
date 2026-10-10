@@ -73,7 +73,8 @@ object UpdateChecker {
     }
 
     /**
-     * Semantic version with optional pre-release suffix (e.g. `1.0.0-beta1`).
+     * Semantic version with optional pre-release suffix (e.g. `1.0.0-beta1`)
+     * and an optional fourth build segment (e.g. `1.0.4.1`).
      *
      * 旧实现会把第一个 `-` 之后的内容全部丢掉，于是 `v1.0.0-beta1` 被压成 `1.0.0`：
      * 界面显示成 "v1.0.0"、和正式版撞名、并且两条都会被打上「当前版本」标签。
@@ -83,15 +84,22 @@ object UpdateChecker {
         val major: Int,
         val minor: Int,
         val patch: Int,
-        val pre: String = ""
+        val pre: String = "",
+        // 第四段（如 1.0.4.1 的末位 .1）。旧版本只有三段，默认 0 以免破坏既有
+        // Version(major, minor, patch, pre) 这类按位置构造的调用。
+        val build: Int = 0
     ) : Comparable<Version> {
         override fun toString(): String =
-            "$major.$minor.$patch" + if (pre.isNotBlank()) "-$pre" else ""
+            "$major.$minor.$patch" +
+                (if (build > 0) ".$build" else "") +
+                if (pre.isNotBlank()) "-$pre" else ""
 
         override fun compareTo(other: Version): Int {
             if (major != other.major) return major - other.major
             if (minor != other.minor) return minor - other.minor
             if (patch != other.patch) return patch - other.patch
+            // 四段版本号：1.0.4.1 > 1.0.4（后者 build 为 0）
+            if (build != other.build) return build - other.build
             if (pre == other.pre) return 0
             // 同一核心版本下，正式版永远排在任何预发布版之上。
             if (pre.isBlank()) return 1
@@ -123,7 +131,8 @@ object UpdateChecker {
                 val major = parts.getOrNull(0)?.toIntOrNull() ?: return null
                 val minor = parts.getOrNull(1)?.toIntOrNull() ?: 0
                 val patch = parts.getOrNull(2)?.toIntOrNull() ?: 0
-                return Version(major, minor, patch, pre)
+                val build = parts.getOrNull(3)?.toIntOrNull() ?: 0
+                return Version(major, minor, patch, pre, build)
             }
         }
     }
