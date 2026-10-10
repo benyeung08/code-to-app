@@ -126,8 +126,8 @@ generateShellStrings: facade 818/5191 members, splits 813/5188 members, toplevel
 > Task :shell:parseDebugLocalResources
 > Task :shell:processDebugMainManifest
 > Task :shell:processDebugManifest
-> Task :shell:processDebugManifestForPackage
 > Task :shell:mergeDebugResources
+> Task :shell:processDebugManifestForPackage
 > Task :shell:processDebugResources
 > Task :shell:compileDebugKotlin
 w: file:///home/runner/work/code-to-app/code-to-app/shell/build/generated/shellRuntimeSrc/com/webtoapp/core/engine/GeckoViewEngine.kt:1672:33 Condition is always 'true'.
@@ -219,5 +219,5 @@ w: file:///home/runner/work/code-to-app/code-to-app/shell/src/main/java-override
 w: file:///home/runner/work/code-to-app/code-to-app/shell/src/main/java-overrides/com/webtoapp/WebToAppApplication.kt:100:33 'static field TRIM_MEMORY_MODERATE: Int' is deprecated. Deprecated in Java.
 w: file:///home/runner/work/code-to-app/code-to-app/shell/src/main/java-overrides/com/webtoapp/WebToAppApplication.kt:101:33 'static field TRIM_MEMORY_COMPLETE: Int' is deprecated. Deprecated in Java.
 
-BUILD SUCCESSFUL in 1m 13s
+BUILD SUCCESSFUL in 1m 51s
 20 actionable tasks: 18 executed, 2 from cache
