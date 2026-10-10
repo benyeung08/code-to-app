@@ -142,8 +142,8 @@ To suppress this warning, add android.generateSyncIssueWhenLibraryConstraintsAre
 
 > Task :clone-host:preBuild UP-TO-DATE
 > Task :app:checkKotlinGradlePluginConfigurationErrors SKIPPED
-> Task :app:protobufDummy UP-TO-DATE
 > Task :clone-host:preReleaseBuild UP-TO-DATE
+> Task :app:protobufDummy UP-TO-DATE
 > Task :app:extractDebugProto
 > Task :clone-host:checkReleaseAarMetadata
 > Task :clone-host:mergeReleaseJniLibFolders
@@ -221,5 +221,5 @@ Execution failed for task ':app:compileStandardDebugKotlin'.
 > Run with --scan to get full insights from a Build Scan (powered by Develocity).
 > Get more help at https://help.gradle.org.
 
-BUILD FAILED in 3m 18s
+BUILD FAILED in 3m 39s
 51 actionable tasks: 50 executed, 1 from cache
