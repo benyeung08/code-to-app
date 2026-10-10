@@ -106,7 +106,21 @@ target_link_libraries(
     ${dl-lib}
 )
 
+# ★ 关键修复：让 CMake 输出 libnode_launcher.so
+#
+# AGP 只会把 `**/*.so` 打包进 APK 的 lib/<abi>/。node_launcher 是
+# add_executable（可执行档，不是 shared library），默认输出名为 `node_launcher`
+# —— 没有 lib 前缀、没有 .so 后缀 —— AGP 的 .so 过滤器会直接跳过它。
+# 结果：运行时 context.applicationInfo.nativeLibraryDir 下永远找不到
+# libnode_launcher.so，LocalBuildEnvironment.ensureNodeLauncher() 就会抛
+# 「node 启动器未随 APK 打包」。
+#
+# 加上 PREFIX/SUFFIX 后，CMake 输出 libnode_launcher.so。它实质仍然是
+# PIE 可执行档（可以被 exec），只是名字符合 AGP 的打包规则，因此会被
+# 一并打进 lib/<abi>/ 并带可执行权限。
 set_target_properties(node_launcher PROPERTIES
+    PREFIX "lib"
+    SUFFIX ".so"
     LINK_FLAGS "-Wl,--gc-sections -Wl,-z,max-page-size=16384"
 )
 
@@ -119,7 +133,12 @@ target_compile_options(go_exec_loader PRIVATE
     -DNDEBUG
 )
 
+# 同上：ApkBuilder 导出 GO_APP 时也会去 nativeLibraryDir 找
+# libgo_exec_loader.so（ApkBuilder.kt:3018），缺了就报
+# "Go exec loader missing at ..."。因此这个可执行档同样要改成 .so 名字。
 set_target_properties(go_exec_loader PROPERTIES
+    PREFIX "lib"
+    SUFFIX ".so"
     LINK_FLAGS "-Wl,--gc-sections -Wl,-z,max-page-size=16384"
 )
 
