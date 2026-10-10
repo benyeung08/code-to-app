@@ -94,27 +94,40 @@ object WebViewPool {
         }
     }
 
+    /**
+     * 归还一个 WebView 到池中。
+     *
+     * 公开签名保持 [WebView]（父类），外部呼叫点不受影响；但池元素已改为
+     * [WtaWebView]（消费方 EngineViewFactory 需要的就是 WtaWebView），
+     * 所以这里先做安全转型：不是 WtaWebView 就无从复用，直接销毁。
+     */
     fun recycle(webView: WebView) {
+        val wta = webView as? WtaWebView
+        if (wta == null) {
+            AppLogger.d(TAG, "Recycled view is not a WtaWebView, destroying it")
+            try { webView.destroy() } catch (_: Exception) {}
+            return
+        }
         try {
 
-            webView.stopLoading()
-            webView.loadUrl("about:blank")
-            webView.clearHistory()
-            webView.removeAllViews()
+            wta.stopLoading()
+            wta.loadUrl("about:blank")
+            wta.clearHistory()
+            wta.removeAllViews()
 
             synchronized(pool) {
                 if (pool.size < MAX_POOL_SIZE) {
-                    pool.addLast(webView)
+                    pool.addLast(wta)
                     AppLogger.d(TAG, "WebView recycled to pool (pool size: ${pool.size})")
                     return
                 }
             }
 
-            webView.destroy()
+            wta.destroy()
             AppLogger.d(TAG, "Pool full, WebView destroyed")
         } catch (e: Exception) {
             AppLogger.e(TAG, "WebView recycle failed, destroying", e)
-            try { webView.destroy() } catch (_: Exception) {}
+            try { wta.destroy() } catch (_: Exception) {}
         }
     }
 
